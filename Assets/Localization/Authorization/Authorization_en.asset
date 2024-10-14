@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9620f8c34305754d8cc9a7e49e852d9, type: 3}
+  m_Name: Authorization_en
+  m_EditorClassIdentifier: 
+  m_LocaleId:
+    m_Code: en
+  m_SharedData: {fileID: 11400000, guid: 01befbfd5371f7e4588ca89284de8322, type: 2}
+  m_Metadata:
+    m_Items: []
+  m_TableData:
+  - m_Id: 469201285120
+    m_Localized: Do you agree to send more detailed data to improve our application?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469247422464
+    m_Localized: "By accepting, you acknowledge that analytics may collect and store
+      the data you enter in our application. For example, this data may include:\n\n\u2022
+      Your email\n\u2022 Your approximate location\n\u2022 Your IP and MAC addresses"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469251616768
+    m_Localized: You need to sign in, please select a sign-in method
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469255811072
+    m_Localized: Email Confirmation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005376
+    m_Localized: 'An email with a confirmation code has been sent.
+
+
+      Please
+      enter it in the field above and click "Next."'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005377
+    m_Localized: <link=AnotherMethod>Choose another method</link>
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005378
+    m_Localized: Change Name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005379
+    m_Localized: '<b>Your in-game name is not a unique identifier and may match other
+      players'' names</b>
+
+
+      You can change it an unlimited number of times,
+      but it must comply with cultural and ethical standards. Otherwise, your account
+      may lose the ability to change the name.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005380
+    m_Localized: The version of your application is not up to date
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005381
+    m_Localized: 'This version of the app is no longer supported.
+
+
+      To continue
+      using the app, please update it by clicking the "Update" button below.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005382
+    m_Localized: Update
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005383
+    m_Localized: Code
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005384
+    m_Localized: Next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005385
+    m_Localized: Yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005386
+    m_Localized: No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005387
+    m_Localized: Or
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005388
+    m_Localized: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005389
+    m_Localized: Try again
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005390
+    m_Localized: Sign out
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005391
+    m_Localized: <link=ContactSupport>Contact Support</link>
+    m_Metadata:
+      m_Items: []
+  references:
+    version: 2
+    RefIds: []

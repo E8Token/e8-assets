@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b11a58205ec3474ca216360e9fa74a8, type: 3}
+  m_Name: Authorization Shared Data
+  m_EditorClassIdentifier: 
+  m_TableCollectionName: Authorization
+  m_TableCollectionNameGuidString: 01befbfd5371f7e4588ca89284de8322
+  m_Entries:
+  - m_Id: 469201285120
+    m_Key: AnalyticsContentTitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469247422464
+    m_Key: AnalyticsContentDescription
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469251616768
+    m_Key: SignInContentTitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469255811072
+    m_Key: CodeContentTitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005376
+    m_Key: CodeContentDescription
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005377
+    m_Key: ChooseAnotherMethod
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005378
+    m_Key: ChangeNameContentTitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005379
+    m_Key: ChangeNameContentDescription
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005380
+    m_Key: UpdateContentTitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005381
+    m_Key: UpdateContentDescription
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005382
+    m_Key: Update
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005383
+    m_Key: CodePlaceholder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005384
+    m_Key: Next
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005385
+    m_Key: Yes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005386
+    m_Key: No
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005387
+    m_Key: Or
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005388
+    m_Key: Close
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005389
+    m_Key: TryAgain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005390
+    m_Key: SignOut
+    m_Metadata:
+      m_Items: []
+  - m_Id: 469260005391
+    m_Key: ContactSupportButton
+    m_Metadata:
+      m_Items: []
+  m_Metadata:
+    m_Items: []
+  m_KeyGenerator:
+    rid: 7450376776903032856
+  references:
+    version: 2
+    RefIds:
+    - rid: 7450376776903032856
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
+      data:
+        m_CustomEpoch: 1728513510838

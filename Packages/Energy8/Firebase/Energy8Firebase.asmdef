@@ -1,0 +1,25 @@
+{
+    "name": "Energy8Firebase",
+    "rootNamespace": "Energy8.Firebase",
+    "references": [
+        "UniTask",
+        "Energy8Models",
+        "Energy8"
+    ],
+    "includePlatforms": [
+        "Android",
+        "Editor",
+        "iOS",
+        "WebGL"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        ""
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

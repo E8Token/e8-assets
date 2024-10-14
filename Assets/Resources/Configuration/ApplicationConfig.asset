@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d90736f0db65d74b85088b94f69d920, type: 3}
+  m_Name: ApplicationConfig
+  m_EditorClassIdentifier: 
+  googleWebApi: 523375396079-8emtlq3ran6sobr9uakfn3ohvkjc0g8e.apps.googleusercontent.com
+  ipConfigs:
+  - ipType: 0
+    ipAddress: http://localhost:5001
+  - ipType: 1
+    ipAddress: http://192.168.1.10:5001
+  - ipType: 2
+    ipAddress: http://176.223.131.88
+  - ipType: 3
+    ipAddress: https://games.energy8.io/Debug
+  - ipType: 4
+    ipAddress: http://176.223.131.88
+  - ipType: 5
+    ipAddress: https://games.energy8.io
+  selectedIPType: 0

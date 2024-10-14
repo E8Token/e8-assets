@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>523375396079-goh39rq0ll9kr4kl4he7e2o8j51ese69.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.523375396079-goh39rq0ll9kr4kl4he7e2o8j51ese69</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAngrxU_6_kYVE21JU8K1fSDFfSqmzMCYU</string>
+	<key>GCM_SENDER_ID</key>
+	<string>523375396079</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>io.Energy8Games.Energy8Assets</string>
+	<key>PROJECT_ID</key>
+	<string>energy8assets</string>
+	<key>STORAGE_BUCKET</key>
+	<string>energy8assets.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:523375396079:ios:8aaae45a9047901ed2071a</string>
+</dict>
+</plist>

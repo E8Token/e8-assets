@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "523375396079",
+    "project_id": "energy8assets",
+    "storage_bucket": "energy8assets.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:523375396079:android:e20498fbf583181bd2071a",
+        "android_client_info": {
+          "package_name": "io.Energy8Games.Energy8Assets"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "523375396079-urd73bnrsbmbb61gqichhp67in091k44.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAoUzdxFo3vh-VeIiP9sY0fwj2NumSK1I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "523375396079-urd73bnrsbmbb61gqichhp67in091k44.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "523375396079-goh39rq0ll9kr4kl4he7e2o8j51ese69.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.Energy8Games.Energy8Assets"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

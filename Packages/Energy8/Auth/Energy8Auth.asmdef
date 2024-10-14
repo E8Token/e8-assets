@@ -1,0 +1,25 @@
+{
+    "name": "Energy8Auth",
+    "rootNamespace": "",
+    "references": [
+        "UniTask",
+        "Unity.TextMeshPro",
+        "Energy8Models",
+        "Energy8Firebase",
+        "Energy8"
+    ],
+    "includePlatforms": [
+        "Android",
+        "Editor",
+        "iOS",
+        "WebGL"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
