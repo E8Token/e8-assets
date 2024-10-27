@@ -53,7 +53,7 @@ namespace Energy8.Auth
             }
         }
         async UniTask<TryResult<UserT>> GetGameUserAsync(CancellationToken cancellationToken) =>
-            await TrySendRequest<UserT>(
+            await SendRequestAsync<UserT>(
                 cancellationToken, "GetUser", $"{Game}/GetUser", GET_METHOD, AuthorizationType.Bearer, () => AuthToken, isBackground: true);
         #endregion
     }

@@ -19,15 +19,16 @@ namespace Energy8.Auth
     public class AuthControllerBase : MonoBehaviour
     {
         [Header("Logger")]
-        [SerializeField] string loggerName;
-        [SerializeField] Color loggerColor;
+        [SerializeField] string loggerName = "AuthController";
+        [SerializeField] Color loggerColor = Color.red;
+
+        [Header("Content (Base)")]
+        [SerializeField] List<AuthContentBase> contentPrefabs;
 
         [Header("Functional (Base)")]
         [SerializeField] ScrollRect scrollView;
         [SerializeField] RectTransform viewport;
         [SerializeField] new Animation animation;
-
-        [SerializeField] List<AuthContentBase> contentPrefabs;
 
         [Header("UI (Base)")]
         [SerializeField] Button openBut;
@@ -54,6 +55,12 @@ namespace Energy8.Auth
 
         public UserData User { get; private set; }
 
+        void ThrowCriticalError()
+        {
+            AuthController.SignOut();
+            throw new Exception("Critical Authorization error");
+        }
+
         #region Unity
         void Reset()
         {
@@ -61,6 +68,8 @@ namespace Energy8.Auth
             scrollView?.TryGetComponent(out animation);
 
             scrollView?.transform.Find("Viewport").TryGetComponent(out viewport);
+
+            scrollView?.transform.Find("OpenBut").TryGetComponent(out openBut);
         }
 
         protected void Awake()
@@ -80,12 +89,12 @@ namespace Energy8.Auth
             }
             else Destroy(gameObject);
         }
-
         void Start()
         {
             onSignInCTS = new();
             StartAuthorizationAsync(onSignInCTS.Token).Forget();
         }
+
         void OnDestroy()
         {
             onSignInCTS?.Cancel();
@@ -105,64 +114,21 @@ namespace Energy8.Auth
         async UniTask StartAuthorizationAsync(CancellationToken cancellationToken)
         {
             logger.Log("StartAuthorizationAsync()");
-            cancellationToken.ThrowIfCancellationRequested();
+
             await FirebaseContoller.InitializeAllAsync(cancellationToken);
             IsDetailedAnalyticsAllowed = await RequestDetailedAnalyticsAsync(cancellationToken);
-
             IsInitialized = true;
 
             if (!AuthController.IsAutorized)
                 await SignInAsync(cancellationToken);
         }
-
-        async UniTask ShowUserWindowAsync(CancellationToken cancellationToken)
-        {
-            logger.Log("ShowUserWindowAsync()");
-            await UniTask.WaitUntil(() => IsInitialized).
-                AttachExternalCancellation(cancellationToken);
-            do
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var getUserResult = await RunWithHandlingError(cancellationToken, async () =>
-                {
-                    var result = await TryGetUserAsync(cancellationToken);
-                    if (result.IsFailed)
-                        result = new TryResult<UserData>(result.Status, result.Value,
-                            new ErrorData(result.Error.Header, result.Error.Description, mustSignOut: true));
-                    return result;
-                });
-                if (getUserResult.IsSuccessful)
-                {
-                    User = getUserResult.Value;
-                    OnSignIn?.Invoke(User);
-                }
-
-                var userResult = await TryAddAndProcessContentAsync<UserContent, UserContentResult>(cancellationToken, User.Name);
-                if (userResult.Value.ResultType == UserWindowAction.SignOut)
-                    AuthController.SignOut();
-                else
-                {
-                    TryResult changeNameResult =
-                        await RunWithHandlingError(cancellationToken, async () =>
-                            {
-                                var nameResult = await GetNewNameAsync(cancellationToken);
-                                if (nameResult.IsSuccessful)
-                                    return await ChangeNameAsync(cancellationToken, nameResult.Value.Name);
-                                else if (nameResult.IsCancelled)
-                                    return TryResult.CreateCancelled();
-                                else return TryResult.CreateFailed(nameResult.Error);
-                            });
-                }
-            } while (!cancellationToken.IsCancellationRequested);
-        }
-
         async UniTask SignInAsync(CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
             TryResult<string> authResult;
             do
             {
-                SignInContentResult signInResult = await SelectSignInMethodAsync(cancellationToken);
+                SignInContentResult signInResult = (await AddAndProcessContentAsync<SignInContent, SignInContentResult>(cancellationToken)).Value;
                 authResult = await RunWithHandlingError(cancellationToken, async () =>
                 {
                     return signInResult.SignInMethod switch
@@ -177,31 +143,10 @@ namespace Energy8.Auth
             while (!authResult.IsSuccessful);
         }
 
-        async UniTask<bool> RequestDetailedAnalyticsAsync(CancellationToken cancellationToken)
-        {
-            if (PlayerPrefs.HasKey("IsDetailedAnalytics"))
-                return bool.Parse(PlayerPrefs.GetString("IsDetailedAnalytics"));
-            var result = await TryAddAndProcessContentAsync<AnalyticsContent, AnalyticsContentResult>(cancellationToken);
-            PlayerPrefs.SetString("IsDetailedAnalytics", result.Value.IsDetailedAnalyticsAllowed.ToString());
-            return result.Value.IsDetailedAnalyticsAllowed;
-        }
-        async UniTask<SignInContentResult> SelectSignInMethodAsync(CancellationToken cancellationToken) =>
-            (await TryAddAndProcessContentAsync<SignInContent, SignInContentResult>(cancellationToken)).Value;
-        async UniTask<TryResult<UserData>> TryGetUserAsync(CancellationToken cancellationToken) =>
-            await TrySendRequest<UserData>(
-                cancellationToken, "GetUser", "User/GetUser", GET_METHOD, AuthorizationType.Bearer, () => AuthToken);
-        async UniTask<TryResult<ChangeNameContentResult>> GetNewNameAsync(CancellationToken cancellationToken) =>
-            await TryAddAndProcessContentAsync<ChangeNameContent, ChangeNameContentResult>(cancellationToken);
-
-        async UniTask<TryResult> ChangeNameAsync(
-            CancellationToken cancellationToken, string name) =>
-                await TrySendRequest(cancellationToken, "ChangeName", "User/ChangeName", PUT_METHOD, AuthorizationType.Bearer, () => AuthToken, false, ("Name", name));
-        #endregion
-
         #region Email
         async UniTask<TryResult<string>> SignInByEmailAsync(CancellationToken cancellationToken, string email)
         {
-            var confTokenResult = await GetEmailConfirmationTokenAsync(cancellationToken, email);
+            var confTokenResult = await SendSignInByEmailAsync(cancellationToken, email);
             if (confTokenResult.IsSuccessful)
             {
                 var authTokenResult = await ConfirmEmailByCodeAsync(cancellationToken, email, confTokenResult.Value.Token);
@@ -221,9 +166,9 @@ namespace Energy8.Auth
             {
                 authTokenResult = await RunWithHandlingError(cancellationToken, async () =>
                 {
-                    var codeContentResult = await GetConfirmationCodeAsync(cancellationToken);
+                    var codeContentResult = await AddAndProcessContentAsync<CodeContent, CodeContentResult>(cancellationToken); ;
                     if (codeContentResult.IsSuccessful)
-                        return await GetAuthTokenByEmailAsync(cancellationToken, email.ToLower(), token, codeContentResult.Value.Code);
+                        return await SendConfirmEmailByCodeAsync(cancellationToken, email.ToLower(), token, codeContentResult.Value.Code);
                     else if (codeContentResult.IsCancelled)
                         return TryResult<ConfirmEmailByCodeResponseData>.CreateCancelled();
                     else return TryResult<ConfirmEmailByCodeResponseData>.CreateFailed(codeContentResult.Error);
@@ -235,24 +180,23 @@ namespace Energy8.Auth
         async UniTask<TryResult<string>> SignInByCustomToken(CancellationToken cancellationToken, string token)
         {
             Func<UniTask<object>> authRequest = async () =>
-                await AuthController.TrySignInByTokenAsync(cancellationToken, token);
-            var authResult = await TryAddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
+                await AuthController.SignInByTokenAsync(cancellationToken, token);
+            var authResult = await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
                 LoadingContentType.Simple, authRequest);
             if (authResult.IsSuccessful)
                 return (TryResult<string>)authResult.Value.ObjectResult;
             else return TryResult<string>.CreateFailed(authResult.Error);
         }
 
-        async UniTask<TryResult<CodeContentResult>> GetConfirmationCodeAsync(CancellationToken cancellationToken) =>
-            await TryAddAndProcessContentAsync<CodeContent, CodeContentResult>(cancellationToken);
-        async UniTask<TryResult<SignInByEmailResponseData>> GetEmailConfirmationTokenAsync(
+        async UniTask<TryResult<SignInByEmailResponseData>> SendSignInByEmailAsync(
             CancellationToken cancellationToken, string email) =>
-                await TrySendRequest<SignInByEmailResponseData>(
-                    cancellationToken, "GetEmailConfirmationToken", "User/SignInByEmail", POST_METHOD, AuthorizationType.None, null, false, ("Email", email));
-        async UniTask<TryResult<ConfirmEmailByCodeResponseData>> GetAuthTokenByEmailAsync(
+                await SendRequestAsync<SignInByEmailResponseData>(
+                    cancellationToken, "SignInByEmail", "User/SignInByEmail", POST_METHOD, AuthorizationType.None, null, false, ("Email", email));
+        async UniTask<TryResult<ConfirmEmailByCodeResponseData>> SendConfirmEmailByCodeAsync(
             CancellationToken cancellationToken, string email, string token, string code) =>
-                await TrySendRequest<ConfirmEmailByCodeRequestData, ConfirmEmailByCodeResponseData>(
-                    cancellationToken, "GetAuthTokenByEmail", "User/ConfirmEmailByCode", POST_METHOD, AuthorizationType.None, null, new ConfirmEmailByCodeRequestData(email, token, code));
+                await SendRequestAsync<ConfirmEmailByCodeRequestData, ConfirmEmailByCodeResponseData>(
+                    cancellationToken, "ConfirmEmailByCode", "User/ConfirmSignInByCode", POST_METHOD, AuthorizationType.None,
+                        null, new ConfirmEmailByCodeRequestData(email, token, code));
         #endregion
 
         #region Google
@@ -267,6 +211,81 @@ namespace Energy8.Auth
         }
         #endregion
 
+        #region  UserWindow
+        async UniTask ShowUserWindowAsync(CancellationToken cancellationToken)
+        {
+            logger.Log("ShowUserWindowAsync()");
+
+            await UniTask.WaitUntil(() => IsInitialized).
+                AttachExternalCancellation(cancellationToken);
+
+            do
+            {
+                await GetUserAsync(cancellationToken);
+                await AddAndProcessUserContentAsync(cancellationToken);
+            } while (!cancellationToken.IsCancellationRequested);
+        }
+
+        async UniTask GetUserAsync(CancellationToken cancellationToken)
+        {
+            var getUserResult = await RunWithHandlingError(cancellationToken, async () =>
+            {
+                var result = await SendGetUserRequestAsync(cancellationToken);
+                if (result.IsFailed)
+                    result = new TryResult<UserData>(result.Status, result.Value,
+                        new ErrorData(result.Error.Header, result.Error.Description, canRetry: true, mustSignOut: true));
+                return result;
+            });
+
+            if (getUserResult.IsSuccessful)
+            {
+                User = getUserResult.Value;
+                OnSignIn?.Invoke(User);
+            }
+            else ThrowCriticalError();
+        }
+
+        async UniTask AddAndProcessUserContentAsync(CancellationToken cancellationToken)
+        {
+            var userResult = await AddAndProcessContentAsync<UserContent, UserContentResult>(cancellationToken, User.Name);
+            if (userResult.Value.ResultType == UserWindowAction.SignOut)
+                AuthController.SignOut();
+            else
+                await AddAndProcessChangeNameWindow(cancellationToken);
+        }
+        async UniTask AddAndProcessChangeNameWindow(CancellationToken cancellationToken)
+        {
+            TryResult changeNameResult =
+                await RunWithHandlingError(cancellationToken, async () =>
+                    {
+                        var nameResult = await AddAndProcessContentAsync<ChangeNameContent, ChangeNameContentResult>(cancellationToken);
+                        if (nameResult.IsSuccessful)
+                            return await SendChangeNameRequestAsync(cancellationToken, nameResult.Value.Name);
+                        else if (nameResult.IsCancelled)
+                            return TryResult.CreateCancelled();
+                        else return TryResult.CreateFailed(nameResult.Error);
+                    });
+            if (changeNameResult.IsFailed) ThrowCriticalError();
+        }
+
+        async UniTask<TryResult<UserData>> SendGetUserRequestAsync(CancellationToken cancellationToken) =>
+            await SendRequestAsync<UserData>(
+                cancellationToken, "GetUser", "User/GetUser", GET_METHOD, AuthorizationType.Bearer, () => AuthToken);
+        async UniTask<TryResult> SendChangeNameRequestAsync(CancellationToken cancellationToken, string name) =>
+                await SendRequestAsync(cancellationToken, "ChangeName", "User/ChangeName", PUT_METHOD, AuthorizationType.Bearer,
+                    () => AuthToken, false, ("Name", name));
+        #endregion
+
+        async UniTask<bool> RequestDetailedAnalyticsAsync(CancellationToken cancellationToken)
+        {
+            if (PlayerPrefs.HasKey("IsDetailedAnalytics"))
+                return bool.Parse(PlayerPrefs.GetString("IsDetailedAnalytics"));
+            var result = await AddAndProcessContentAsync<AnalyticsContent, AnalyticsContentResult>(cancellationToken);
+            PlayerPrefs.SetString("IsDetailedAnalytics", result.Value.IsDetailedAnalyticsAllowed.ToString());
+            return result.Value.IsDetailedAnalyticsAllowed;
+        }
+        #endregion
+
         #region Functionaly
         async UniTask<TryResult<TResult>> RunWithHandlingError<TResult>(CancellationToken cancellationToken, Func<UniTask<TryResult<TResult>>> func)
         {
@@ -277,7 +296,7 @@ namespace Energy8.Auth
                 result = await UniTask.Create(func);
                 if (result.IsFailed)
                 {
-                    var errorResultValue = (await TryAddAndProcessContentAsync<ErrorContent, ErrorContentResult>(cancellationToken, result.Error)).Value;
+                    var errorResultValue = (await AddAndProcessContentAsync<ErrorContent, ErrorContentResult>(cancellationToken, result.Error)).Value;
                     switch (errorResultValue.Method)
                     {
                         case ErrorHandlingMethod.Close:
@@ -292,35 +311,13 @@ namespace Energy8.Auth
                 else return result;
             }
         }
-        async UniTask<TryResult> RunWithHandlingError(CancellationToken cancellationToken, Func<UniTask<TryResult>> func)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            TryResult result;
-            while (true)
-            {
-                result = await UniTask.Create(func);
-                if (result.IsFailed)
-                {
-                    var errorResultValue = (await TryAddAndProcessContentAsync<ErrorContent, ErrorContentResult>(cancellationToken, result.Error)).Value;
-                    switch (errorResultValue.Method)
-                    {
-                        case ErrorHandlingMethod.Close:
-                            return TryResult.CreateCancelled();
-                        case ErrorHandlingMethod.TryAgain:
-                            break;
-                        case ErrorHandlingMethod.SignOut:
-                            AuthController.SignOut();
-                            return result;
-                    }
-                }
-                else return result;
-            }
-        }
+        async UniTask<TryResult> RunWithHandlingError(CancellationToken cancellationToken, Func<UniTask<TryResult>> func) =>
+            await RunWithHandlingError(cancellationToken, async () => await func());
 
-        protected async UniTask<TryResult<TResponse>> TrySendRequest<TRequest, TResponse>(CancellationToken cancellationToken,
+        protected async UniTask<TryResult<TResponse>> SendRequestAsync<TRequest, TResponse>(CancellationToken cancellationToken,
             string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, TRequest requestData, bool isBackground = false)
-                where TRequest : Data
-                where TResponse : Data
+                        where TRequest : Data
+                        where TResponse : Data
         {
             cancellationToken.ThrowIfCancellationRequested();
             byte attemp = 1;
@@ -343,7 +340,7 @@ namespace Energy8.Auth
                     webResult = await UniTask.Create(request);
                 else
                 {
-                    var result = await TryAddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken, LoadingContentType.WebRequest, request);
+                    var result = await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken, LoadingContentType.WebRequest, request);
                     webResult = result.Value.RequestResult;
                 }
 
@@ -357,8 +354,8 @@ namespace Energy8.Auth
                     if (webResult.StatusCode == HttpStatusCode.Unauthorized)
                     {
                         Func<UniTask<object>> tokenRequest = async () =>
-                            await TryUpdateAuthTokenAsync(cancellationToken, true);
-                        var tokenResult = await TryAddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
+                            await UpdateAuthTokenAsync(cancellationToken, true);
+                        var tokenResult = await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
                             LoadingContentType.Simple, tokenRequest);
                         if (tokenResult.IsSuccessful)
                         {
@@ -379,7 +376,7 @@ namespace Energy8.Auth
             return TryResult<TResponse>.CreateFailed(new ErrorData("Authorization Error",
                 "Please try restarting the app and signing in again. If this doesn't help, contact support.", canProceed: true, canRetry: true, mustSignOut: true));
         }
-        protected async UniTask<TryResult<TResponse>> TrySendRequest<TResponse>(CancellationToken cancellationToken,
+        protected async UniTask<TryResult<TResponse>> SendRequestAsync<TResponse>(CancellationToken cancellationToken,
             string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, bool isBackground = false, params (string key, string value)[] requestData)
             where TResponse : Data
         {
@@ -404,7 +401,7 @@ namespace Energy8.Auth
                     webResult = await UniTask.Create(request);
                 else
                 {
-                    var result = await TryAddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken, LoadingContentType.WebRequest, request);
+                    var result = await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken, LoadingContentType.WebRequest, request);
                     webResult = result.Value.RequestResult;
                 }
 
@@ -418,8 +415,8 @@ namespace Energy8.Auth
                     if (webResult.StatusCode == HttpStatusCode.Unauthorized)
                     {
                         Func<UniTask<object>> tokenRequest = async () =>
-                            await TryUpdateAuthTokenAsync(cancellationToken, true);
-                        var tokenResult = await TryAddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
+                            await UpdateAuthTokenAsync(cancellationToken, true);
+                        var tokenResult = await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
                             LoadingContentType.Simple, tokenRequest);
                         if (tokenResult.IsSuccessful)
                         {
@@ -440,8 +437,8 @@ namespace Energy8.Auth
             return TryResult<TResponse>.CreateFailed(new ErrorData("Authorization Error",
                 "Please try restarting the app and signing in again. If this doesn't help, contact support.", canProceed: true, canRetry: true, mustSignOut: true));
         }
-        protected async UniTask<TryResult> TrySendRequest(CancellationToken cancellationToken,
-                   string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, bool isBackground = false, params (string key, string value)[] requestData)
+        protected async UniTask<TryResult> SendRequestAsync(CancellationToken cancellationToken,
+            string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, bool isBackground = false, params (string key, string value)[] requestData)
         {
             cancellationToken.ThrowIfCancellationRequested();
             byte attemp = 1;
@@ -463,7 +460,7 @@ namespace Energy8.Auth
                     webResult = (await UniTask.Create(request)) as WebTryResult;
                 else
                 {
-                    var result = await TryAddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken, LoadingContentType.Simple, request);
+                    var result = await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken, LoadingContentType.Simple, request);
                     webResult = result.Value.ObjectResult as WebTryResult;
                 }
 
@@ -477,8 +474,8 @@ namespace Energy8.Auth
                     if (webResult.StatusCode == HttpStatusCode.Unauthorized)
                     {
                         Func<UniTask<object>> tokenRequest = async () =>
-                            await TryUpdateAuthTokenAsync(cancellationToken, true);
-                        var tokenResult = await TryAddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
+                            await UpdateAuthTokenAsync(cancellationToken, true);
+                        var tokenResult = await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
                             LoadingContentType.Simple, tokenRequest);
                         if (tokenResult.IsSuccessful)
                         {
@@ -500,7 +497,15 @@ namespace Energy8.Auth
                 "Please try restarting the app and signing in again. If this doesn't help, contact support.", canProceed: true, canRetry: true, mustSignOut: true));
         }
 
-        async UniTask<TryResult<TResult>> TryAddAndProcessContentAsync<TContent, TResult>(CancellationToken cancellationToken, params object[] args)
+        async UniTask<TryResult<string>> UpdateAuthTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
+        {
+            var result = await AuthController.GetAuthTokenAsync(cancellationToken, forceRefresh);
+            if (result.IsSuccessful)
+                AuthToken = result.Value;
+            return result;
+        }
+
+        async UniTask<TryResult<TResult>> AddAndProcessContentAsync<TContent, TResult>(CancellationToken cancellationToken, params object[] args)
             where TContent : AuthContentBase
             where TResult : AuthContentResultBase
         {
@@ -517,13 +522,6 @@ namespace Energy8.Auth
             TContent content = Instantiate(contentPrefab, viewport);
             scrollView.content = content.RectTransform;
             return await content.TryProcessContentAsync<TResult>(cancellationToken, args);
-        }
-        async UniTask<TryResult<string>> TryUpdateAuthTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
-        {
-            var result = await AuthController.TryGetAuthTokenAsync(cancellationToken, forceRefresh);
-            if (result.IsSuccessful)
-                AuthToken = result.Value;
-            return result;
         }
         #endregion
 
@@ -549,6 +547,14 @@ namespace Energy8.Auth
             openBut.onClick.AddListener(() => SetOpenState(!IsOpen));
         }
         #endregion
+
+#if UNITY_EDITOR
+        [ContextMenu("SignOut")]
+        private void SignOut()
+        {
+            AuthController.SignOut();
+        }
+#endif
     }
 
     public class PrefabNotFoundException : Exception

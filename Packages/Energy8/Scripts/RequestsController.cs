@@ -147,7 +147,6 @@ namespace Energy8.Requests
             catch (Exception ex)
             {
                 var response = WebTryResult<T>.Create(request);
-                Debug.Log(response.StatusCode);
                 logger.LogWarning($"Send({request.uri}, {request.method}, {response.StatusCode}) : {ex.Message}");
                 return response;
             }

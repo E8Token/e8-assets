@@ -45,7 +45,7 @@ namespace Energy8.Firebase
             logger.Log("Initialized");
 #endif
         }
-        public static async UniTask<TryResult<string>> TryGetAuthTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
+        public static async UniTask<TryResult<string>> GetAuthTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             UniTask<string> task = FirebaseAuthWebGL.GetIdTokenAsync(cancellationToken, forceRefresh);
@@ -62,7 +62,7 @@ namespace Energy8.Firebase
 #endif
         }
 
-        public static async UniTask<TryResult<string>> TrySignInByTokenAsync(CancellationToken cancellationToken, string token)
+        public static async UniTask<TryResult<string>> SignInByTokenAsync(CancellationToken cancellationToken, string token)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             UniTask<string> task = FirebaseAuthWebGL.SignInByTokenAsync(cancellationToken, token);
