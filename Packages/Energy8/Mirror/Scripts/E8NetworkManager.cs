@@ -8,6 +8,10 @@ using UnityEngine.SceneManagement;
 using Cysharp.Threading.Tasks;
 using Mirror;
 
+#if UNITY_SERVER
+using Energy8.Server; 
+#endif
+
 namespace Energy8.Mirror
 {
     public partial class E8NetworkManager : NetworkManager
