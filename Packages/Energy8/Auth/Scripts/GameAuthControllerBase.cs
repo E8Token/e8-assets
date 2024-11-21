@@ -39,7 +39,7 @@ namespace Energy8.Auth
                 // await RunWithHandlingError(cancellationToken, async () =>
                 // {
                 await GetUserAsync(cancellationToken);
-                await GetGameUserAsync(cancellationToken);
+                OnUpdateGameUser?.Invoke(await GetGameUserAsync(cancellationToken););
 
                 //     var cts = new CancellationTokenSource();
                 //     cts.CancelAfterSlim(TimeSpan.FromSeconds(10));
