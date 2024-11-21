@@ -73,7 +73,7 @@ namespace Energy8.Firebase
                 i++;
             }
             return convertedParams;
-#endif
         }
+#endif
     }
 }
