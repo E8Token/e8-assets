@@ -36,14 +36,15 @@ namespace Energy8.Auth
 
             do
             {
-                await RunWithHandlingError(cancellationToken, async () =>
-                {
-                    await GetUserAsync(cancellationToken);
-                    await GetGameUserAsync(cancellationToken);
-                    var cts = new CancellationTokenSource();
-                    cts.CancelAfterSlim(TimeSpan.FromSeconds(10));
-                    await AddAndProcessUserContentAsync(cancellationToken).AttachExternalCancellation(cts.Token);
-                });
+                // await RunWithHandlingError(cancellationToken, async () =>
+                // {
+                await GetUserAsync(cancellationToken);
+                await GetGameUserAsync(cancellationToken);
+
+                //     var cts = new CancellationTokenSource();
+                //     cts.CancelAfterSlim(TimeSpan.FromSeconds(10));
+                await AddAndProcessUserContentAsync(cancellationToken);//.AttachExternalCancellation(cts.Token);
+                //});
             } while (!cancellationToken.IsCancellationRequested);
         }
 
