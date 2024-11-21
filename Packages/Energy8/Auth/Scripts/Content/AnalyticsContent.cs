@@ -11,13 +11,13 @@ namespace Energy8.Auth.Content
         [SerializeField] Button yesBut;
         [SerializeField] Button noBut;
 
-        private protected override void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args)
+        private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
             yesBut.onClick.AddListener(() => 
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new AnalyticsContentResult(true) as TResult)));
+                taskCompletionSource.TrySetResult(new AnalyticsContentResult(true) as TResult));
             noBut.onClick.AddListener(() => 
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new AnalyticsContentResult(false) as TResult)));
+                taskCompletionSource.TrySetResult(new AnalyticsContentResult(false) as TResult));
         }
     }
     public class AnalyticsContentResult : AuthContentResultBase

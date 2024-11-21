@@ -29,7 +29,7 @@ namespace Energy8.Auth.Content
             private protected set => canvasGroup.interactable = value;
         }
 
-        private protected UniTaskCompletionSource<TryResult<AuthContentResultBase>> taskCompletionSource;
+        private protected UniTaskCompletionSource<AuthContentResultBase> taskCompletionSource;
         CancellationTokenSource showCTS;
 
         void Reset()
@@ -71,16 +71,16 @@ namespace Energy8.Auth.Content
         #endregion
 
         #region Functional
-        private protected virtual void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args) where TResult : AuthContentResultBase
+        private protected virtual void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args) where TResult : AuthContentResultBase
         {
             logger = new Logger(gameObject, loggerName, loggerColor);
             logger.Log($"Initialize({string.Join(", ", args)})");
         }
-        public virtual async UniTask<TryResult<TResult>> TryProcessContentAsync<TResult>(CancellationToken cancellationToken, params object[] args) where TResult : AuthContentResultBase
+        public virtual async UniTask<TResult> TryProcessContentAsync<TResult>(CancellationToken cancellationToken, params object[] args) where TResult : AuthContentResultBase
         {
             try
             {
-                UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource = new();
+                UniTaskCompletionSource<TResult> taskCompletionSource = new();
                 Initialize(taskCompletionSource, args);
                 ShowUI();
                 var result = await taskCompletionSource.Task.AttachExternalCancellation(cancellationToken);
@@ -94,9 +94,9 @@ namespace Energy8.Auth.Content
             }
             catch (Exception ex)
             {
+                Destroy(gameObject);
                 throw ex;
             }
-
         }
     }
     #endregion

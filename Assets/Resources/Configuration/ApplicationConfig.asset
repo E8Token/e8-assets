@@ -12,18 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d90736f0db65d74b85088b94f69d920, type: 3}
   m_Name: ApplicationConfig
   m_EditorClassIdentifier: 
-  googleWebApi: 523375396079-8emtlq3ran6sobr9uakfn3ohvkjc0g8e.apps.googleusercontent.com
-  ipConfigs:
+  _ipConfigs:
   - ipType: 0
     ipAddress: http://localhost:5001
   - ipType: 1
-    ipAddress: http://192.168.1.10:5001
+    ipAddress: http://localhost:5001
   - ipType: 2
-    ipAddress: http://176.223.131.88
+    ipAddress: http://194.135.91.70:5001
   - ipType: 3
     ipAddress: https://games.energy8.io/Debug
   - ipType: 4
-    ipAddress: http://176.223.131.88
+    ipAddress: http://176.223.131.88:5000
   - ipType: 5
     ipAddress: https://games.energy8.io
-  selectedIPType: 0
+  _selectedIPType: 0
+  _selectedAuthType: 0
+  _firebaseAuthConfigs:
+  - authType: 0
+    config: {fileID: 4900000, guid: 611664c296eed6d448ded7c73ee7982f, type: 3}
+  _firebaseWebAuthConfigs: []

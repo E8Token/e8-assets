@@ -10,10 +10,10 @@ namespace Energy8.Auth.Content
         [Header("UI (Update)")]
         [SerializeField] Button updateBut;
 
-        private protected override void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args)
+        private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
-            updateBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new UpdateContentResult() as TResult)));
+            updateBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(new UpdateContentResult() as TResult));
         }
     }
     public class UpdateContentResult : AuthContentResultBase

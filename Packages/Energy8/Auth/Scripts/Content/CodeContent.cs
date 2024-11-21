@@ -1,3 +1,4 @@
+using System;
 using Cysharp.Threading.Tasks;
 using Energy8.Models;
 using TMPro;
@@ -13,15 +14,15 @@ namespace Energy8.Auth.Content
         [SerializeField] Button nextBut;
         [SerializeField] TextButton camTextBut;
 
-        private protected override void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args)
+        private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
 
             codeIF.onValueChanged.AddListener((email) => nextBut.interactable = email.Length == 6);
             camTextBut.OnClick += (s) =>
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateCancelled());
+                taskCompletionSource.TrySetCanceled();
             nextBut.onClick.AddListener(() =>
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new CodeContentResult(codeIF.text) as TResult)));
+                taskCompletionSource.TrySetResult(new CodeContentResult(codeIF.text) as TResult));
         }
     }
 

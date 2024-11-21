@@ -15,7 +15,7 @@ namespace Energy8.Auth.Content
         [SerializeField] Button nextBut;
 
 
-        private protected override void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args)
+        private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
 
@@ -23,7 +23,7 @@ namespace Energy8.Auth.Content
                 nextBut.interactable = name.Length > 3);
 
             nextBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
-                TryResult<TResult>.CreateSuccessful(new ChangeNameContentResult(nameIF.text) as TResult)));
+                new ChangeNameContentResult(nameIF.text) as TResult));
         }
     }
 

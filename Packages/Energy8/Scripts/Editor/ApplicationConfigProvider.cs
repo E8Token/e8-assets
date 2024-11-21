@@ -22,10 +22,6 @@ namespace Energy8
                         return;
                     }
 
-                    // Отображение настроек Google Web API
-                    EditorGUILayout.LabelField("Google Web API", EditorStyles.boldLabel);
-                    ApplicationConfig.GoogleWebAPI = EditorGUILayout.TextField("Google Web API", ApplicationConfig.GoogleWebAPI);
-
                     EditorGUILayout.Space();
 
                     // Отображение выпадающего списка для выбора IPType
@@ -34,6 +30,11 @@ namespace Energy8
 
                     // Отображение текущего IP-адреса на основе выбранного IPType
                     EditorGUILayout.LabelField("Selected IP Address", ApplicationConfig.SelectedIP);
+
+
+                    // Отображение выпадающего списка для выбора IPType
+                    EditorGUILayout.LabelField("Selected Auth Type", EditorStyles.boldLabel);
+                    ApplicationConfig.SelectedAuthType = (AuthType)EditorGUILayout.EnumPopup("Auth Type", ApplicationConfig.SelectedAuthType);
 
                     EditorGUILayout.Space();
 

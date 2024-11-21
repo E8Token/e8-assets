@@ -13,14 +13,14 @@ namespace Energy8.Auth.Content
         [SerializeField] Button changeNameBut;
         [SerializeField] Button signOutBut;
 
-        private protected override void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args)
+        private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
             titleText.text = (string)args[0];
             changeNameBut.onClick.AddListener(() =>
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new UserContentResult(UserWindowAction.ChangeName) as TResult)));
+                taskCompletionSource.TrySetResult(new UserContentResult(UserWindowAction.ChangeName) as TResult));
             signOutBut.onClick.AddListener(() =>
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new UserContentResult(UserWindowAction.SignOut) as TResult)));
+                taskCompletionSource.TrySetResult(new UserContentResult(UserWindowAction.SignOut) as TResult));
         }
     }
     public class UserContentResult : AuthContentResultBase

@@ -14,93 +14,85 @@ namespace Energy8.Server
         public static string ServerKey { get; set; }
         static readonly Logger logger = new(null, "ServerController", new Color(0.45f, 0.39f, 0));
 
-        public static async UniTask<TryResult<AddServerResponseData>> SendAddServerRequest(string ip, ushort port, byte maxPlayers)
+        public static UniTask<AddServerResponseData> SendAddServerRequest(string ip, ushort port, byte maxPlayers)
         {
             logger.Log($"AddServer(IP: {ip}, Port: {port}, MaxPlayersCount: {maxPlayers})");
-            return (await RequestsController.Post<AddServerResponseData>($"{Game}/AddServer",
-                AuthorizationType.None, requestData: new AddServerRequestData(ip, port, maxPlayers))).AsTryResult();
+            return RequestsController.Post<AddServerResponseData>($"{Game}/AddServer",
+                AuthorizationType.None, requestData: new AddServerRequestData(ip, port, maxPlayers));
         }
-        public static async UniTask<TryResult> SendUpdateServerRequest(byte players, bool isFree)
+        public static UniTask SendUpdateServerRequest(byte players, bool isFree)
         {
             logger.Log($"UpdateServer(PlayersCount: {players}, IsFree: {isFree})");
-            return (await RequestsController.Put(
+            return RequestsController.Put(
                 $"{Game}/UpdateServer",
                 AuthorizationType.Server,
                 $"{ServerId}:{ServerKey}",
-                new UpdateServerRequestData(players, isFree)
-            )).AsTryResult();
+                new UpdateServerRequestData(players, isFree));
         }
-        public static async UniTask<TryResult> SendRemoveServerRequest()
+        public static UniTask SendRemoveServerRequest()
         {
             logger.Log($"RemoveServer()");
-            return (await RequestsController.Delete(
+            return RequestsController.Delete(
                 $"{Game}/RemoveServer",
                 AuthorizationType.Server,
-                $"{ServerId}:{ServerKey}"
-            )).AsTryResult();
+                $"{ServerId}:{ServerKey}");
         }
 
-        public static async UniTask<TryResult> SendIsValidSessionRequest(string sessionId)
+        public static UniTask SendIsValidSessionRequest(string sessionId)
         {
             logger.Log($"IsValidSession({sessionId})");
-            return (await RequestsController.Get(
+            return RequestsController.Get(
                 $"{Game}/IsValidSession",
                 AuthorizationType.Server,
                 $"{ServerId}:{ServerKey}",
-                ("SessionsId", sessionId)
-            )).AsTryResult();
+                ("SessionsId", sessionId));
         }
-        public static async UniTask<TryResult> SendRemoveSessionRequest(string sessionId)
+        public static UniTask SendRemoveSessionRequest(string sessionId)
         {
             logger.Log($"RemoveSession({sessionId})");
-            return (await RequestsController.Delete(
+            return RequestsController.Delete(
                 $"{Game}/RemoveSession",
                 AuthorizationType.Server,
                 $"{ServerId}:{ServerKey}",
-                ("SessionsId", sessionId)
-            )).AsTryResult();
+                requestDataFields: ("SessionsId", sessionId));
         }
 
-        public static async UniTask<TryResult<GameUserData>> SendGetGameUserBySessionRequest(string sessionId)
+        public static UniTask<GameUserData> SendGetGameUserBySessionRequest(string sessionId)
         {
             logger.Log($"GetGameUserBySession({sessionId})");
-            return (await RequestsController.Get<GameUserData>(
+            return RequestsController.Get<GameUserData>(
                 $"{Game}/GetGameUserBySession",
                 AuthorizationType.Server,
                 $"{ServerId}:{ServerKey}",
-                ("SessionsId", sessionId)
-            )).AsTryResult();
+                ("SessionsId", sessionId));
         }
-        public static async UniTask<TryResult<GetNameBySessionResponseData>> SendGetNameBySessionRequest(string sessionId)
+        public static UniTask<GetNameBySessionResponseData> SendGetNameBySessionRequest(string sessionId)
         {
             logger.Log($"GetNameBySession({sessionId})");
-            return (await RequestsController.Get<GetNameBySessionResponseData>(
+            return RequestsController.Get<GetNameBySessionResponseData>(
                 $"{Game}/GetNameBySession",
                 AuthorizationType.Server,
                 $"{ServerId}:{ServerKey}",
-                ("SessionsId", sessionId)
-            )).AsTryResult();
+                ("SessionsId", sessionId));
         }
-        public static async UniTask<TryResult<GetAdditionalDataBySessionResponseData>> SendGetAdditionalDataBySessionRequest(string sessionId)
+        public static UniTask<GetAdditionalDataBySessionResponseData> SendGetAdditionalDataBySessionRequest(string sessionId)
         {
             logger.Log($"GetAdditionalDataBySession({sessionId})");
-            return (await RequestsController.Get<GetAdditionalDataBySessionResponseData>(
+            return RequestsController.Get<GetAdditionalDataBySessionResponseData>(
                 $"{Game}/GetAdditionalDataBySession",
                 AuthorizationType.Server,
                 $"{ServerId}:{ServerKey}",
-                ("SessionsId", sessionId)
-            )).AsTryResult();
+                ("SessionsId", sessionId));
         }
 
-        public static async UniTask<TryResult> SendChangeUserBalanceRequest(string sessionId, long amount)
+        public static UniTask SendChangeUserBalanceRequest(string sessionId, long amount)
         {
             logger.Log($"ChangeUserBalance(Session: {sessionId}, Amount: {amount})");
-            return (await RequestsController.Put(
+            return RequestsController.Put(
                 $"{Game}/ChangeUserBalance",
                 AuthorizationType.Server,
                 $"{ServerId}:{ServerKey}",
-                new ChangeUserBalanceBySessionRequestData(sessionId, amount)
-            )).AsTryResult();
+                new ChangeUserBalanceBySessionRequestData(sessionId, amount));
         }
     }
 }

@@ -19,7 +19,7 @@ namespace Energy8.Auth.Content
         [SerializeField] Button googleBut;
 
 
-        private protected override void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args)
+        private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
 
@@ -29,11 +29,11 @@ namespace Energy8.Auth.Content
             });
 
             appleBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
-                TryResult<TResult>.CreateSuccessful(new SignInContentResult(SignInMethod.Apple, string.Empty) as TResult)));
+                new SignInContentResult(SignInMethod.Apple, string.Empty) as TResult));
             googleBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
-                TryResult<TResult>.CreateSuccessful(new SignInContentResult(SignInMethod.Google, string.Empty) as TResult)));
+                new SignInContentResult(SignInMethod.Google, string.Empty) as TResult));
             nextBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
-                TryResult<TResult>.CreateSuccessful(new SignInContentResult(SignInMethod.Email, emailIF.text) as TResult)));
+                new SignInContentResult(SignInMethod.Email, emailIF.text) as TResult));
         }
 
         static bool IsValidEmail(string email)

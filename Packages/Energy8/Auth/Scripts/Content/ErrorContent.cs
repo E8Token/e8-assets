@@ -17,7 +17,7 @@ namespace Energy8.Auth.Content
         [SerializeField] Button signOutBut;
         [SerializeField] TextButton contactBut;
 
-        private protected override void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args)
+        private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
             ErrorData error = (ErrorData)args[0];
@@ -34,11 +34,11 @@ namespace Energy8.Auth.Content
                 (signOutBut.gameObject.activeSelf ? 0 : signOutBut.GetComponent<RectTransform>().sizeDelta.y));
 
             closeBut.onClick.AddListener(() =>
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new ErrorContentResult(ErrorHandlingMethod.Close) as TResult)));
+                taskCompletionSource.TrySetResult(new ErrorContentResult(ErrorHandlingMethod.Close) as TResult));
             tryAgainBut.onClick.AddListener(() =>
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new ErrorContentResult(ErrorHandlingMethod.TryAgain) as TResult)));
+                taskCompletionSource.TrySetResult(new ErrorContentResult(ErrorHandlingMethod.TryAgain) as TResult));
             signOutBut.onClick.AddListener(() =>
-                taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new ErrorContentResult(ErrorHandlingMethod.SignOut) as TResult)));
+                taskCompletionSource.TrySetResult(new ErrorContentResult(ErrorHandlingMethod.SignOut) as TResult));
             contactBut.OnClick += (link) =>
             {
                 if (link == "ContactSupport")

@@ -1,18 +1,21 @@
+#if UNITY_WEBGL && !UNITY_EDITOR
+#else
 using UnityEngine;
-using Newtonsoft.Json;
-#if UNITY_ANDROID || UNITY_IOS
 using Firebase.Analytics;
+using Newtonsoft.Json;
 #endif
+
 namespace Energy8.Firebase
 {
     public class AnalyticsController
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+#else
         static readonly Logger logger = new(null, "AnalyticsController", new Color(0.1f, 0.9f, 0.38f));
         public static void Initialize()
         {
             logger.Log("Initialized");
         }
-#if UNITY_ANDROID || UNITY_IOS
         public static void LogEvent(string name, params (string, object)[] parameters)
         {
             logger.Log($"LogEvent({name}, {JsonConvert.SerializeObject(parameters)})");
@@ -70,40 +73,7 @@ namespace Energy8.Firebase
                 i++;
             }
             return convertedParams;
-        }
-#else
-    public static void LogEvent(string name, params (string, object)[] parameters)
-    {
-        logger.Log($"LogEvent({name})");
-    }
-    public static void LogEvent(string name)
-    {
-        logger.Log($"LogEvent({name})");
-    }
-    public static void LogEvent(string name, string parameterName, int parameterValue)
-    {
-        logger.Log($"LogEvent({name})");
-    }
-    public static void LogEvent(string name, string parameterName, long parameterValue)
-    {
-        logger.Log($"LogEvent({name})");
-    }
-    public static void LogEvent(string name, string parameterName, double parameterValue)
-    {
-        logger.Log($"LogEvent({name})");
-    }
-    public static void LogEvent(string name, string parameterName, string parameterValue)
-    {
-        logger.Log($"LogEvent({name})");
-    }
-    public static void SetUserId(string userId)
-    {
-        logger.Log($"SetUserId({userId})");
-    }
-    public static void SetUserProperty(string name, string property)
-    {
-        logger.Log($"SetUserProperty({name}, {property})");
-    }
 #endif
+        }
     }
 }

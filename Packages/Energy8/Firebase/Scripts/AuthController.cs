@@ -3,11 +3,13 @@ using System;
 using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 using System.Threading;
-using Energy8.Models;
+using Energy8.Models.Errors;
+
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Firebase.WebGL;
 #else
+using Firebase;
 using Firebase.Auth;
 #endif
 
@@ -32,50 +34,54 @@ namespace Energy8.Firebase
         static public event Action<string> OnSignIn;
         static public event Action OnSignOut;
 
-        public static void Initialize()
+        public static void Initialize(FirebaseApp app)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             FirebaseAuthWebGL.Initialize();
             FirebaseAuthWebGL.OnSignIn += (uid) => AuthStateChanged(true, uid);
             FirebaseAuthWebGL.OnSignOut += () => AuthStateChanged(false, string.Empty);
 #else
-            auth = FirebaseAuth.DefaultInstance;
+            auth = FirebaseAuth.GetAuth(app);
             auth.StateChanged += AuthStateChanged;
             AuthStateChanged(null, null);
             logger.Log("Initialized");
 #endif
         }
-        public static async UniTask<TryResult<string>> GetAuthTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
+        public static async UniTask<string> GetAuthTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             UniTask<string> task = FirebaseAuthWebGL.GetIdTokenAsync(cancellationToken, forceRefresh);
             return TryResult<string>.CreateSuccessful(await task);
 #else
             Task<string> task = auth.CurrentUser.TokenAsync(forceRefresh);
-            await task.AsUniTask().AttachExternalCancellation(cancellationToken);
-
-            if (task.IsCanceled)
-                TryResult<string>.CreateFailed(new("Cancelled", "SignInWithCustomTokenAsync was canceled.", canProceed: true));
-            if (task.IsFaulted)
-                TryResult<string>.CreateFailed(new("Authorization Error", task.Exception.Message, canProceed: true, mustSignOut: true));
-            return TryResult<string>.CreateSuccessful(task.Result);
+            try
+            {
+                await task.AsUniTask().AttachExternalCancellation(cancellationToken);
+                throw new ErrorDataException("Authorization Error", task.Exception.Message, canProceed: true, mustSignOut: true);
+            }
+            catch
+            {
+                return task.Result;
+            }
 #endif
         }
 
-        public static async UniTask<TryResult<string>> SignInByTokenAsync(CancellationToken cancellationToken, string token)
+        public static async UniTask<FirebaseUser> SignInByTokenAsync(CancellationToken cancellationToken, string token)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             UniTask<string> task = FirebaseAuthWebGL.SignInByTokenAsync(cancellationToken, token);
             return TryResult<string>.CreateSuccessful(await task);
 #else
             Task<AuthResult> task = auth.SignInWithCustomTokenAsync(token);
-            await task.AsUniTask().AttachExternalCancellation(cancellationToken);
-
-            if (task.IsCanceled)
-                TryResult<string>.CreateFailed(new("Cancelled", "SignInWithCustomTokenAsync was canceled.", canProceed: true));
-            if (task.IsFaulted)
-                TryResult<string>.CreateFailed(new("Authorization Error", task.Exception.Message, canProceed: true));
-            return TryResult<string>.CreateSuccessful(task.Result.User.UserId);
+            try
+            {
+                await task.AsUniTask().AttachExternalCancellation(cancellationToken);
+                return task.Result.User;
+            }
+            catch
+            {
+                throw new ErrorDataException("Authorization Error", task.Exception.Message, canProceed: true, mustSignOut: true);
+            }
 #endif
         }
 #if UNITY_WEBGL && !UNITY_EDITOR

@@ -1,81 +1,126 @@
 using Cysharp.Threading.Tasks;
 using System;
+using System.Linq;
 using UnityEngine.Networking;
 using UnityEngine;
 using Energy8.Models;
-using Energy8.Models.Requests;
+using System.Net;
+using Energy8.Models.Errors;
+using System.Collections.Generic;
 
 namespace Energy8.Requests
 {
     public class RequestsController
     {
-        public const string API_ENDPOINT = "/api/";
-        public const string POST_METHOD = "POST";
-        public const string PUT_METHOD = "PUT";
-        public const string GET_METHOD = "GET";
-        public const string DELETE_METHOD = "DELETE";
-        public const string AUTHORIZATION_HEADER = "Authorization";
-        public const string AUTHORIZATION_BEARER = "Bearer";
-        public const string AUTHORIZATION_SERVER = "Server";
+        public const string ApiEndpoint = "/api/";
 
-        static readonly Logger logger = new(null, "RequestsController", new Color(0.5f, 0.8f, 0f));
+        public const string PostMethod = "POST";
+        public const string PutMethod = "PUT";
+        public const string GetMethod = "GET";
+        public const string DeleteMethod = "DELETE";
+
+        public const string AuthorizationHeader = "Authorization";
+        public const string AuthorizationBearer = "Bearer ";
+        public const string AuthorizationServer = "Server ";
+
+        static readonly Logger _logger = new(null, "RequestsController", new Color(0.5f, 0.8f, 0f));
         static string RemoteAddress => ApplicationConfig.SelectedIP;
 
-        public static async UniTask<WebTryResult> Post(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", Data requestData = null) =>
-            await Send(CreateRequest(endpoint, POST_METHOD, authorizationType, authorizationData, GetFormData(requestData)));
-        public static async UniTask<WebTryResult> Post(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", params (string key, string value)[] fields) =>
-            await Send(CreateRequest(endpoint, POST_METHOD, authorizationType, authorizationData, GetFormData(fields)));
+        public static UniTask Post(
+            string endpoint,
+            AuthorizationType authorizationType = AuthorizationType.None,
+            string authorizationData = "",
+            Data requestData = null,
+            params (string key, string value)[] requestDataFields)
+        {
+            _logger.Log("Post");
+            if (authorizationData is null)
+                return Send(CreateRequest(endpoint, PostMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
+            else
+                return Send(CreateRequest(endpoint, PostMethod, authorizationType, authorizationData, GetFormData(requestData)));
+        }
 
-        public static async UniTask<WebTryResult<T>> Post<T>(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", Data requestData = null) where T : Data =>
-            await Send<T>(CreateRequest(endpoint, POST_METHOD, authorizationType, authorizationData, GetFormData(requestData)));
-        public static async UniTask<WebTryResult<T>> Post<T>(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", params (string key, string value)[] fields) where T : Data =>
-            await Send<T>(CreateRequest(endpoint, POST_METHOD, authorizationType, authorizationData, GetFormData(fields)));
+        public static UniTask<T> Post<T>(
+            string endpoint,
+            AuthorizationType authorizationType = AuthorizationType.None,
+            string authorizationData = "",
+            Data requestData = null,
+            params (string key, string value)[] requestDataFields) where T : Data
+        {
+            _logger.Log("Post");
+            if (requestData is null)
+                return Send<T>(CreateRequest(endpoint, PostMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
+            else
+                return Send<T>(CreateRequest(endpoint, PostMethod, authorizationType, authorizationData, GetFormData(requestData)));
+        }
 
-        public static async UniTask<WebTryResult> Put(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", Data requestData = null) =>
-            await Send(CreateRequest(endpoint, PUT_METHOD, authorizationType, authorizationData, GetFormData(requestData)));
-        public static async UniTask<WebTryResult> Put(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", params (string key, string value)[] fields) =>
-            await Send(CreateRequest(endpoint, PUT_METHOD, authorizationType, authorizationData, GetFormData(fields)));
+        public static UniTask Put(
+            string endpoint,
+            AuthorizationType authorizationType = AuthorizationType.None,
+            string authorizationData = "",
+            Data requestData = null,
+            params (string key, string value)[] requestDataFields)
+        {
+            if (authorizationData is null)
+                return Send(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
+            else
+                return Send(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestData)));
+        }
 
-        public static async UniTask<WebTryResult<T>> Put<T>(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", Data requestData = null) where T : Data =>
-            await Send<T>(CreateRequest(endpoint, PUT_METHOD, authorizationType, authorizationData, GetFormData(requestData)));
-        public static async UniTask<WebTryResult<T>> Put<T>(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", params (string key, string value)[] fields) where T : Data =>
-            await Send<T>(CreateRequest(endpoint, PUT_METHOD, authorizationType, authorizationData, GetFormData(fields)));
+        public static UniTask<T> Put<T>(
+            string endpoint,
+            AuthorizationType authorizationType = AuthorizationType.None,
+            string authorizationData = "",
+            Data requestData = null,
+            params (string key, string value)[] requestDataFields) where T : Data
+        {
+            if (authorizationData is null)
+                return Send<T>(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
+            else
+                return Send<T>(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestData)));
+        }
 
-        public static async UniTask<WebTryResult> Delete(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", Data requestData = null) =>
-            await Send(CreateRequest(endpoint, DELETE_METHOD, authorizationType, authorizationData, GetFormData(requestData)));
-        public static async UniTask<WebTryResult> Delete(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", params (string key, string value)[] fields) =>
-            await Send(CreateRequest(endpoint, DELETE_METHOD, authorizationType, authorizationData, GetFormData(fields)));
 
-        public static async UniTask<WebTryResult<T>> Delete<T>(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", Data requestData = null) where T : Data =>
-            await Send<T>(CreateRequest(endpoint, DELETE_METHOD, authorizationType, authorizationData, GetFormData(requestData)));
-        public static async UniTask<WebTryResult<T>> Delete<T>(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", params (string key, string value)[] fields) where T : Data =>
-            await Send<T>(CreateRequest(endpoint, DELETE_METHOD, authorizationType, authorizationData, GetFormData(fields)));
+        public static UniTask Delete(
+            string endpoint,
+            AuthorizationType authorizationType = AuthorizationType.None,
+            string authorizationData = "",
+            Data requestData = null,
+            params (string key, string value)[] requestDataFields)
+        {
+            if (authorizationData is null)
+                return Send(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
+            else
+                return Send(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestData)));
+        }
 
-        public static async UniTask<WebTryResult> Get(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", Data requestData = null) =>
-            await Send(CreateRequest(endpoint, GET_METHOD, authorizationType, authorizationData, headersData: requestData));
-        public static async UniTask<WebTryResult> Get(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", params (string key, string value)[] fields) =>
-            await Send(CreateRequest(endpoint, GET_METHOD, authorizationType, authorizationData, headers: fields));
+        public static UniTask<T> Delete<T>(
+            string endpoint,
+            AuthorizationType authorizationType = AuthorizationType.None,
+            string authorizationData = "",
+            Data requestData = null,
+            params (string key, string value)[] requestDataFields) where T : Data
+        {
+            if (authorizationData is null)
+                return Send<T>(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
+            else
+                return Send<T>(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestData)));
+        }
 
-        public static async UniTask<WebTryResult<T>> Get<T>(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", Data requestData = null) where T : Data =>
-            await Send<T>(CreateRequest(endpoint, GET_METHOD, authorizationType, authorizationData, headersData: requestData));
-        public static async UniTask<WebTryResult<T>> Get<T>(string endpoint, AuthorizationType authorizationType,
-            string authorizationData = "", params (string key, string value)[] fields) where T : Data =>
-            await Send<T>(CreateRequest(endpoint, GET_METHOD, authorizationType, authorizationData, headers: fields));
+
+        public static UniTask Get(
+            string endpoint,
+            AuthorizationType authorizationType,
+            string authorizationData = "",
+            params (string key, string value)[] headers) =>
+                Send(CreateRequest(endpoint, GetMethod, authorizationType, authorizationData, headers: GetRequestHeaders(headers)));
+
+        public static UniTask<T> Get<T>(
+            string endpoint,
+            AuthorizationType authorizationType,
+            string authorizationData = "",
+            params (string key, string value)[] headers) where T : Data =>
+                Send<T>(CreateRequest(endpoint, GetMethod, authorizationType, authorizationData, headers: GetRequestHeaders(headers)));
 
         static WWWForm GetFormData(params (string key, string value)[] fields)
         {
@@ -87,92 +132,125 @@ namespace Energy8.Requests
         static WWWForm GetFormData(Data data)
         {
             WWWForm form = new();
-            var fields = data.ToDictionary();
-            foreach (var key in fields.Keys)
-                form.AddField(key, fields[key]);
+            var headers = data.ToDictionary();
+            foreach (var key in headers.Keys)
+                form.AddField(key, headers[key]);
             return form;
         }
 
-        static void SetRequestHeaders(ref UnityWebRequest request, params (string key, string value)[] fields)
-        {
-            foreach (var (key, value) in fields)
-                request.SetRequestHeader(key, value);
-        }
-        static void SetRequestHeaders(ref UnityWebRequest request, Data data)
-        {
-            if (data == null)
-                return;
-            var fields = data.ToDictionary();
-            foreach (var key in fields.Keys)
-                request.SetRequestHeader(key, fields[key]);
-        }
+        static Dictionary<string, string> GetRequestHeaders(params (string key, string value)[] headers) =>
+            headers.ToDictionary((header) => header.key, (header) => header.value);
+        static Dictionary<string, string> GetRequestHeaders(Data data) =>
+            data.ToDictionary();
 
-        static UnityWebRequest CreateRequest(string endpoint, string method, AuthorizationType authorizationType, string authorizationData = "",
-            WWWForm form = null, Data headersData = null, params (string key, string value)[] headers)
+        static UnityWebRequest CreateRequest(
+            string endpoint,
+            string method,
+            AuthorizationType authorizationType,
+            string authorizationData = "",
+            WWWForm form = null,
+            Dictionary<string, string> headers = null)
         {
+            _logger.Log("CreateRequest");
             UnityWebRequest request;
 
-            if (form == null)
-                request = UnityWebRequest.Get(RemoteAddress + API_ENDPOINT + endpoint);
-            else
-                request = UnityWebRequest.Post(RemoteAddress + API_ENDPOINT + endpoint, form);
+            request = form == null ? UnityWebRequest.Get(RemoteAddress + ApiEndpoint + endpoint) :
+                                     UnityWebRequest.Post(RemoteAddress + ApiEndpoint + endpoint, form);
 
             request.method = method;
 
-            if (authorizationType == AuthorizationType.Bearer)
-                request.SetRequestHeader(AUTHORIZATION_HEADER, AUTHORIZATION_BEARER + " " + authorizationData);
-            else if (authorizationType == AuthorizationType.Server)
-                request.SetRequestHeader(AUTHORIZATION_HEADER, AUTHORIZATION_SERVER + " " + authorizationData);
+            request.SetRequestHeader(AuthorizationHeader, authorizationType switch
+            {
+                AuthorizationType.Bearer => AuthorizationBearer,
+                AuthorizationType.Server => AuthorizationServer,
+                _ => string.Empty
+            } + authorizationData);
 
-            if (headersData != null)
-                SetRequestHeaders(ref request, headersData);
-            if (headers.Length > 0)
-                SetRequestHeaders(ref request, headers);
+            if (headers is not null)
+                foreach (var key in headers.Keys)
+                    request.SetRequestHeader(key, headers[key]);
 
             return request;
         }
 
-        static async UniTask<WebTryResult<T>> Send<T>(UnityWebRequest request) where T : Data
+        static async UniTask<T> Send<T>(UnityWebRequest request) where T : Data
         {
+            string requestLog = $"Send({request.uri}, {request.method}) : ";
             try
             {
                 await request.SendWebRequest();
-                var response = WebTryResult<T>.Create(request);
-                if (request.responseCode == 200)
-                    logger.Log($"Send({request.uri}, {request.method}) : {response.Value}");
-                else
-                    logger.LogWarning($"Send({request.uri}, {request.method}, {response.StatusCode}) : {response.Error}");
-                return response;
+                if (request.downloadHandler.text is null)
+                    throw new RequestErrorDataException(HttpStatusCode.NotFound, "Request Error", "Data returned from server is empty.");
+
+                if (!Data.TryFromJson(request.downloadHandler.text, out T data))
+                {
+                    _logger.LogWarning(requestLog + "Data returned from server is invalid.");
+                    throw new RequestErrorDataException(HttpStatusCode.UnprocessableEntity, "Request Error", "Data returned from server is invalid.");
+                }
+
+                _logger.Log(requestLog + $"{request.responseCode}, {data}");
+                return data;
             }
-            catch (Exception ex)
+            catch
             {
-                var response = WebTryResult<T>.Create(request);
-                logger.LogWarning($"Send({request.uri}, {request.method}, {response.StatusCode}) : {ex.Message}");
-                return response;
+                if (!Data.TryFromJson(request.downloadHandler.text, out ErrorData errorData))
+                    errorData = ValiadateErrorResponse((HttpStatusCode)request.responseCode);
+                _logger.LogWarning(requestLog + $"{request.responseCode}, {errorData}");
+                throw new RequestErrorDataException((HttpStatusCode)request.responseCode, errorData.Header, errorData.Description, errorData.CanProceed, errorData.CanRetry, errorData.MustSignOut);
             }
         }
-        static async UniTask<WebTryResult> Send(UnityWebRequest request)
+        static async UniTask Send(UnityWebRequest request)
         {
+            string requestLog = $"Send({request.uri}, {request.method}) : ";
             try
             {
                 await request.SendWebRequest();
-                var response = WebTryResult.Create(request);
-                if (request.responseCode == 200)
-                    logger.Log($"Send({request.uri}, {request.method})");
-                else
-                    logger.LogWarning($"Send({request.uri}, {request.method}, {response.StatusCode}) : {response.Error}");
-                return response;
+                _logger.Log(requestLog + $"{request.responseCode}");
             }
-            catch (Exception ex)
+            catch
             {
-                var response = WebTryResult.Create(request);
-                logger.LogWarning($"Send({request.uri}, {request.method}, {response.StatusCode}) : {ex.Message}");
-                return response;
+                if (!Data.TryFromJson(request.downloadHandler.text, out ErrorData errorData))
+                    errorData = ValiadateErrorResponse((HttpStatusCode)request.responseCode);
+                _logger.LogWarning(requestLog + $"{request.responseCode}, {errorData}");
+                throw new RequestErrorDataException((HttpStatusCode)request.responseCode, errorData.Header, errorData.Description, errorData.CanProceed, errorData.CanRetry, errorData.MustSignOut);
             }
+        }
+
+        static public ErrorData ValiadateErrorResponse(HttpStatusCode code)
+        {
+            ErrorData validateErrorMessage = new("Unknown Error");
+            switch (code)
+            {
+                case HttpStatusCode.OK:
+                    validateErrorMessage = new("Connection Error", "The server is not responding to the request. Most likely the problem is in your network connection.\n" +
+                        "Please check that you have internet access and try again later.", canProceed: true);
+                    return validateErrorMessage;
+                case HttpStatusCode.BadGateway:
+                    validateErrorMessage = new("Server Error", "<b>Error on the <u>server</u> side!</b>\n" +
+                        "It is possible that technical work is underway on the server.\n\n" +
+                        "<b><u>Try again or wait, please.</u></b>", canProceed: true);
+                    return validateErrorMessage;
+                case HttpStatusCode.InternalServerError:
+                    validateErrorMessage = new("Server Error", "<b>Error on the <u>server</u> side!</b>\n" +
+                        "It is possible that technical work is underway on the server.\n\n" +
+                        "<b><u>Try again or wait, please.</u></b>", canProceed: true);
+                    return validateErrorMessage;
+                case HttpStatusCode.BadRequest:
+                    validateErrorMessage = new("System error",
+                        "Error processing the request.\n" +
+                        "Please try again, try restart the app and contact support to report the problem.", canProceed: true);
+                    return validateErrorMessage;
+                case HttpStatusCode.Unauthorized:
+                    validateErrorMessage = new("Authorization Error",
+                        "<b>Your device is not authorized.</b>\n" +
+                        "The key may have been deleted or the authorization session of this device is outdated.\n" +
+                        "<b><u>Try again</u> and, in case of an error, <u>Re-Login</u>.</b>", canProceed: true, mustSignOut: true);
+                    return validateErrorMessage;
+            }
+            return validateErrorMessage;
         }
     }
 }
-
 public enum AuthorizationType
 {
     None,

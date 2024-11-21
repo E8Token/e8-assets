@@ -1,48 +1,77 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Energy8.Models;
-using Energy8.Models.Requests;
 using UnityEngine;
 
 namespace Energy8.Auth.Content
 {
     public class LoadingContent : AuthContentBase
     {
-        private protected override void Initialize<TResult>(UniTaskCompletionSource<TryResult<TResult>> taskCompletionSource, params object[] args)
+        private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
             LoadingContentType type = (LoadingContentType)args[0];
             UniTask.Create(async () =>
             {
-                if (type == LoadingContentType.WebRequest)
+                if (type == LoadingContentType.Empty)
                 {
-                    var func = (Func<UniTask<WebTryResult<Data>>>)args[1];
+                    var func = (Func<UniTask>)args[1];
                     var task = UniTask.Create(func);
-                    WebTryResult<Data> webTryResult = await task;
-                    taskCompletionSource.TrySetResult(webTryResult.IsSuccessful ?
-                        TryResult<TResult>.CreateSuccessful(new LoadingContentResult(webTryResult) as TResult) :
-                        TryResult<TResult>.CreateFailed(new LoadingContentResult(webTryResult) as TResult, webTryResult.Error));
+                    try
+                    {
+                        await task;
+                        taskCompletionSource.TrySetResult(new LoadingContentResult() as TResult);
+                    }
+                    catch (Exception ex)
+                    {
+                        taskCompletionSource.TrySetException(ex);
+                    }
                 }
-                else
+                else if (type == LoadingContentType.Object)
                 {
                     var func = (Func<UniTask<object>>)args[1];
                     var task = UniTask.Create(func);
-                    object objectResult = await task;
-                    taskCompletionSource.TrySetResult(TryResult<TResult>.CreateSuccessful(new LoadingContentResult(objectResult) as TResult));
+                    try
+                    {
+                        taskCompletionSource.TrySetResult(new LoadingContentResult(await task) as TResult);
+                    }
+                    catch (Exception ex)
+                    {
+                        taskCompletionSource.TrySetException(ex);
+                    }
+                }
+                else if (type == LoadingContentType.WebRequest)
+                {
+                    var func = (Func<UniTask<Data>>)args[1];
+                    var task = UniTask.Create(func);
+                    try
+                    {
+                        taskCompletionSource.TrySetResult(new LoadingContentResult(await task) as TResult);
+                    }
+                    catch (Exception ex)
+                    {
+                        taskCompletionSource.TrySetException(ex);
+                    }
                 }
             }).AttachExternalCancellation(destroyCancellationToken).Forget();
         }
     }
     public enum LoadingContentType
     {
-        WebRequest,
-        Simple
+        Empty,
+        Object,
+        WebRequest
     }
     public class LoadingContentResult : AuthContentResultBase
     {
-        public WebTryResult<Data> RequestResult { get; set; }
+        public Data RequestResult { get; set; }
         public object ObjectResult { get; set; }
-        public LoadingContentResult(WebTryResult<Data> result)
+        public LoadingContentResult()
+        {
+            RequestResult = default;
+            ObjectResult = default;
+        }
+        public LoadingContentResult(Data result)
         {
             RequestResult = result;
             ObjectResult = default;
