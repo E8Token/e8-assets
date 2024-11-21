@@ -4,7 +4,10 @@ apply plugin: 'com.android.library'
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 // Android Resolver Dependencies Start
+    implementation 'androidx.credentials:credentials:1.2.2' // Packages/io.energy8games.assets/Plugins/Editor/GoogleSignInDependencies.xml:41
+    implementation 'com.google.android.gms:play-services-auth:21.2.0' // Packages/io.energy8games.assets/Plugins/Editor/GoogleSignInDependencies.xml:58
     implementation 'com.google.android.gms:play-services-base:18.4.0' // Assets/Firebase/Editor/AppDependencies.xml:17
+    implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1' // Packages/io.energy8games.assets/Plugins/Editor/GoogleSignInDependencies.xml:75
     implementation 'com.google.firebase:firebase-analytics:22.0.0' // Assets/Firebase/Editor/MessagingDependencies.xml:15
     implementation 'com.google.firebase:firebase-analytics-unity:12.0.0' // Assets/Firebase/Editor/AnalyticsDependencies.xml:18
     implementation 'com.google.firebase:firebase-app-unity:12.0.0' // Assets/Firebase/Editor/AppDependencies.xml:22

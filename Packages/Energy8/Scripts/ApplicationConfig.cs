@@ -9,7 +9,7 @@ namespace Energy8
     [CreateAssetMenu(menuName = "Configs/CreateApplicationConfig")]
     public class ApplicationConfig : ScriptableObject
     {
-#if UNITY_EDITOR
+//#if UNITY_EDITOR
         [SerializeField] List<IPConfig> _ipConfigs = new();
         [SerializeField] IPType _selectedIPType;
         [SerializeField] AuthType _selectedAuthType;
@@ -39,7 +39,7 @@ namespace Energy8
                 Instance._selectedAuthType = value;
             }
         }
-#endif
+//#endif
 
         private static ApplicationConfig _instance;
         public static ApplicationConfig Instance
