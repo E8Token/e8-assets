@@ -26,10 +26,10 @@ MonoBehaviour:
   scriptingBackend: 1
   compatibilityLevel: 6
   il2CppCodeGeneration: 0
-  il2CppCompilerConfiguration: 1
+  il2CppCompilerConfiguration: 0
   dedicatedServerOptimizations: 0
   prebakeCollisionMeshes: 0
-  managedStrippingLevel: 4
+  managedStrippingLevel: 0
   optimizeMeshData: 0
   textureMipMapStriping: 0
   useCustomKeystore: 0
@@ -37,7 +37,7 @@ MonoBehaviour:
   keystoreSettingsFile: 
   webGLExceptionSupport: 1
   dataCaching: 0
-  webGLcompressionFormat: 0
-  webGLdebugSymbolsMode: 0
+  webGLcompressionFormat: 2
+  webGLdebugSymbolsMode: 2
   buildAdditionalMobileData: 1
   enableDevelopmentBuild: 0

@@ -13,48 +13,52 @@ using System.Net;
 using Energy8.Models.Errors;
 using static Energy8.Requests.RequestsController;
 using System.Linq;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+using Energy8.Models.WebGL.Firebase;
+#else
 using Firebase.Auth;
+#endif
 
 namespace Energy8.Auth
 {
     public class AuthControllerBase : MonoBehaviour
     {
         [Header("Logger")]
-        [SerializeField] string loggerName = "AuthController";
-        [SerializeField] Color loggerColor = Color.red;
+        [SerializeField] string _loggerName = "AuthController";
+        [SerializeField] Color _loggerColor = Color.red;
 
         [Header("Content (Base)")]
-        [SerializeField] List<AuthContentBase> contentPrefabs;
+        [SerializeField] List<AuthContentBase> _contentPrefabs;
 
         [Header("Functional (Base)")]
-        [SerializeField] ScrollRect scrollView;
-        [SerializeField] RectTransform viewport;
-        [SerializeField] new Animation animation;
+        [SerializeField] ScrollRect _scrollView;
+        [SerializeField] RectTransform _viewport;
+        [SerializeField] Animation _animation;
 
         [Header("UI (Base)")]
-        [SerializeField] Button openBut;
+        [SerializeField] Button _openBut;
 
         [Header("Animations (Base)")]
-        [SerializeField] string openClipName = "Open";
-        [SerializeField] string closeClipName = "Close";
+        [SerializeField] string _openClipName = "Open";
+        [SerializeField] string _closeClipName = "Close";
 
         private protected Logger _logger;
 
         public static AuthControllerBase Instance { get; private set; }
 
+        public UserData User { get; private set; }
         public string AuthToken { get; private set; }
 
         public bool IsOpen { get; private protected set; } = false;
         public bool IsDetailedAnalyticsAllowed { get; private protected set; } = false;
         public bool IsInitialized { get; private set; } = false;
 
-        private protected CancellationTokenSource onSignInCTS;
-        private protected CancellationTokenSource onSignOutCTS;
+        private protected CancellationTokenSource _onSignInCTS;
+        private protected CancellationTokenSource _onSignOutCTS;
 
-        public event Action<UserData> OnSignIn;
-        public event Action OnSignOut;
-
-        public UserData User { get; private set; }
+        public event Action<UserData> OnSignInEvent;
+        public event Action OnSignOutEvent;
 
         void ThrowCriticalError()
         {
@@ -65,11 +69,11 @@ namespace Energy8.Auth
         #region Unity
         void Reset()
         {
-            if (transform.Find("Scroll View").TryGetComponent(out scrollView))
+            if (transform.Find("Scroll View").TryGetComponent(out _scrollView))
             {
-                scrollView.TryGetComponent(out animation);
-                scrollView.transform.Find("Viewport").TryGetComponent(out viewport);
-                scrollView.transform.Find("OpenBut").TryGetComponent(out openBut);
+                _scrollView.TryGetComponent(out _animation);
+                _scrollView.transform.Find("Viewport").TryGetComponent(out _viewport);
+                _scrollView.transform.Find("OpenBut").TryGetComponent(out _openBut);
             }
         }
 
@@ -79,7 +83,7 @@ namespace Energy8.Auth
             {
                 Instance = this;
 
-                _logger = new(this, loggerName, loggerColor);
+                _logger = new(this, _loggerName, _loggerColor);
 
                 InitializeEvents();
                 InitializeButtons();
@@ -92,14 +96,14 @@ namespace Energy8.Auth
         }
         void Start()
         {
-            onSignInCTS = new();
-            StartAuthorizationAsync(onSignInCTS.Token).Forget();
+            _onSignInCTS = new();
+            StartAuthorizationAsync(_onSignInCTS.Token).Forget();
         }
 
         void OnDestroy()
         {
-            onSignInCTS?.Cancel();
-            onSignOutCTS?.Cancel();
+            _onSignInCTS?.Cancel();
+            _onSignOutCTS?.Cancel();
         }
         #endregion
 
@@ -107,7 +111,7 @@ namespace Energy8.Auth
         public void SetOpenState(bool isOpen)
         {
             IsOpen = isOpen;
-            animation.Play(isOpen ? openClipName : closeClipName);
+            _animation.Play(isOpen ? _openClipName : _closeClipName);
         }
         #endregion
 
@@ -232,7 +236,7 @@ namespace Energy8.Auth
             if (status == RunWithHandlingErrorStatus.Successful)
             {
                 User = userData;
-                OnSignIn?.Invoke(User);
+                OnSignInEvent?.Invoke(User);
             }
             else ThrowCriticalError();
         }
@@ -382,9 +386,7 @@ namespace Energy8.Auth
                     _ => Post<TResponse>(endpoint, authType, authData, requestDataFields: requestDataFields)
                 };
 
-                _logger.Log("1");
                 Func<UniTask<Data>> request = async () => await task;
-                _logger.Log("1");
 
                 try
                 {
@@ -420,9 +422,7 @@ namespace Energy8.Auth
             RequestErrorDataException exception = null;
             while (attemp < 3)
             {
-                _logger.Log("1");
                 string authData = authType == AuthorizationType.None ? string.Empty : getAuthData();
-                _logger.Log("1");
 
                 var task = method.ToUpper() switch
                 {
@@ -431,10 +431,8 @@ namespace Energy8.Auth
                     DeleteMethod => Delete(endpoint, authType, authData, requestDataFields: requestDataFields),
                     _ => Post(endpoint, authType, authData, requestDataFields: requestDataFields),
                 };
-                _logger.Log("1");
 
                 Func<UniTask> request = async () => await task;
-                _logger.Log("1");
 
                 try
                 {
@@ -475,15 +473,15 @@ namespace Energy8.Auth
             cancellationToken.ThrowIfCancellationRequested();
             TContent contentPrefab = null;
 
-            foreach (var c in contentPrefabs)
+            foreach (var c in _contentPrefabs)
                 if (c.GetType() == typeof(TContent))
                     contentPrefab = (TContent)c;
 
             if (contentPrefab == null)
                 throw new PrefabNotFoundException(typeof(TContent));
 
-            TContent content = Instantiate(contentPrefab, viewport);
-            scrollView.content = content.RectTransform;
+            TContent content = Instantiate(contentPrefab, _viewport);
+            _scrollView.content = content.RectTransform;
             return await content.TryProcessContentAsync<TResult>(cancellationToken, args);
         }
         #endregion
@@ -491,23 +489,23 @@ namespace Energy8.Auth
         #region Initialization
         private protected virtual void InitializeEvents()
         {
-            AuthController.OnSignIn += (_) =>
+            AuthController.OnSignInEvent += (_) =>
             {
-                onSignInCTS?.Cancel();
-                onSignOutCTS = new();
-                ShowUserWindowAsync(onSignOutCTS.Token).Forget();
+                _onSignInCTS?.Cancel();
+                _onSignOutCTS = new();
+                ShowUserWindowAsync(_onSignOutCTS.Token).Forget();
             };
-            AuthController.OnSignOut += () =>
+            AuthController.OnSignOutEvent += () =>
             {
-                OnSignOut?.Invoke();
-                onSignOutCTS?.Cancel();
-                onSignInCTS = new();
-                SignInAsync(onSignInCTS.Token).Forget();
+                OnSignOutEvent?.Invoke();
+                _onSignOutCTS?.Cancel();
+                _onSignInCTS = new();
+                SignInAsync(_onSignInCTS.Token).Forget();
             };
         }
         private protected virtual void InitializeButtons()
         {
-            openBut.onClick.AddListener(() => SetOpenState(!IsOpen));
+            _openBut.onClick.AddListener(() => SetOpenState(!IsOpen));
         }
         #endregion
 

@@ -3,12 +3,11 @@ using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 using System;
 using System.Threading;
-using Firebase;
-
-
 
 #if UNITY_WEBGL && !UNITY_EDITOR
+using Energy8.Firebase.WebGL;
 #else
+using Firebase;
 using Energy8.Firebase;
 using Firebase.Auth;
 using Google;
@@ -27,6 +26,8 @@ namespace Energy8.Firebase
 
             logger.Log("Initialization started");
 #if UNITY_WEBGL && !UNITY_EDITOR
+            AuthController.Initialize(ApplicationConfig.AuthConfig);
+            logger.Log("Initialization ended");
 #else
             await FirebaseApp.CheckAndFixDependenciesAsync().AsUniTask().ContinueWith(dependencyStatus =>
             {

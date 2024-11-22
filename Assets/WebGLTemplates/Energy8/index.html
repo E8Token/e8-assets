@@ -29,21 +29,7 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
     import { getAuth, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
 
-    async function initializeFirebase() {
-      let firebaseConfig;
-      try {
-        const response = await fetch('StreamingAssets/google-services-web.json');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        firebaseConfig = await response.json();
-        console.log("Firebase has been initialized with the following config: ", firebaseConfig);
-      } catch (error) {
-        console.error("Error loading Firebase config: ", error);
-        return; // Выходим из функции, если конфигурация не загружена
-      }
-
+    async function initializeFirebase(firebaseConfig) {
       // Инициализация Firebase
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app); // Инициализируем аутентификацию для данного приложения
@@ -59,9 +45,7 @@
 
       console.log("Firebase app and auth initialized, methods available globally.");
     }
-
-    // Запускаем инициализацию
-    initializeFirebase();
+    window.initializeFirebase = initializeFirebase;
   </script>
 
   <script>

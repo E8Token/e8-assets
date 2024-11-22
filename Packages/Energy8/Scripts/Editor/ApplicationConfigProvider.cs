@@ -38,6 +38,29 @@ namespace Energy8
 
                     EditorGUILayout.Space();
 
+                    // Отображение текущей версии приложения
+                    string currentVersion = PlayerSettings.bundleVersion;
+                    EditorGUILayout.LabelField("Application Version", EditorStyles.boldLabel);
+                    EditorGUILayout.LabelField($"Current Version: {currentVersion}");
+
+                    EditorGUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Add Global Update"))
+                    {
+                        currentVersion = IncrementVersion(currentVersion, 0);
+                        SaveChanges(currentVersion);
+                    }
+                    if (GUILayout.Button("Add Minor Update"))
+                    {
+                        currentVersion = IncrementVersion(currentVersion, 1);
+                        SaveChanges(currentVersion);
+                    }
+                    EditorGUILayout.EndHorizontal();
+
+                    EditorGUILayout.Space();
+
+                    // Отображение Bundle Version Code (Android)
+                    EditorGUILayout.LabelField("Bundle Version Code", PlayerSettings.Android.bundleVersionCode.ToString());
+
                     if (GUI.changed)
                     {
                         // Сохраняем изменения в ScriptableObject
@@ -50,6 +73,48 @@ namespace Energy8
             };
 
             return provider;
+        }
+
+        private static string IncrementVersion(string version, int level)
+        {
+            // Парсинг текущей версии
+            var parts = version.Split('.');
+            if (parts.Length != 3) parts = new[] { "0", "0", "0" };
+
+            int.TryParse(parts[0], out int major);
+            int.TryParse(parts[1], out int minor);
+            int.TryParse(parts[2], out int patch);
+
+            if (level == 0)
+            {
+                major++;
+                minor = 0;
+                patch = 0;
+            }
+            else if (level == 1)
+            {
+                minor++;
+                patch = 0;
+            }
+
+            // Увеличиваем третью часть версии
+            patch++;
+
+            // Формируем новую версию
+            return $"{major}.{minor}.{patch}";
+        }
+
+        private static void SaveChanges(string newVersion)
+        {
+            // Устанавливаем новую версию в PlayerSettings
+            PlayerSettings.bundleVersion = newVersion;
+
+            // Обновляем Bundle Version Code (заменяем точки на 0)
+            int versionCode = int.Parse(newVersion.Replace(".", "0"));
+            PlayerSettings.Android.bundleVersionCode = versionCode;
+
+            // Сохраняем изменения
+            Debug.Log($"Updated to version {newVersion} (Bundle Version Code: {versionCode})");
         }
     }
 }

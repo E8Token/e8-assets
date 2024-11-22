@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 using System.Threading;
 using Energy8.Models.Errors;
 
-
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Firebase.WebGL;
+using Energy8.Models.WebGL.Firebase;
 #else
 using Firebase;
 using Firebase.Auth;
@@ -19,49 +19,62 @@ namespace Energy8.Firebase
     {
 #if !UNITY_WEBGL || UNITY_EDITOR
         static FirebaseAuth auth;
-        static FirebaseUser user;
 #endif
+
+        static FirebaseUser _user;
 
         static readonly Logger logger = new(null, "AuthController", new Color(0.5f, 0.1f, 0.6f));
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        public static FirebaseUser CurrentUser { get; private set; }
+#endif
+
         static public bool IsAutorized
 #if UNITY_WEBGL && !UNITY_EDITOR
-        { get; private set; } = false;
+        => CurrentUser != null;
 #else
         => auth.CurrentUser != null && auth.CurrentUser.IsValid();
 #endif
 
-        static public event Action<string> OnSignIn;
-        static public event Action OnSignOut;
+        static public event Action<string> OnSignInEvent;
+        static public event Action OnSignOutEvent;
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        public static void Initialize(string config)
+        {
+            FirebaseAuthWebGL.Initialize(config);
+            FirebaseAuthWebGL.OnSignInEvent += (user) =>
+            {
+                CurrentUser = user;
+                AuthStateChanged(user);
+            };
+            FirebaseAuthWebGL.OnSignOutEvent += () => 
+            {
+                CurrentUser = null;
+                AuthStateChanged(null);
+            };
+        }
+#else
         public static void Initialize(FirebaseApp app)
         {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            FirebaseAuthWebGL.Initialize();
-            FirebaseAuthWebGL.OnSignIn += (uid) => AuthStateChanged(true, uid);
-            FirebaseAuthWebGL.OnSignOut += () => AuthStateChanged(false, string.Empty);
-#else
             auth = FirebaseAuth.GetAuth(app);
             auth.StateChanged += AuthStateChanged;
             AuthStateChanged(null, null);
             logger.Log("Initialized");
-#endif
         }
+#endif
         public static async UniTask<string> GetAuthTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            UniTask<string> task = FirebaseAuthWebGL.GetIdTokenAsync(cancellationToken, forceRefresh);
-            return TryResult<string>.CreateSuccessful(await task);
+            return await FirebaseAuthWebGL.GetIdTokenAsync(cancellationToken, forceRefresh);
 #else
-            Task<string> task = auth.CurrentUser.TokenAsync(forceRefresh);
             try
             {
-                await task.AsUniTask().AttachExternalCancellation(cancellationToken);
-                throw new ErrorDataException("Authorization Error", task.Exception.Message, canProceed: true, mustSignOut: true);
+                return await auth.CurrentUser.TokenAsync(forceRefresh).AsUniTask().AttachExternalCancellation(cancellationToken);
             }
-            catch
+            catch (Exception ex)
             {
-                return task.Result;
+                throw new ErrorDataException("Authorization Error", ex.Message, canProceed: true, mustSignOut: true);
             }
 #endif
         }
@@ -69,37 +82,34 @@ namespace Energy8.Firebase
         public static async UniTask<FirebaseUser> SignInByTokenAsync(CancellationToken cancellationToken, string token)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            UniTask<string> task = FirebaseAuthWebGL.SignInByTokenAsync(cancellationToken, token);
-            return TryResult<string>.CreateSuccessful(await task);
+            return await FirebaseAuthWebGL.SignInByTokenAsync(cancellationToken, token);
 #else
-            Task<AuthResult> task = auth.SignInWithCustomTokenAsync(token);
             try
             {
-                await task.AsUniTask().AttachExternalCancellation(cancellationToken);
-                return task.Result.User;
+                return (await auth.SignInWithCustomTokenAsync(token).AsUniTask().AttachExternalCancellation(cancellationToken)).User;
             }
-            catch
+            catch (Exception ex)
             {
-                throw new ErrorDataException("Authorization Error", task.Exception.Message, canProceed: true, mustSignOut: true);
+                throw new ErrorDataException("Authorization Error", ex.Message, canProceed: true, mustSignOut: true);
             }
 #endif
         }
 #if UNITY_WEBGL && !UNITY_EDITOR
-        static void AuthStateChanged(bool signedIn, string userId)
+        static void AuthStateChanged(FirebaseUser user)
         {
-            if(IsAutorized != signedIn)
+            if (CurrentUser != _user)
             {
-                if (!signedIn)
+                bool signedIn = _user != CurrentUser && CurrentUser != null;
+                if (!signedIn && _user != null)
                 {
-                    IsAutorized = false;
-                    logger.Log("Signed out " + userId);
-                    OnSignOut?.Invoke();
+                    logger.Log("Signed out " + user.UserId);
+                    OnSignOutEvent?.Invoke();
                 }
+                user = CurrentUser;
                 if (signedIn)
                 {
-                    IsAutorized = true;
-                    logger.Log("Signed in " + userId);
-                    OnSignIn?.Invoke(userId);
+                    logger.Log("Signed in " + user.UserId);
+                    OnSignInEvent?.Invoke(user.UserId);
                 }
             }
         }
@@ -121,20 +131,20 @@ namespace Energy8.Firebase
 
         static void AuthStateChanged(object sender, EventArgs eventArgs)
         {
-            if (auth.CurrentUser != user)
+            if (auth.CurrentUser != _user)
             {
-                bool signedIn = user != auth.CurrentUser && auth.CurrentUser != null
+                bool signedIn = _user != auth.CurrentUser && auth.CurrentUser != null
                     && auth.CurrentUser.IsValid();
-                if (!signedIn && user != null)
+                if (!signedIn && _user != null)
                 {
-                    logger.Log("Signed out " + user.UserId);
-                    OnSignOut?.Invoke();
+                    logger.Log("Signed out " + _user.UserId);
+                    OnSignOutEvent?.Invoke();
                 }
-                user = auth.CurrentUser;
+                _user = auth.CurrentUser;
                 if (signedIn)
                 {
-                    logger.Log("Signed in " + user.UserId);
-                    OnSignIn?.Invoke(user.UserId);
+                    logger.Log("Signed in " + _user.UserId);
+                    OnSignInEvent?.Invoke(_user.UserId);
                 }
             }
         }

@@ -1,11 +1,12 @@
 var firebaseAuth = {
-    Initialize: function (objectName, signInCallback, signOutCallback) {
+    Initialize: function (config, objectName, signInCallback, signOutCallback) {
+        window.initializeFirebase(JSON.parse(UTF8ToString(config)));
         window.firebaseAuthObjectName = UTF8ToString(objectName);
         signInCallback = UTF8ToString(signInCallback);
         signOutCallback = UTF8ToString(signOutCallback);
         window.firebaseAuth.onAuthStateChanged((user) => {
             if (user) {
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName, signInCallback, user.uid);
+                window.unityInstance.SendMessage(window.firebaseAuthObjectName, signInCallback, JSON.stringify(user));
             } else {
                 window.unityInstance.SendMessage(window.firebaseAuthObjectName, signOutCallback);
             }

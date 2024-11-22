@@ -124,7 +124,7 @@ MonoBehaviour:
       m_Calls: []
 --- !u!95 &5230180162845801796
 Animator:
-  serializedVersion: 5
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -138,6 +138,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -260,7 +261,7 @@ Animation:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6344028404330211403}
   m_Enabled: 1
-  serializedVersion: 3
+  serializedVersion: 4
   m_Animation: {fileID: 0}
   m_Animations:
   - {fileID: 7400000, guid: 5f686ccc3c2b527428b9ad80fb5ee98b, type: 2}
@@ -268,6 +269,7 @@ Animation:
   m_WrapMode: 0
   m_PlayAutomatically: 0
   m_AnimatePhysics: 0
+  m_UpdateMode: 0
   m_CullingType: 0
 --- !u!1 &6485663310277396377
 GameObject:
@@ -599,20 +601,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 97e374de2cc93464d864443f311ae595, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  loggerName: AuthControllerBase
-  loggerColor: {r: 1, g: 0.5267917, b: 0, a: 1}
-  scrollView: {fileID: 2112474532664991938}
-  viewport: {fileID: 7541914985965467120}
-  animation: {fileID: 7688176789010965454}
-  contentPrefabs:
+  _loggerName: AuthController
+  _loggerColor: {r: 1, g: 0, b: 0, a: 1}
+  _contentPrefabs:
   - {fileID: 9175273142255132109, guid: 7c713f22ef2dc644481e86c0a2520ea6, type: 3}
-  - {fileID: -2264226140982703804, guid: 2a8801fd81d3b8d43b743082aafa2857, type: 3}
-  - {fileID: -2841604786973561996, guid: 6a7bdaac6846a6746bb290b0f1d93bbf, type: 3}
-  - {fileID: 4046994291640969583, guid: 988983218dd0d6c499be8d38530f25e1, type: 3}
-  - {fileID: 5884458434657768937, guid: 645ef3fd5a52828488066216013dabd0, type: 3}
-  - {fileID: 6070060932881609302, guid: aa69759cf168bb847adbe4f17874657e, type: 3}
-  - {fileID: 8482152742129751822, guid: 06fcd848dd430cc4b9e81ecad59ccfa2, type: 3}
   - {fileID: 5629357483176839107, guid: 1e7e31c415d6bcd4d890627f4297f7bb, type: 3}
-  openBut: {fileID: 7381616911443544266}
-  openClipName: Open
-  closeClipName: Close
+  - {fileID: -2841604786973561996, guid: 6a7bdaac6846a6746bb290b0f1d93bbf, type: 3}
+  - {fileID: 5884458434657768937, guid: 645ef3fd5a52828488066216013dabd0, type: 3}
+  - {fileID: 4046994291640969583, guid: 988983218dd0d6c499be8d38530f25e1, type: 3}
+  - {fileID: -2264226140982703804, guid: 2a8801fd81d3b8d43b743082aafa2857, type: 3}
+  - {fileID: 8482152742129751822, guid: 06fcd848dd430cc4b9e81ecad59ccfa2, type: 3}
+  - {fileID: 6070060932881609302, guid: aa69759cf168bb847adbe4f17874657e, type: 3}
+  _scrollView: {fileID: 2112474532664991938}
+  _viewport: {fileID: 7541914985965467120}
+  _animation: {fileID: 7688176789010965454}
+  _openBut: {fileID: 7381616911443544266}
+  _openClipName: Open
+  _closeClipName: Close
