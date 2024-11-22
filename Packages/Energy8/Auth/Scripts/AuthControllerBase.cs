@@ -491,6 +491,7 @@ namespace Energy8.Auth
         {
             AuthController.OnSignInEvent += (_) =>
             {
+                OnSignInEvent?.Invoke(User);
                 _onSignInCTS?.Cancel();
                 _onSignOutCTS = new();
                 ShowUserWindowAsync(_onSignOutCTS.Token).Forget();

@@ -36,7 +36,7 @@ namespace Energy8.Firebase
         => auth.CurrentUser != null && auth.CurrentUser.IsValid();
 #endif
 
-        static public event Action<string> OnSignInEvent;
+        static public event Action<FirebaseUser> OnSignInEvent;
         static public event Action OnSignOutEvent;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -102,14 +102,14 @@ namespace Energy8.Firebase
                 bool signedIn = _user != CurrentUser && CurrentUser != null;
                 if (!signedIn && _user != null)
                 {
-                    logger.Log("Signed out " + user.UserId);
+                    logger.Log("Signed out " + user);
                     OnSignOutEvent?.Invoke();
                 }
                 user = CurrentUser;
                 if (signedIn)
                 {
-                    logger.Log("Signed in " + user.UserId);
-                    OnSignInEvent?.Invoke(user.UserId);
+                    logger.Log("Signed in " + user);
+                    OnSignInEvent?.Invoke(user);
                 }
             }
         }
@@ -144,7 +144,7 @@ namespace Energy8.Firebase
                 if (signedIn)
                 {
                     logger.Log("Signed in " + _user.UserId);
-                    OnSignInEvent?.Invoke(_user.UserId);
+                    OnSignInEvent?.Invoke(_user);
                 }
             }
         }
