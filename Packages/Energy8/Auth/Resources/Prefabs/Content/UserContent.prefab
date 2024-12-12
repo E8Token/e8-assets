@@ -634,7 +634,7 @@ MonoBehaviour:
   loggerColor: {r: 0.7998471, g: 0, b: 1, a: 1}
   rt: {fileID: 8678642907273039538}
   canvasGroup: {fileID: 3316895254021517179}
-  animationDuration: 500
+  animationDuration: 250
   titleText: {fileID: 7687971257548279279}
   changeNameBut: {fileID: 8867385911842400617}
   signOutBut: {fileID: 1995756011357998558}

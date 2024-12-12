@@ -61,7 +61,7 @@ namespace Energy8.Requests
             Data requestData = null,
             params (string key, string value)[] requestDataFields)
         {
-            if (authorizationData is null)
+            if (requestData is null)
                 return Send(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
             else
                 return Send(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestData)));
@@ -74,7 +74,7 @@ namespace Energy8.Requests
             Data requestData = null,
             params (string key, string value)[] requestDataFields) where T : Data
         {
-            if (authorizationData is null)
+            if (requestData is null)
                 return Send<T>(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
             else
                 return Send<T>(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestData)));
@@ -88,7 +88,7 @@ namespace Energy8.Requests
             Data requestData = null,
             params (string key, string value)[] requestDataFields)
         {
-            if (authorizationData is null)
+            if (requestData is null)
                 return Send(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
             else
                 return Send(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestData)));
@@ -101,7 +101,7 @@ namespace Energy8.Requests
             Data requestData = null,
             params (string key, string value)[] requestDataFields) where T : Data
         {
-            if (authorizationData is null)
+            if (requestData is null)
                 return Send<T>(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
             else
                 return Send<T>(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestData)));
@@ -132,7 +132,7 @@ namespace Energy8.Requests
         static WWWForm GetFormData(Data data)
         {
             WWWForm form = new();
-            var headers = data.ToDictionary();
+            var headers = data?.ToDictionary();
             foreach (var key in headers.Keys)
                 form.AddField(key, headers[key]);
             return form;
@@ -151,7 +151,6 @@ namespace Energy8.Requests
             WWWForm form = null,
             Dictionary<string, string> headers = null)
         {
-            _logger.Log("CreateRequest");
             UnityWebRequest request;
 
             request = form == null ? UnityWebRequest.Get(RemoteAddress + ApiEndpoint + endpoint) :
@@ -182,9 +181,9 @@ namespace Energy8.Requests
                 if (request.downloadHandler.text is null)
                     throw new RequestErrorDataException(HttpStatusCode.NotFound, "Request Error", "Data returned from server is empty.");
 
-                if (!Data.TryFromJson(request.downloadHandler.text, out T data))
+                if (!Data.TryFromJson(request.downloadHandler.text, out T data, false))
                 {
-                    _logger.LogWarning(requestLog + "Data returned from server is invalid.");
+                    _logger.LogWarning(requestLog + "Data returned from server is invalid: " + request.downloadHandler.text);
                     throw new RequestErrorDataException(HttpStatusCode.UnprocessableEntity, "Request Error", "Data returned from server is invalid.");
                 }
 

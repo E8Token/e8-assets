@@ -1,6 +1,6 @@
 {
   "name": "io.energy8games.assets",
-  "version": "0.7.8",
+  "version": "0.8.10",
   "displayName": "Energy8Assets",
   "description": "Package for Energy8 functionality",
   "author": {
@@ -11,7 +11,6 @@
   "dependencies": {
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "com.unity.nuget.newtonsoft-json": "3.2.1",
-    "com.unity.textmeshpro": "3.2.0-pre.10",
     "com.unity.localization": "1.5.3"
   }
 }

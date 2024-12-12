@@ -34,19 +34,31 @@ SpriteAtlas:
     packables:
     - {fileID: 2800000, guid: 62eb4ff1964e92f4aabcf1c2971beda0, type: 3}
     - {fileID: 2800000, guid: ba097f4152a29f342bda22ce8571b765, type: 3}
+    - {fileID: 2800000, guid: 9014eed1309afb8479e8efecf387467b, type: 3}
+    - {fileID: 2800000, guid: 61c0bd823b3803c4688e766258146886, type: 3}
+    - {fileID: 2800000, guid: 04dc49676d5718a4b97ab67273d00027, type: 3}
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
     packedSpriteRenderDataKeys:
     - ba097f4152a29f342bda22ce8571b765: 21300000
+    - 9014eed1309afb8479e8efecf387467b: 21300000
     - 62eb4ff1964e92f4aabcf1c2971beda0: 21300000
+    - 61c0bd823b3803c4688e766258146886: 5248415023898783801
+    - 04dc49676d5718a4b97ab67273d00027: 21300000
   m_MasterAtlas: {fileID: 0}
   m_PackedSprites:
   - {fileID: 21300000, guid: ba097f4152a29f342bda22ce8571b765, type: 3}
+  - {fileID: 21300000, guid: 9014eed1309afb8479e8efecf387467b, type: 3}
   - {fileID: 21300000, guid: 62eb4ff1964e92f4aabcf1c2971beda0, type: 3}
+  - {fileID: 5248415023898783801, guid: 61c0bd823b3803c4688e766258146886, type: 3}
+  - {fileID: 21300000, guid: 04dc49676d5718a4b97ab67273d00027, type: 3}
   m_PackedSpriteNamesToIndex:
   - GoogleLogo
+  - Mail
   - AppleLogo
+  - Close_0
+  - Frame
   m_RenderDataMap: {}
   m_Tag: Auth
   m_IsVariant: 0

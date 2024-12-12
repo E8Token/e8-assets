@@ -321,7 +321,7 @@ MonoBehaviour:
   loggerColor: {r: 0.6827016, g: 1, b: 0, a: 1}
   rt: {fileID: 4486351215003638417}
   canvasGroup: {fileID: 4447885572323702949}
-  animationDuration: 500
+  animationDuration: 250
   updateBut: {fileID: 1842747858344029978}
 --- !u!1 &3543704173419626032
 GameObject:

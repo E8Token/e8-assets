@@ -17,6 +17,28 @@ namespace Energy8
         private static string logFilePath;
         private static StreamWriter logWriter;
 
+        public static void BuildProject()
+        {
+            string configName = string.Empty;
+            bool cleanBuild = false;
+            string[] args = Environment.GetCommandLineArgs();
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i].StartsWith("-configName"))
+                    configName = args[i + 1];
+                if (args[i].StartsWith("-cleanBuild"))
+                    cleanBuild = bool.Parse(args[i + 1]);
+            }
+            
+            if(string.IsNullOrEmpty(configName))
+                throw new Exception("Name of the configuration is not specified.");
+
+
+            foreach (var config in BuildConfigProjectSettings.Instance.buildConfigurations)
+                if (config.name == configName)
+                    BuildProject(config, cleanBuild);
+        }
         public static void BuildProject(BuildConfig config, bool cleanBuild = false)
         {
             InitializeLog(config);
@@ -25,6 +47,9 @@ namespace Energy8
             CheckBuildDirectory(config.buildPath, cleanBuild);
 
             DateTime buildStartTime = DateTime.Now;
+
+            IPType iPType = ApplicationConfig.SelectedIPType;
+            AuthType authType = ApplicationConfig.SelectedAuthType;
 
             try
             {
@@ -35,7 +60,18 @@ namespace Energy8
                 }
 
                 logWriter.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Building project to {config.buildPath}");
+
                 ApplicationConfig.SelectedIPType = config.ipType;
+                ApplicationConfig.SelectedAuthType = config.ipType switch
+                {
+                    IPType.LocalPC => AuthType.Local,
+                    IPType.LocalNetwork => AuthType.Local,
+                    IPType.Debug => AuthType.Debug,
+                    IPType.DebugTLS => AuthType.Debug,
+                    IPType.Production => AuthType.Production,
+                    IPType.ProductionTLS => AuthType.Production,
+                    _ => AuthType.Local
+                };
                 PlayerSettings.insecureHttpOption = config.insecureHttpOption;
 
                 ConfigureScriptingBackend(config);
@@ -82,20 +118,18 @@ namespace Energy8
 
                 if (report.summary.result == BuildResult.Succeeded)
                 {
+                    if (config.buildTargetGroup == BuildTargetGroup.WebGL && config.buildAdditionalMobileData)
+                    {
+                        BuildMobileWebGLData(config);
+                    }
                     logWriter.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Build succeeded.");
                     IncrementVersion();
-                    Process.Start("explorer.exe", $"/select, \"{config.buildPath}\"");
+                    Process.Start("explorer.exe ", $"{new DirectoryInfo(Application.dataPath).Parent.FullName + "\\" + config.buildPath.Replace("/", "\\")}\"");
                 }
                 else
                 {
                     logWriter.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Build failed with result: {report.summary.result}");
                     throw new Exception("Build failed.");
-                }
-
-                // Handle WebGL additional mobile data build if necessary
-                if (config.buildTargetGroup == BuildTargetGroup.WebGL && config.buildAdditionalMobileData)
-                {
-                    BuildMobileWebGLData(config);
                 }
             }
             catch (Exception e)
@@ -116,6 +150,9 @@ namespace Energy8
                 logWriter.Close();
 
                 Process.Start(logFilePath);
+
+                ApplicationConfig.SelectedIPType = iPType;
+                ApplicationConfig.SelectedAuthType = authType;
             }
         }
 
@@ -174,8 +211,6 @@ namespace Energy8
             }
         }
 
-
-
         private static void CheckBuildDirectory(string buildPath, bool cleanBuild)
         {
             if (Directory.Exists(buildPath) & cleanBuild)
@@ -228,7 +263,7 @@ namespace Energy8
 
             EditorUserBuildSettings.webGLBuildSubtarget = WebGLTextureSubtarget.ASTC;
 
-            BuildPlayerOptions mobileBuildOptions = new BuildPlayerOptions
+            BuildPlayerOptions mobileBuildOptions = new()
             {
                 scenes = config.scenesToBuild.ToArray(),
                 locationPathName = mobileBuildPath,
@@ -263,6 +298,7 @@ namespace Energy8
                     logWriter.WriteLine($"[{DateTime.Now.ToLongTimeString()}] Mobile data file not found.");
                     throw new Exception("Mobile data file not found.");
                 }
+                Directory.Delete(mobileBuildPath, true);
             }
             else
             {

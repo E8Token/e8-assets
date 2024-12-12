@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-using Energy8.Firebase.WebGL;
+using Energy8.Plugins.WebGL.Firebase;
 #else
 using Firebase;
 using Energy8.Firebase;

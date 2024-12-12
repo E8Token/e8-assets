@@ -2,128 +2,52 @@
 <html lang="en-us">
 
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>{{{ PRODUCT_NAME }}}</title>
-  <link rel="shortcut icon" href="TemplateData/favicon.ico">
-  <link rel="stylesheet" href="TemplateData/style.css">
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="{{{ PRODUCT_NAME }}}">
+    <meta name="keywords" content="Energy8, WebGL, Unity, NFT, Crypto, Token, PlayToEarn, P2P, Bridge">
+    <meta name="author" content="{{{ COMPANY_NAME }}}">
+    <title>{{{ PRODUCT_NAME }}}</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
 </head>
 
-<body class="{{{ SPLASH_SCREEN_STYLE.toLowerCase() }}}">
-  <div id="unity-container" class="unity-desktop">
-    <canvas id="unity-canvas"></canvas>
-  </div>
-  <div id="loading-cover" style="display:none;">
-    <div id="unity-loading-bar">
-      <div id="unity-logo"><img src="logo.png"></div>
-      <div id="unity-progress-bar-empty" style="display: none;">
-        <div id="unity-progress-bar-full"></div>
-      </div>
-      <div class="spinner"></div>
+<body>
+    <!-- Unity Container -->
+    <div id="unity-container" class="unity-desktop" aria-hidden="true">
+        <canvas id="unity-canvas" aria-label="Game canvas"></canvas>
     </div>
-  </div>
-  <div id="unity-fullscreen-button" style="display: none;"></div>
 
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
-    import { getAuth, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+    <!-- Loading Screen -->
+    <div id="loading-screen" aria-label="Loading screen">
+        <div id="loading-ring" class="loading-ring">
+            <svg width="100%" height="100%" viewBox="0 0 100 100">
+                <circle id="ring-background" cx="50" cy="50" r="45" stroke="#ddd" stroke-width="6" fill="none"></circle>
+                <circle id="ring-progress" cx="50" cy="50" r="45" stroke="#7d3aed" stroke-width="6" fill="none"
+                    stroke-dasharray="282.743" stroke-dashoffset="282.743"></circle>
+            </svg>
+            <img src="TemplateData/loadingIcon.png" alt="Unity Logo">
+        </div>
+    </div>
 
-    async function initializeFirebase(firebaseConfig) {
-      // Инициализация Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app); // Инициализируем аутентификацию для данного приложения
 
-      // Сохраняем объект auth и метод signInWithCustomToken в window для глобального доступа
-      window.firebaseApp = app;
-      window.firebaseAuth = {
-        onAuthStateChanged: (f) => auth.onAuthStateChanged(f),
-        signInWithCustomToken: (t) => signInWithCustomToken(auth, t),
-        signOut: () => auth.signOut(),
-        getCurrentUser: () => auth.currentUser
-      }
+    <!-- Universal Warning Modal -->
+    <div id="warning-modal" class="warning-modal" style="display: none;" aria-hidden="true">
+        <div class="warning-modal-content">
+            <div id="warning-message" aria-live="polite"></div>
+            <div id="warning-buttons" class="warning-buttons">
+                <!-- Buttons will be added dynamically -->
+            </div>
+        </div>
+    </div>
 
-      console.log("Firebase app and auth initialized, methods available globally.");
-    }
-    window.initializeFirebase = initializeFirebase;
-  </script>
-
-  <script>
-    var dataFile = "/{{{ DATA_FILENAME }}}";
-    var c = document.createElement("canvas");
-    var webgl2 = c.getContext("webgl2");
-    if (webgl2 && webgl2.getExtension('WEBGL_compressed_texture_astc')) {
-      dataFile = dataFile.replace(".data", "_Mobile.data");
-    }
-    delete c;
-    const buildUrl = "Build";
-    const loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
-    const config = {
-      dataUrl: buildUrl + dataFile,
-      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
-      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
-      #if MEMORY_FILENAME
-          memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
-      #endif
-        #if SYMBOLS_FILENAME
-          symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
-      #endif
-          streamingAssetsUrl: "StreamingAssets",
-      companyName: "{{{ COMPANY_NAME }}}",
-      productName: "{{{ PRODUCT_NAME }}}",
-      productVersion: "{{{ PRODUCT_VERSION }}}",
-    };
-
-    const container = document.querySelector("#unity-container");
-    const canvas = document.querySelector("#unity-canvas");
-    const loadingCover = document.querySelector("#loading-cover");
-    const progressBarEmpty = document.querySelector("#unity-progress-bar-empty");
-    const progressBarFull = document.querySelector("#unity-progress-bar-full");
-    const spinner = document.querySelector('.spinner');
-    const logoImg = document.querySelector("#unity-logo img");
-
-    const canFullscreen = (function () {
-      for (const key of [
-        'exitFullscreen',
-        'webkitExitFullscreen',
-        'webkitCancelFullScreen',
-        'mozCancelFullScreen',
-        'msExitFullscreen',
-      ]) {
-        if (key in document) {
-          return true;
-        }
-      }
-      return false;
-    }());
-
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      container.className = "unity-mobile";
-      config.devicePixelRatio = 2;
-      if (window.screen.height < window.screen.width)
-        logoImg.style = "max-width: 40%"
-    }
-    #if BACKGROUND_FILENAME
-    canvas.style.background = "url('" + buildUrl + "/{{{ BACKGROUND_FILENAME.replace(/'/g, '%27') }}}') center / cover";
-    #endif
-    loadingCover.style.display = "";
-
-    const script = document.createElement("script");
-    script.src = loaderUrl;
-    script.onload = () => {
-      createUnityInstance(canvas, config, (progress) => {
-        spinner.style.display = "none";
-        progressBarEmpty.style.display = "";
-        progressBarFull.style.width = `${100 * progress}%`;
-      }).then((unityInstance) => {
-        window.unityInstance = unityInstance;
-        loadingCover.style.display = "none";
-      }).catch((message) => {
-        alert(message);
-      });
-    };
-    document.body.appendChild(script);
-  </script>
+    <!-- Scripts -->
+    <script type="module" src="TemplateData/firebaseHandler.js"></script>
+    <script src="TemplateData/warningModal.js"></script>
+    <script src="TemplateData/platformHandler.js"></script>
+    <script src="TemplateData/orientationHandler.js"></script>
+    <script src="TemplateData/unityLoader.js"></script>
 </body>
 
 </html>

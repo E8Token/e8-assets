@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "18361905498",
+    "project_id": "energy8auth-debug",
+    "storage_bucket": "energy8auth-debug.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18361905498:android:24eee92911b2372e350363",
+        "android_client_info": {
+          "package_name": "io.energy8games.e8auth_debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzk_J6x7ZO8BakEMfXy1xOf7KObUo7UhY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

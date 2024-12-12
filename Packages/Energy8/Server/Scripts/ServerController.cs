@@ -57,10 +57,10 @@ namespace Energy8.Server
                 requestDataFields: ("SessionsId", sessionId));
         }
 
-        public static UniTask<GameUserData> SendGetGameUserBySessionRequest(string sessionId)
+        public static UniTask<GameUserDataBase> SendGetGameUserBySessionRequest(string sessionId)
         {
             logger.Log($"GetGameUserBySession({sessionId})");
-            return RequestsController.Get<GameUserData>(
+            return RequestsController.Get<GameUserDataBase>(
                 $"{Game}/GetGameUserBySession",
                 AuthorizationType.Server,
                 $"{ServerId}:{ServerKey}",

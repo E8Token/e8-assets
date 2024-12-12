@@ -16,6 +16,7 @@ using System.Linq;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Models.WebGL.Firebase;
+using Energy8.Plugins.WebGL.LocalStorage;
 #else
 using Firebase.Auth;
 #endif
@@ -54,17 +55,11 @@ namespace Energy8.Auth
         public bool IsDetailedAnalyticsAllowed { get; private protected set; } = false;
         public bool IsInitialized { get; private set; } = false;
 
-        private protected CancellationTokenSource _onSignInCTS;
-        private protected CancellationTokenSource _onSignOutCTS;
+        private protected CancellationTokenSource _onSignedInCTS;
+        private protected CancellationTokenSource _onSignedOutCTS;
 
-        public event Action<UserData> OnSignInEvent;
-        public event Action OnSignOutEvent;
-
-        void ThrowCriticalError()
-        {
-            AuthController.SignOut();
-            throw new Exception("Critical Authorization error");
-        }
+        public event Action<UserData> OnSignedIn;
+        public event Action OnSignedOut;
 
         #region Unity
         void Reset()
@@ -76,7 +71,6 @@ namespace Energy8.Auth
                 _scrollView.transform.Find("OpenBut").TryGetComponent(out _openBut);
             }
         }
-
         protected void Awake()
         {
             if (Instance == null)
@@ -84,11 +78,10 @@ namespace Energy8.Auth
                 Instance = this;
 
                 _logger = new(this, _loggerName, _loggerColor);
+                _logger.Log($"Application information: {Application.companyName} {Application.productName}:{Application.version}");
 
                 InitializeEvents();
-                InitializeButtons();
-
-                _logger.Log($"Application information: {Application.companyName} {Application.productName}:{Application.version}");
+                InitializeUI();
 
                 DontDestroyOnLoad(gameObject);
             }
@@ -96,41 +89,47 @@ namespace Energy8.Auth
         }
         void Start()
         {
-            _onSignInCTS = new();
-            StartAuthorizationAsync(_onSignInCTS.Token).Forget();
+            _onSignedInCTS = new();
+            StartSignInProcessAsync(_onSignedInCTS.Token).Forget();
         }
-
         void OnDestroy()
         {
-            _onSignInCTS?.Cancel();
-            _onSignOutCTS?.Cancel();
+            _onSignedInCTS?.Cancel();
+            _onSignedOutCTS?.Cancel();
         }
         #endregion
 
         #region UI
         public void SetOpenState(bool isOpen)
         {
+            if (isOpen == IsOpen)
+                return;
             IsOpen = isOpen;
             _animation.Play(isOpen ? _openClipName : _closeClipName);
         }
         #endregion
 
-        #region Authorization
-        async UniTask StartAuthorizationAsync(CancellationToken cancellationToken)
+        #region SignIn
+        async UniTask StartSignInProcessAsync(CancellationToken cancellationToken)
         {
-            _logger.Log("StartAuthorizationAsync()");
+            _logger.Log("StartSignInProcessAsync()");
 
             await FirebaseController.InitializeAllAsync(cancellationToken);
             IsDetailedAnalyticsAllowed = await RequestDetailedAnalyticsAsync(cancellationToken);
             IsInitialized = true;
 
-            if (!AuthController.IsAutorized)
+            if (!AuthController.IsSignedIn)
                 await SignInAsync(cancellationToken);
         }
         async UniTask SignInAsync(CancellationToken cancellationToken)
         {
+            _logger.Log("SignInAsync()");
+
             cancellationToken.ThrowIfCancellationRequested();
             FirebaseUser authUser;
+#if !UNITY_EDITOR
+            SetOpenState(true);
+#endif
             while (true)
             {
                 SignInContentResult signInResult = await AddAndProcessContentAsync<SignInContent, SignInContentResult>(cancellationToken);
@@ -148,7 +147,6 @@ namespace Energy8.Auth
                 });
             }
         }
-
         #region Email
         async UniTask<FirebaseUser> SignInByEmailAsync(CancellationToken cancellationToken, string email)
         {
@@ -160,6 +158,7 @@ namespace Energy8.Auth
 
         async UniTask<ConfirmSignInResponseData> ConfirmEmailByCodeAsync(CancellationToken cancellationToken, string email, string token)
         {
+            _logger.Log($"SignInByEmailAsync({email}, {token})");
             ConfirmSignInResponseData authTokenResult;
             RunWithHandlingErrorStatus status;
 
@@ -209,36 +208,37 @@ namespace Energy8.Auth
         #endregion
 
         #region  UserWindow
-        private protected virtual async UniTask ShowUserWindowAsync(CancellationToken cancellationToken)
+        private async UniTask ShowUserWindowAsync(CancellationToken cancellationToken)
         {
-            _logger.Log("ShowUserWindowAsync()");
-
             await UniTask.WaitUntil(() => IsInitialized).
                 AttachExternalCancellation(cancellationToken);
-
             do
             {
-                await GetUserAsync(cancellationToken);
-                await AddAndProcessUserContentAsync(cancellationToken);
+                await UniTask.SwitchToMainThread();
+                CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                cts.CancelAfter(60000);
+                var status = await RunWithHandlingError(cts.Token, async () =>
+                {
+                    await UpdateUserContentAsync(cts.Token);
+                });
+                if (!cts.Token.IsCancellationRequested && status == RunWithHandlingErrorStatus.SignedOut)
+                {
+                    AuthController.SignOut();
+                    return;
+                }
             } while (!cancellationToken.IsCancellationRequested);
+        }
+
+        protected virtual async UniTask UpdateUserContentAsync(CancellationToken cancellationToken)
+        {
+            await GetUserAsync(cancellationToken);
+            await AddAndProcessUserContentAsync(cancellationToken);
         }
 
         private protected async UniTask GetUserAsync(CancellationToken cancellationToken)
         {
-            UserData userData;
-            RunWithHandlingErrorStatus status;
-
-            (status, userData) = await RunWithHandlingError(cancellationToken, async () =>
-            {
-                return await SendGetUserRequestAsync(cancellationToken);
-            });
-
-            if (status == RunWithHandlingErrorStatus.Successful)
-            {
-                User = userData;
-                OnSignInEvent?.Invoke(User);
-            }
-            else ThrowCriticalError();
+            _logger.Log("GetUserAsync()");
+            User = await SendGetUserRequestAsync(cancellationToken);
         }
 
         private protected async UniTask AddAndProcessUserContentAsync(CancellationToken cancellationToken)
@@ -249,18 +249,16 @@ namespace Energy8.Auth
                 AuthController.SignOut();
             else
             {
-                var status = await AddAndProcessChangeNameWindow(cancellationToken);
-                if (status == RunWithHandlingErrorStatus.SignedOut)
-                    AuthController.SignOut();
+                await AddAndProcessChangeNameWindow(cancellationToken);
             }
         }
-        async UniTask<RunWithHandlingErrorStatus> AddAndProcessChangeNameWindow(CancellationToken cancellationToken)
+        async UniTask AddAndProcessChangeNameWindow(CancellationToken cancellationToken)
         {
-            return await RunWithHandlingError(cancellationToken, async () =>
-                    {
-                        var changeNameContentResult = await AddAndProcessContentAsync<ChangeNameContent, ChangeNameContentResult>(cancellationToken);
-                        await SendChangeNameRequestAsync(cancellationToken, changeNameContentResult.Name);
-                    });
+            await RunWithHandlingError(cancellationToken, async () =>
+            {
+                var changeNameContentResult = await AddAndProcessContentAsync<ChangeNameContent, ChangeNameContentResult>(cancellationToken);
+                await SendChangeNameRequestAsync(cancellationToken, changeNameContentResult.Name);
+            });
         }
 
         async UniTask<UserData> SendGetUserRequestAsync(CancellationToken cancellationToken) =>
@@ -273,35 +271,50 @@ namespace Energy8.Auth
 
         async UniTask<bool> RequestDetailedAnalyticsAsync(CancellationToken cancellationToken)
         {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (LocalStorageController.HasKey("IsDetailedAnalytics"))
+                return bool.Parse(LocalStorageController.Get("IsDetailedAnalytics"));
+#else
             if (PlayerPrefs.HasKey("IsDetailedAnalytics"))
                 return bool.Parse(PlayerPrefs.GetString("IsDetailedAnalytics"));
+#endif
             var result = await AddAndProcessContentAsync<AnalyticsContent, AnalyticsContentResult>(cancellationToken);
+#if UNITY_WEBGL && !UNITY_EDITOR
+            LocalStorageController.Set("IsDetailedAnalytics", result.IsDetailedAnalyticsAllowed.ToString());
+#else
             PlayerPrefs.SetString("IsDetailedAnalytics", result.IsDetailedAnalyticsAllowed.ToString());
+#endif
             return result.IsDetailedAnalyticsAllowed;
         }
         #endregion
 
         #region Functionaly
-        private protected enum RunWithHandlingErrorStatus
+        protected enum RunWithHandlingErrorStatus
         {
             Successful,
             Cancelled,
             SignedOut
         }
 
-        private protected async UniTask<(RunWithHandlingErrorStatus Status, TResult Result)> RunWithHandlingError<TResult>(CancellationToken cancellationToken, Func<UniTask<TResult>> func)
+        protected async UniTask<(RunWithHandlingErrorStatus Status, TResult Result)> RunWithHandlingError<TResult>(CancellationToken cancellationToken, Func<UniTask<TResult>> func)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            if (cancellationToken.IsCancellationRequested)
+                return (RunWithHandlingErrorStatus.Cancelled, default);
             while (true)
             {
                 try
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                        return (RunWithHandlingErrorStatus.Cancelled, default);
                     return (RunWithHandlingErrorStatus.Successful, await UniTask.Create(func));
                 }
                 catch (Exception ex)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                        return (RunWithHandlingErrorStatus.Cancelled, default);
+                    _logger.Log("Handled error: " + ex.Message + cancellationToken.IsCancellationRequested);
                     ErrorData error;
-                    if (typeof(ErrorDataException) == ex.GetType())
+                    if (typeof(ErrorDataException).IsAssignableFrom(ex.GetType()))
                         error = (ex as ErrorDataException).Error;
                     else
                         error = new ErrorData("Unknown Error", ex.Message, canProceed: true, canRetry: true, mustSignOut: true);
@@ -318,8 +331,42 @@ namespace Energy8.Auth
                 }
             }
         }
-        private protected async UniTask<RunWithHandlingErrorStatus> RunWithHandlingError(CancellationToken cancellationToken, Func<UniTask> func) =>
-            await RunWithHandlingError(cancellationToken, async () => await func());
+        protected async UniTask<RunWithHandlingErrorStatus> RunWithHandlingError(CancellationToken cancellationToken, Func<UniTask> func)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                return RunWithHandlingErrorStatus.Cancelled;
+            while (true)
+            {
+                try
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        return RunWithHandlingErrorStatus.Cancelled;
+                    await UniTask.Create(func);
+                    return RunWithHandlingErrorStatus.Successful;
+                }
+                catch (Exception ex)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                        return RunWithHandlingErrorStatus.Cancelled;
+                    _logger.Log("Handled error: " + ex.Message + cancellationToken.IsCancellationRequested);
+                    ErrorData error;
+                    if (typeof(ErrorDataException).IsAssignableFrom(ex.GetType()))
+                        error = (ex as ErrorDataException).Error;
+                    else
+                        error = new ErrorData("Unknown Error", ex.Message, canProceed: true, canRetry: true, mustSignOut: true);
+                    var errorResultValue = await AddAndProcessContentAsync<ErrorContent, ErrorContentResult>(cancellationToken, error);
+                    switch (errorResultValue.Method)
+                    {
+                        case ErrorHandlingMethod.Close:
+                            return RunWithHandlingErrorStatus.Cancelled;
+                        case ErrorHandlingMethod.TryAgain:
+                            break;
+                        case ErrorHandlingMethod.SignOut:
+                            return RunWithHandlingErrorStatus.SignedOut;
+                    }
+                }
+            }
+        }
 
         protected async UniTask<TResponse> SendRequestAsync<TRequest, TResponse>(CancellationToken cancellationToken,
             string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, TRequest requestData, bool isBackground = false)
@@ -335,7 +382,8 @@ namespace Energy8.Auth
                 string authData = getAuthData != null ? getAuthData() : string.Empty;
                 var task = method.ToUpper() switch
                 {
-                    GetMethod => Get<TResponse>(endpoint, authType, authData, requestData.ToDictionary().ToList().Select((el) => (el.Key, el.Value)).ToArray()),
+                    GetMethod => Get<TResponse>(endpoint, authType, authData,
+                                                requestData.ToDictionary().ToList().Select((el) => (el.Key, el.Value)).ToArray()),
                     PutMethod => Put<TResponse>(endpoint, authType, authData, requestData),
                     DeleteMethod => Delete<TResponse>(endpoint, authType, authData, requestData),
                     _ => Post<TResponse>(endpoint, authType, authData, requestData),
@@ -390,7 +438,6 @@ namespace Energy8.Auth
 
                 try
                 {
-                    _logger.Log($"{requestName}");
                     if (isBackground)
                         return (TResponse)await UniTask.Create(request);
                     else
@@ -440,8 +487,7 @@ namespace Energy8.Auth
                         await UniTask.Create(request);
                     else
                         await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken, LoadingContentType.Empty, request);
-
-                    _logger.Log($"{requestName}");
+                    return;
                 }
                 catch (RequestErrorDataException ex)
                 {
@@ -489,23 +535,28 @@ namespace Energy8.Auth
         #region Initialization
         private protected virtual void InitializeEvents()
         {
-            AuthController.OnSignInEvent += (_) =>
+            AuthController.OnSignedIn += (user) =>
             {
-                OnSignInEvent?.Invoke(User);
-                _onSignInCTS?.Cancel();
-                _onSignOutCTS = new();
-                ShowUserWindowAsync(_onSignOutCTS.Token).Forget();
+                _logger.Log($"OnSignedIn({user})");
+                OnSignedIn?.Invoke(User);
+                _onSignedInCTS?.Cancel();
+                _onSignedOutCTS = new();
+                ShowUserWindowAsync(_onSignedOutCTS.Token).Forget();
             };
-            AuthController.OnSignOutEvent += () =>
+            AuthController.OnSignedOut += () =>
             {
-                OnSignOutEvent?.Invoke();
-                _onSignOutCTS?.Cancel();
-                _onSignInCTS = new();
-                SignInAsync(_onSignInCTS.Token).Forget();
+                _logger.Log($"OnSignedOut()");
+                SetOpenState(true);
+                OnSignedOut?.Invoke();
+                _onSignedOutCTS?.Cancel();
+                _onSignedInCTS = new();
+                SignInAsync(_onSignedInCTS.Token).Forget();
             };
+            _logger.Log("InitializeEvents()");
         }
-        private protected virtual void InitializeButtons()
+        private protected virtual void InitializeUI()
         {
+            _logger.Log("InitializeUI()");
             _openBut.onClick.AddListener(() => SetOpenState(!IsOpen));
         }
         #endregion

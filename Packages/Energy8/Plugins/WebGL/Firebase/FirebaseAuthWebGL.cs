@@ -1,4 +1,4 @@
-#if UNITY_WEBGL && !UNITY_EDITOR
+#if UNITY_WEBGL //&& !UNITY_EDITOR
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -8,7 +8,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 
 
-namespace Energy8.Firebase.WebGL
+namespace Energy8.Plugins.WebGL.Firebase
 {
     public class FirebaseAuthWebGL : MonoBehaviour
     {
@@ -17,13 +17,13 @@ namespace Energy8.Firebase.WebGL
         public delegate void ErrorCallback(string errorJson);
         public delegate void TokenCallback(string idToken);
 
-        public static event SignInCallback OnSignInEvent;
-        public static event SignOutCallback OnSignOutEvent;
-        public static event ErrorCallback OnErrorEvent;
-        public static event TokenCallback OnTokenReceivedEvent;
+        public event SignInCallback OnSignInEvent;
+        public event SignOutCallback OnSignOutEvent;
+        public event ErrorCallback OnErrorEvent;
+        public event TokenCallback OnTokenReceivedEvent;
 
         [DllImport("__Internal")]
-        private static extern void Initialize(string config, string objectName, string signInCallback, string signOutCallback);
+        private static extern void InitializeAuth(string config, string objectName, string signInCallback, string signOutCallback);
 
         [DllImport("__Internal")]
         private static extern void SignInByTokenAsync(string token, string callback, string fallback);
@@ -45,17 +45,17 @@ namespace Energy8.Firebase.WebGL
             Instance = this;
         }
 
-        public static void Initialize(string config)
+        public void Initialize(string config)
         {
-            Initialize(config, "FirebaseAuthWebGL", "OnSignInCallback", "OnSignOutCallback");
+            InitializeAuth(config, gameObject.name, nameof(OnSignInCallback), nameof(OnSignOutCallback));
         }
 
-        public static async UniTask<FirebaseUser> SignInByTokenAsync(CancellationToken cancellationToken, string token)
+        public async UniTask<FirebaseUser> SignInByTokenAsync(CancellationToken cancellationToken, string token)
         {
             var tcs = new UniTaskCompletionSource<FirebaseUser>();
 
             void HandleSignIn(FirebaseUser user) => tcs.TrySetResult(user);
-            void HandleError(string errorJson) => tcs.TrySetException(new Exception(errorJson));
+            void HandleError(string error) => tcs.TrySetException(new Exception(error));
 
             OnSignInEvent += HandleSignIn;
             OnErrorEvent += HandleError;
@@ -72,7 +72,7 @@ namespace Energy8.Firebase.WebGL
             }
         }
 
-        public static async UniTask<string> GetIdTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
+        public async UniTask<string> GetIdTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
         {
             var tcs = new UniTaskCompletionSource<string>();
 
@@ -96,25 +96,21 @@ namespace Energy8.Firebase.WebGL
 
         private void OnSignInCallback(string userJson)
         {
-            Debug.Log("User signed in: " + userJson);
             OnSignInEvent?.Invoke(JsonConvert.DeserializeObject<FirebaseUser>(userJson));
         }
 
         private void OnSignOutCallback()
         {
-            Debug.Log("User signed out");
             OnSignOutEvent?.Invoke();
         }
 
-        private void OnErrorCallback(string errorJson)
+        private void OnErrorCallback(string error)
         {
-            Debug.LogError("Sign in error: " + errorJson);
-            OnErrorEvent?.Invoke(errorJson);
+            OnErrorEvent?.Invoke(error);
         }
 
         private void OnTokenReceivedCallback(string idToken)
         {
-            Debug.Log("Received ID Token: " + idToken);
             OnTokenReceivedEvent?.Invoke(idToken);
         }
     }

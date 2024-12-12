@@ -1,17 +1,18 @@
 using UnityEngine;
-
-public class WebGLPluginsController : MonoBehaviour
+namespace Energy8.Plugins.WebGL
 {
-    public WebGLPluginsController Instance
+    public class WebGLPluginsController : MonoBehaviour
     {
-        get; private set;
-    }
+        public WebGLPluginsController Instance
+        {
+            get; private set;
+        }
 
-    void Awake()
-    {
+        void Awake()
+        {
 #if !UNITY_WEBGL
-        Destroy(gameObject);
-        return;
+            Destroy(gameObject);
+            return;
 #else
         if(Instance != null)
         {
@@ -21,5 +22,6 @@ public class WebGLPluginsController : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 #endif
+        }
     }
 }

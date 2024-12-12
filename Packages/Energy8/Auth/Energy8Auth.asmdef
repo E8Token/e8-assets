@@ -6,7 +6,8 @@
         "Unity.TextMeshPro",
         "Energy8Models",
         "Energy8Firebase",
-        "Energy8"
+        "Energy8",
+        "Energy8WebGL"
     ],
     "includePlatforms": [
         "Android",

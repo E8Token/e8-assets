@@ -30,88 +30,52 @@ body {
     width: 100%;
     height: 100%;
 
-    background: {
-            {
-                {
-                BACKGROUND_COLOR
-            }
-        }
-    }
-
-    ;
+    background: white;
 }
 
-#loading-cover {
-    position: absolute;
+#loading-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background-color: white;
+    z-index: 1000;
 }
 
-#unity-loading-bar {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-#unity-logo {
-    text-align: center;
-}
-
-#unity-logo img {
-    max-width: 80%;
-}
-
-#unity-progress-bar-empty {
-    width: 80%;
-    height: 24px;
-    margin: 10px 20px 20px 10px;
-    text-align: left;
-    border: 1px solid rgb(92, 15, 235);;
-    padding: 2px;
-}
-
-#unity-progress-bar-full {
-    width: 0%;
-    height: 100%;
-    background: rgb(131, 112, 167);;
-}
-
-.light #unity-progress-bar-empty {
-    border-color: rgb(107, 40, 229);;
-}
-
-.light #unity-progress-bar-full {
-    background: rgb(107, 40, 229);
-}
-
-.spinner,
-.spinner:after {
-    border-radius: 50%;
-    width: 5em;
-    height: 5em;
-}
-
-.spinner {
-    margin: 10px;
-    font-size: 10px;
+#loading-ring {
     position: relative;
-    text-indent: -9999em;
-    border-top: 1.1em solid rgba(255, 255, 255, 0.2);
-    border-right: 1.1em solid rgba(255, 255, 255, 0.2);
-    border-bottom: 1.1em solid rgba(255, 255, 255, 0.2);
-    border-left: 1.1em solid #ffffff;
-    transform: translateZ(0);
-    animation: spinner-spin 1.1s infinite linear;
+    width: 40vw;
+    /* 40% от ширины экрана */
+    height: 40vh;
+    /* 40% от высоты экрана */
+    max-width: 40%;
+    /* Максимальная ширина */
+    max-height: 40%;
+    /* Максимальная высота */
 }
 
-@keyframes spinner-spin {
+#loading-ring svg {
+    width: 100%;
+    height: 100%;
+}
+
+#loading-ring img {
+    object-fit: contain;
+    aspect-ratio: 1 / 1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40%;
+    height: 40%;
+}
+
+
+@keyframes spin {
     0% {
         transform: rotate(0deg);
     }
@@ -119,4 +83,55 @@ body {
     100% {
         transform: rotate(360deg);
     }
+}
+
+/* Warning Modal */
+.warning-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 1001;
+    display: none;
+}
+
+.warning-modal-content {
+    background-color: white;
+    padding: 5vw;
+    /* Относительные отступы */
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px;
+    text-align: center;
+}
+
+#warning-message {
+    margin-bottom: 2vw;
+    font-size: calc((100vw - 300px) / (1920px - 300px) * (5rem - 1rem) + 1rem);
+    color: #333;
+}
+
+.warning-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 2vw;
+}
+
+.warning-buttons button {
+    background-color: #7d3aed;
+    color: white;
+    padding: 2vw 4vw;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: calc((100vw - 300px) / (1200px - 300px) * (5rem - 1rem) + 1rem);
+}
+
+.warning-buttons button:hover {
+    background-color: #8d50ef;
 }

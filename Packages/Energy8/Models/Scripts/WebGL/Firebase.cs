@@ -1,5 +1,6 @@
 #if UNITY_WEBGL //&& !UNITY_EDITOR
 using System;
+using Newtonsoft.Json;
 
 namespace Energy8.Models.WebGL.Firebase
 {
@@ -11,6 +12,7 @@ namespace Energy8.Models.WebGL.Firebase
 
         public bool IsAnonymous { get; private set; }
 
+        [JsonProperty("EmailVerified")]
         public bool IsEmailVerified { get; private set; }
 
         public UserMetadata Metadata { get; private set; }
@@ -22,7 +24,7 @@ namespace Energy8.Models.WebGL.Firebase
         //public IEnumerable<IUserInfo> ProviderData { get; private set; }
 
         public string ProviderId { get; private set; } = string.Empty;
-
+        [JsonProperty("Uid")]
         public string UserId { get; private set; } = string.Empty;
     }
     public class UserMetadata

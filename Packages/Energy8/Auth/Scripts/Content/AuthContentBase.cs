@@ -87,13 +87,15 @@ namespace Energy8.Auth.Content
                 HideUI();
                 return result;
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
+                await UniTask.SwitchToMainThread();
                 Destroy(gameObject);
-                throw new OperationCanceledException();
+                throw ex;
             }
             catch (Exception ex)
             {
+                await UniTask.SwitchToMainThread();
                 Destroy(gameObject);
                 throw ex;
             }

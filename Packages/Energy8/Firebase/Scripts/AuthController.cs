@@ -6,7 +6,7 @@ using System.Threading;
 using Energy8.Models.Errors;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-using Energy8.Firebase.WebGL;
+using Energy8.Plugins.WebGL.Firebase;
 using Energy8.Models.WebGL.Firebase;
 #else
 using Firebase;
@@ -29,29 +29,29 @@ namespace Energy8.Firebase
         public static FirebaseUser CurrentUser { get; private set; }
 #endif
 
-        static public bool IsAutorized
+        static public bool IsSignedIn
 #if UNITY_WEBGL && !UNITY_EDITOR
         => CurrentUser != null;
 #else
         => auth.CurrentUser != null && auth.CurrentUser.IsValid();
 #endif
 
-        static public event Action<FirebaseUser> OnSignInEvent;
-        static public event Action OnSignOutEvent;
+        static public event Action<FirebaseUser> OnSignedIn;
+        static public event Action OnSignedOut;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
         public static void Initialize(string config)
         {
-            FirebaseAuthWebGL.Initialize(config);
-            FirebaseAuthWebGL.OnSignInEvent += (user) =>
+            FirebaseAuthWebGL.Instance.Initialize(config);
+            FirebaseAuthWebGL.Instance.OnSignInEvent += (user) =>
             {
                 CurrentUser = user;
-                AuthStateChanged(user);
+                AuthStateChanged();
             };
-            FirebaseAuthWebGL.OnSignOutEvent += () => 
+            FirebaseAuthWebGL.Instance.OnSignOutEvent += () => 
             {
                 CurrentUser = null;
-                AuthStateChanged(null);
+                AuthStateChanged();
             };
         }
 #else
@@ -66,7 +66,7 @@ namespace Energy8.Firebase
         public static async UniTask<string> GetAuthTokenAsync(CancellationToken cancellationToken, bool forceRefresh)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            return await FirebaseAuthWebGL.GetIdTokenAsync(cancellationToken, forceRefresh);
+            return await FirebaseAuthWebGL.Instance.GetIdTokenAsync(cancellationToken, forceRefresh);
 #else
             try
             {
@@ -82,7 +82,7 @@ namespace Energy8.Firebase
         public static async UniTask<FirebaseUser> SignInByTokenAsync(CancellationToken cancellationToken, string token)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            return await FirebaseAuthWebGL.SignInByTokenAsync(cancellationToken, token);
+            return await FirebaseAuthWebGL.Instance.SignInByTokenAsync(cancellationToken, token);
 #else
             try
             {
@@ -94,22 +94,23 @@ namespace Energy8.Firebase
             }
 #endif
         }
+
 #if UNITY_WEBGL && !UNITY_EDITOR
-        static void AuthStateChanged(FirebaseUser user)
+        static void AuthStateChanged()
         {
             if (CurrentUser != _user)
             {
                 bool signedIn = _user != CurrentUser && CurrentUser != null;
                 if (!signedIn && _user != null)
                 {
-                    logger.Log("Signed out " + user);
-                    OnSignOutEvent?.Invoke();
+                    logger.Log("Signed out " + _user.UserId);
+                    OnSignedOut?.Invoke();
                 }
-                user = CurrentUser;
+                _user = CurrentUser;
                 if (signedIn)
                 {
-                    logger.Log("Signed in " + user);
-                    OnSignInEvent?.Invoke(user);
+                    logger.Log("Signed in " + _user.UserId);
+                    OnSignedIn?.Invoke(_user);
                 }
             }
         }
@@ -138,13 +139,13 @@ namespace Energy8.Firebase
                 if (!signedIn && _user != null)
                 {
                     logger.Log("Signed out " + _user.UserId);
-                    OnSignOutEvent?.Invoke();
+                    OnSignedOut?.Invoke();
                 }
                 _user = auth.CurrentUser;
                 if (signedIn)
                 {
                     logger.Log("Signed in " + _user.UserId);
-                    OnSignInEvent?.Invoke(_user);
+                    OnSignedIn?.Invoke(_user);
                 }
             }
         }
