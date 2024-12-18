@@ -25,8 +25,8 @@ MonoBehaviour:
     ipAddress: http://176.223.131.88:5000
   - ipType: 5
     ipAddress: https://games.energy8.io
-  _selectedIPType: 3
-  _selectedAuthType: 1
+  _selectedIPType: 0
+  _selectedAuthType: 0
   _firebaseAuthConfigs:
   - authType: 0
     config: {fileID: 4900000, guid: 611664c296eed6d448ded7c73ee7982f, type: 3}

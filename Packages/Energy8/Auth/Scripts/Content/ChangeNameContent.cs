@@ -13,7 +13,7 @@ namespace Energy8.Auth.Content
         [Header("UI (ChangeName)")]
         [SerializeField] TMP_InputField nameIF;
         [SerializeField] Button nextBut;
-
+        [SerializeField] Button closeBut;
 
         private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
@@ -24,6 +24,7 @@ namespace Energy8.Auth.Content
 
             nextBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
                 new ChangeNameContentResult(nameIF.text) as TResult));
+            closeBut.onClick.AddListener(() => taskCompletionSource.TrySetCanceled());
         }
     }
 

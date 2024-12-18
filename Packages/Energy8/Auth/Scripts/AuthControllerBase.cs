@@ -127,7 +127,7 @@ namespace Energy8.Auth
 
             cancellationToken.ThrowIfCancellationRequested();
             FirebaseUser authUser;
-#if !UNITY_EDITOR
+#if !UNITY_WEBGL || UNITY_EDITOR
             SetOpenState(true);
 #endif
             while (true)
@@ -147,6 +147,7 @@ namespace Energy8.Auth
                 });
             }
         }
+
         #region Email
         async UniTask<FirebaseUser> SignInByEmailAsync(CancellationToken cancellationToken, string email)
         {
@@ -158,7 +159,7 @@ namespace Energy8.Auth
 
         async UniTask<ConfirmSignInResponseData> ConfirmEmailByCodeAsync(CancellationToken cancellationToken, string email, string token)
         {
-            _logger.Log($"SignInByEmailAsync({email}, {token})");
+            _logger.Log($"ConfirmEmailByCodeAsync({email}, {token})");
             ConfirmSignInResponseData authTokenResult;
             RunWithHandlingErrorStatus status;
 
@@ -176,6 +177,7 @@ namespace Energy8.Auth
         }
         async UniTask<FirebaseUser> SignInByCustomToken(CancellationToken cancellationToken, string token)
         {
+            _logger.Log($"SignInByCustomToken({token})");
             async UniTask<object> sendAuthRequest() =>
                 await AuthController.SignInByTokenAsync(cancellationToken, token);
 
@@ -192,7 +194,12 @@ namespace Energy8.Auth
             CancellationToken cancellationToken, string email, string token, string code) =>
                 await SendRequestAsync<EmailCodeRequestData, ConfirmSignInResponseData>(
                     cancellationToken, "ConfirmSignInByEmail", "User/ConfirmSignInByEmail", PostMethod, AuthorizationType.None,
-                        null, new EmailCodeRequestData(email, token, code));
+                    null, new EmailCodeRequestData(email, token, code));
+        async UniTask SendConfirmDeleteAccountAsync(
+        CancellationToken cancellationToken, string email, string token, string code) =>
+            await SendRequestAsync(cancellationToken, "ConfirmDeleteAccountByEmail",
+                "User/ConfirmDeleteAccountByEmail", DeleteMethod, AuthorizationType.Bearer,
+                () => AuthToken, new EmailCodeRequestData(email, token, code));
         #endregion
 
         #region Google
@@ -208,20 +215,19 @@ namespace Energy8.Auth
         #endregion
 
         #region  UserWindow
-        private async UniTask ShowUserWindowAsync(CancellationToken cancellationToken)
+        private async UniTask ShowUserContentAsync(CancellationToken cancellationToken)
         {
             await UniTask.WaitUntil(() => IsInitialized).
                 AttachExternalCancellation(cancellationToken);
+            await UpdateAuthTokenAsync(cancellationToken, true);
             do
             {
                 await UniTask.SwitchToMainThread();
-                CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                cts.CancelAfter(60000);
-                var status = await RunWithHandlingError(cts.Token, async () =>
+                var status = await RunWithHandlingError(cancellationToken, async () =>
                 {
-                    await UpdateUserContentAsync(cts.Token);
+                    await UpdateUserContentAsync(cancellationToken);
                 });
-                if (!cts.Token.IsCancellationRequested && status == RunWithHandlingErrorStatus.SignedOut)
+                if (status == RunWithHandlingErrorStatus.SignedOut)
                 {
                     AuthController.SignOut();
                     return;
@@ -247,12 +253,24 @@ namespace Energy8.Auth
 
             if (userResult.ResultType == UserWindowAction.SignOut)
                 AuthController.SignOut();
+            else if (userResult.ResultType == UserWindowAction.DeleteAccount)
+                await AddAndProcessDeleteAccountContent(cancellationToken);
             else
             {
-                await AddAndProcessChangeNameWindow(cancellationToken);
+                await AddAndProcessChangeNameContent(cancellationToken);
             }
         }
-        async UniTask AddAndProcessChangeNameWindow(CancellationToken cancellationToken)
+        async UniTask AddAndProcessDeleteAccountContent(CancellationToken cancellationToken)
+        {
+            await RunWithHandlingError(cancellationToken, async () =>
+            {
+                await AddAndProcessContentAsync<DeleteAccountContent, DeleteAccountContentResult>(cancellationToken);
+                var response = await SendRequestAsync<DeleteAccountByEmailResponseData>(cancellationToken, "DeleteAccount", "User/DeleteAccount", DeleteMethod, AuthorizationType.Bearer, () => AuthToken, false);
+                var codeContentResult = await AddAndProcessContentAsync<CodeContent, CodeContentResult>(cancellationToken);
+                await SendConfirmDeleteAccountAsync(cancellationToken, User.Email, response.Token, codeContentResult.Code);
+            });
+        }
+        async UniTask AddAndProcessChangeNameContent(CancellationToken cancellationToken)
         {
             await RunWithHandlingError(cancellationToken, async () =>
             {
@@ -346,7 +364,7 @@ namespace Energy8.Auth
                 }
                 catch (Exception ex)
                 {
-                    if (cancellationToken.IsCancellationRequested)
+                    if (cancellationToken.IsCancellationRequested || ex is OperationCanceledException)
                         return RunWithHandlingErrorStatus.Cancelled;
                     _logger.Log("Handled error: " + ex.Message + cancellationToken.IsCancellationRequested);
                     ErrorData error;
@@ -368,6 +386,51 @@ namespace Energy8.Auth
             }
         }
 
+        protected async UniTask SendRequestAsync<TRequest>(CancellationToken cancellationToken,
+                    string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, TRequest requestData, bool isBackground = false)
+                                where TRequest : Data
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _logger.Log($"SendRequestAsync({requestName}, {endpoint}, {method}, {authType}, {isBackground}, {requestData})");
+            byte attemp = 1;
+            Exception exception = null;
+            while (attemp < 3)
+            {
+                string authData = getAuthData != null ? getAuthData() : string.Empty;
+                var task = method.ToUpper() switch
+                {
+                    GetMethod => Get(endpoint, authType, authData,
+                                                requestData.ToDictionary().ToList().Select((el) => (el.Key, el.Value)).ToArray()),
+                    PutMethod => Put(endpoint, authType, authData, requestData),
+                    DeleteMethod => Delete(endpoint, authType, authData, requestData),
+                    _ => Post(endpoint, authType, authData, requestData),
+                };
+                Func<UniTask> request = async () => await task;
+
+                try
+                {
+                    if (isBackground)
+                        await UniTask.Create(request);
+                    else
+                        await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(
+                            cancellationToken, LoadingContentType.WebRequest, request);
+                }
+                catch (RequestErrorDataException ex)
+                {
+                    exception = ex;
+                    if (ex.HttpStatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        Func<UniTask> tokenRequest = async () => await UpdateAuthTokenAsync(cancellationToken, true);
+                        await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken, LoadingContentType.Empty, tokenRequest);
+                        attemp++;
+                        continue;
+                    }
+                    _logger.LogWarning($"{requestName}: {ex.Error}");
+                    throw ex;
+                }
+            }
+            throw exception;
+        }
         protected async UniTask<TResponse> SendRequestAsync<TRequest, TResponse>(CancellationToken cancellationToken,
             string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, TRequest requestData, bool isBackground = false)
                         where TRequest : Data
@@ -392,7 +455,6 @@ namespace Energy8.Auth
 
                 try
                 {
-                    _logger.Log($"{requestName}");
                     if (isBackground)
                         return (TResponse)await UniTask.Create(request);
                     else
@@ -460,6 +522,7 @@ namespace Energy8.Auth
             }
             throw exception;
         }
+
         protected async UniTask SendRequestAsync(CancellationToken cancellationToken,
             string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, bool isBackground = false, params (string key, string value)[] requestDataFields)
         {
@@ -541,7 +604,7 @@ namespace Energy8.Auth
                 OnSignedIn?.Invoke(User);
                 _onSignedInCTS?.Cancel();
                 _onSignedOutCTS = new();
-                ShowUserWindowAsync(_onSignedOutCTS.Token).Forget();
+                ShowUserContentAsync(_onSignedOutCTS.Token).Forget();
             };
             AuthController.OnSignedOut += () =>
             {

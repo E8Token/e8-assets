@@ -33,7 +33,6 @@ namespace Energy8.Requests
             Data requestData = null,
             params (string key, string value)[] requestDataFields)
         {
-            _logger.Log("Post");
             if (authorizationData is null)
                 return Send(CreateRequest(endpoint, PostMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
             else
@@ -47,7 +46,6 @@ namespace Energy8.Requests
             Data requestData = null,
             params (string key, string value)[] requestDataFields) where T : Data
         {
-            _logger.Log("Post");
             if (requestData is null)
                 return Send<T>(CreateRequest(endpoint, PostMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
             else
@@ -217,12 +215,18 @@ namespace Energy8.Requests
 
         static public ErrorData ValiadateErrorResponse(HttpStatusCode code)
         {
-            ErrorData validateErrorMessage = new("Unknown Error");
+            ErrorData validateErrorMessage = new("Unknown Error",
+                "The client is unable to validate this error, as it <b>does not align with the expected behavior</b> of the application.\n\n" + 
+                "<b>Please reach out to support for further assistance.</b>", true, true, true);
             switch (code)
             {
+                case 0:
+                    validateErrorMessage = new("Connection Error", "The server is not responding to the request. Most likely the problem is in your network connection.\n" +
+                        "Please check that you have internet access and try again later.", canRetry: true);
+                    return validateErrorMessage;
                 case HttpStatusCode.OK:
                     validateErrorMessage = new("Connection Error", "The server is not responding to the request. Most likely the problem is in your network connection.\n" +
-                        "Please check that you have internet access and try again later.", canProceed: true);
+                        "Please check that you have internet access and try again later.", canRetry: true);
                     return validateErrorMessage;
                 case HttpStatusCode.BadGateway:
                     validateErrorMessage = new("Server Error", "<b>Error on the <u>server</u> side!</b>\n" +

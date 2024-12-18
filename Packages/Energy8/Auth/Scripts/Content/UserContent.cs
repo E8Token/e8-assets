@@ -12,6 +12,7 @@ namespace Energy8.Auth.Content
         [SerializeField] TMP_Text titleText;
         [SerializeField] Button changeNameBut;
         [SerializeField] Button signOutBut;
+        [SerializeField] Button deleteAccountBut;
 
         private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
@@ -21,6 +22,8 @@ namespace Energy8.Auth.Content
                 taskCompletionSource.TrySetResult(new UserContentResult(UserWindowAction.ChangeName) as TResult));
             signOutBut.onClick.AddListener(() =>
                 taskCompletionSource.TrySetResult(new UserContentResult(UserWindowAction.SignOut) as TResult));
+            deleteAccountBut.onClick.AddListener(() =>
+                taskCompletionSource.TrySetResult(new UserContentResult(UserWindowAction.DeleteAccount) as TResult));
         }
     }
     public class UserContentResult : AuthContentResultBase
@@ -34,6 +37,7 @@ namespace Energy8.Auth.Content
     public enum UserWindowAction
     {
         ChangeName,
-        SignOut
+        SignOut,
+        DeleteAccount
     }
 }

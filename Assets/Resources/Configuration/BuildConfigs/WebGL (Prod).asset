@@ -29,7 +29,7 @@ MonoBehaviour:
   il2CppCompilerConfiguration: 1
   dedicatedServerOptimizations: 0
   prebakeCollisionMeshes: 1
-  managedStrippingLevel: 3
+  managedStrippingLevel: 4
   optimizeMeshData: 1
   textureMipMapStriping: 1
   useCustomKeystore: 0

@@ -42,7 +42,7 @@ var webHLSPlayer = {
             window.hlsVideoElement.pause();
         }
     },
-    SetHLSVolume: (volume) => {
+    SetHLSVolume: function (volume) {
         if (window.hlsVideoElement) {
             window.hlsVideoElement.volume = Math.max(0, Math.min(volume, 1));
         }

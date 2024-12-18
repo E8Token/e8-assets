@@ -3,6 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Energy8.Models;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Energy8.Auth.Content
 {
@@ -19,6 +20,9 @@ namespace Energy8.Auth.Content
 
         [Header("Animation (Base)")]
         [SerializeField][Tooltip("Animation duration in msc")] int animationDuration = 500;
+
+        [Header("Selectable")]
+        [SerializeField] Selectable selectable;
 
         private protected Logger logger;
 
@@ -45,7 +49,11 @@ namespace Energy8.Auth.Content
             Interactable = false;
             AnimateAlphaAsync(showCTS.Token, 0, 1, animationDuration).
                 AttachExternalCancellation(destroyCancellationToken).
-                ContinueWith(() => Interactable = true);
+                ContinueWith(() =>
+                {
+                    Interactable = true;
+                    selectable?.Select();
+                });
         }
         private protected void HideUI()
         {

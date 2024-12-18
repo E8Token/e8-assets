@@ -33,7 +33,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &377543369416441162
 GameObject:
@@ -613,7 +613,7 @@ MonoBehaviour:
     m_Top: 90
     m_Bottom: 90
   m_ChildAlignment: 1
-  m_Spacing: 75
+  m_Spacing: 30
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 1
@@ -650,6 +650,7 @@ MonoBehaviour:
   rt: {fileID: 2238174975538593687}
   canvasGroup: {fileID: 7048105571027369934}
   animationDuration: 250
+  selectable: {fileID: 4428520441766386495}
   yesBut: {fileID: 4428520441766386495}
   noBut: {fileID: 4938175931683296712}
 --- !u!1 &4705541522601079692
@@ -1003,7 +1004,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 90}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &6235089793251004604
 GameObject:

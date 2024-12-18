@@ -114,6 +114,25 @@ MonoBehaviour:
     m_Localized: <link=ContactSupport>Contact Support</link>
     m_Metadata:
       m_Items: []
+  - m_Id: 25194466137165824
+    m_Localized: Do you want to delete your account?
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25194466179108864
+    m_Localized: If you continue, you will be able to delete your account, after
+      that you will not be able to access any Energy 8 products under this account.
+      After deletion, you will be able to contact support for data recovery within
+      two weeks, after this period your account will be permanently deleted.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25200009622933504
+    m_Localized: Delete account
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25210778209046528
+    m_Localized: Change name
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

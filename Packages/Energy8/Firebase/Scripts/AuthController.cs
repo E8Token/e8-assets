@@ -59,7 +59,7 @@ namespace Energy8.Firebase
         {
             auth = FirebaseAuth.GetAuth(app);
             auth.StateChanged += AuthStateChanged;
-            AuthStateChanged(null, null);
+            //AuthStateChanged(null, null);
             logger.Log("Initialized");
         }
 #endif

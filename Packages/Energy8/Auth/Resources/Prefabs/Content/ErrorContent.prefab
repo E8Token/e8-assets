@@ -1657,6 +1657,7 @@ MonoBehaviour:
   rt: {fileID: 2052834496794700775}
   canvasGroup: {fileID: 2130858055032273181}
   animationDuration: 250
+  selectable: {fileID: 0}
   headerText: {fileID: 1800842772506791880}
   descriptionText: {fileID: 6856573219593494116}
   closeBut: {fileID: 4413312748462042658}

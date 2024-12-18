@@ -95,6 +95,22 @@ MonoBehaviour:
     m_Key: ContactSupportButton
     m_Metadata:
       m_Items: []
+  - m_Id: 25194466137165824
+    m_Key: DeleteAccountContentTitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25194466179108864
+    m_Key: DeleteAccountContentDescription
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25200009622933504
+    m_Key: DeleteAccountButton
+    m_Metadata:
+      m_Items: []
+  - m_Id: 25210778209046528
+    m_Key: ChangeNameButtton
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
