@@ -8,6 +8,29 @@ var webHLSPlayer = {
         }
     },
 
+    FetchStreamList: function (callbackObject, callbackFunction) {
+        console.log("Fetching stream list from the server...");
+        callbackObject = UTF8ToString(callbackObject)
+        callbackFunction = UTF8ToString(callbackFunction)
+
+        // Выполняем запрос к серверу для получения списка стримов
+        fetch('/stream/list')
+            .then(response => response.json())
+            .then(data => {
+                console.log("Received stream list from server:", data);
+                // Передаем полученный список стримов обратно в Unity
+                var jsonList = JSON.stringify(data);
+                if (window.unityInstance) {
+                    window.unityInstance.SendMessage(callbackObject, callbackFunction, jsonList);
+                } else {
+                    console.error("UnityLoader is undefined. Can't send stream list.");
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching stream list:", error);
+            });
+    },
+
     SetUrl: function (url) {
         url = UTF8ToString(url);
 

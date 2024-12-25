@@ -54,7 +54,7 @@ PlayerSettings:
   m_SpriteBatchMaxVertexCount: 65535
   m_SpriteBatchVertexThreshold: 300
   m_MTRendering: 1
-  mipStripping: 1
+  mipStripping: 0
   numberOfMipsStripped: 0
   numberOfMipsStrippedPerMipmapLimitGroup: {}
   m_StackTraceTypes: 010000000100000001000000010000000100000001000000
@@ -93,7 +93,7 @@ PlayerSettings:
   submitAnalytics: 1
   usePlayerLog: 1
   dedicatedServerOptimizations: 0
-  bakeCollisionMeshes: 1
+  bakeCollisionMeshes: 0
   forceSingleInstance: 0
   useFlipModelSwapchain: 1
   resizableWindow: 0
@@ -142,7 +142,7 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 0.10.1
+  bundleVersion: 0.10.3
   preloadedAssets:
   - {fileID: 0}
   - {fileID: 11400000, guid: 96661dfb2f6f1854cac9969ae067b0b4, type: 2}
@@ -177,7 +177,7 @@ PlayerSettings:
     iPhone: 0
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
-  AndroidBundleVersionCode: 1001
+  AndroidBundleVersionCode: 1003
   AndroidMinSdkVersion: 24
   AndroidTargetSdkVersion: 34
   AndroidPreferredInstallLocation: 1
@@ -190,7 +190,7 @@ PlayerSettings:
   CreateWallpaper: 0
   androidSplitApplicationBinary: 0
   keepLoadedShadersAlive: 0
-  StripUnusedMeshComponents: 1
+  StripUnusedMeshComponents: 0
   strictShaderVariantMatching: 0
   VertexChannelCompressionMask: -1
   iPhoneSdkVersion: 988
@@ -801,14 +801,14 @@ PlayerSettings:
   webGLExceptionSupport: 1
   webGLNameFilesAsHashes: 0
   webGLShowDiagnostics: 0
-  webGLDataCaching: 1
-  webGLDebugSymbols: 1
+  webGLDataCaching: 0
+  webGLDebugSymbols: 2
   webGLEmscriptenArgs: 
   webGLModulesDirectory: 
   webGLTemplate: PROJECT:Energy8
   webGLAnalyzeBuildSize: 0
   webGLUseEmbeddedResources: 0
-  webGLCompressionFormat: 0
+  webGLCompressionFormat: 2
   webGLWasmArithmeticExceptions: 0
   webGLLinkerTarget: 1
   webGLThreadsSupport: 0
@@ -839,10 +839,10 @@ PlayerSettings:
     WebGL: 1
   il2cppCompilerConfiguration:
     Android: 1
-    WebGL: 1
+    WebGL: 0
   il2cppCodeGeneration:
     Android: 0
-    WebGL: 1
+    WebGL: 0
     iPhone: 1
   il2cppStacktraceInformation: {}
   managedStrippingLevel:
@@ -857,7 +857,7 @@ PlayerSettings:
     Server: 1
     Stadia: 1
     Standalone: 1
-    WebGL: 4
+    WebGL: 0
     Windows Store Apps: 1
     XboxOne: 1
     iPhone: 1

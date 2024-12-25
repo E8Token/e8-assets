@@ -1,7 +1,4 @@
-using System.Text.RegularExpressions;
 using Cysharp.Threading.Tasks;
-using Energy8.Models;
-using Energy8.Models.User;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;

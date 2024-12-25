@@ -12,7 +12,6 @@ namespace Energy8.Auth
     {
         public static new GameAuthControllerBase<UserT, ServerT> Instance => AuthControllerBase.Instance as GameAuthControllerBase<UserT, ServerT>;
 
-        public event Action<UserT> OnUpdateGameUser;
         public event Action<UserT> OnGetGameUser;
 
         public string Game { get; set; } = "Game";
@@ -35,16 +34,17 @@ namespace Energy8.Auth
         protected override async UniTask UpdateUserContentAsync(CancellationToken cancellationToken)
         {
             await GetUserAsync(cancellationToken);
-            bool firstGetUser = GameUser == null;
-            GameUser = await GetGameUserAsync(cancellationToken);
-            if (firstGetUser)
-                OnGetGameUser?.Invoke(GameUser);
-            else
-                OnUpdateGameUser?.Invoke(GameUser);
+            await GetGameUserAsync(cancellationToken);
             await AddAndProcessUserContentAsync(cancellationToken);
         }
 
-        protected async UniTask<UserT> GetGameUserAsync(CancellationToken cancellationToken) =>
+        private protected async UniTask GetGameUserAsync(CancellationToken cancellationToken)
+        {
+            GameUser = await SendGetGameUserRequestAsync(cancellationToken);
+            OnGetGameUser?.Invoke(GameUser);
+        }
+
+        protected async UniTask<UserT> SendGetGameUserRequestAsync(CancellationToken cancellationToken) =>
             await SendRequestAsync<UserT>(
                 cancellationToken, "GetUser", $"{Game}/GetUser", GetMethod, AuthorizationType.Bearer, () => AuthToken, isBackground: true);
 

@@ -243,7 +243,6 @@ namespace Energy8.Auth
 
         private protected async UniTask GetUserAsync(CancellationToken cancellationToken)
         {
-            _logger.Log("GetUserAsync()");
             User = await SendGetUserRequestAsync(cancellationToken);
         }
 
