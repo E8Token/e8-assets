@@ -56,5 +56,5 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "Energy8_Assets.sln"
+    "dotnet.defaultSolution": "e8-assets.sln"
 }

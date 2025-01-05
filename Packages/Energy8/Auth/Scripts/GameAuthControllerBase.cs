@@ -13,6 +13,7 @@ namespace Energy8.Auth
         public static new GameAuthControllerBase<UserT, ServerT> Instance => AuthControllerBase.Instance as GameAuthControllerBase<UserT, ServerT>;
 
         public event Action<UserT> OnGetGameUser;
+        public event Action<UserT> OnGameSignedIn;
 
         public string Game { get; set; } = "Game";
         public string SessionId { get; set; } = string.Empty;
@@ -40,7 +41,10 @@ namespace Energy8.Auth
 
         private protected async UniTask GetGameUserAsync(CancellationToken cancellationToken)
         {
-            GameUser = await SendGetGameUserRequestAsync(cancellationToken);
+            var gameUser = await SendGetGameUserRequestAsync(cancellationToken);
+            if (GameUser == null)
+                OnGameSignedIn?.Invoke(gameUser);
+            GameUser = gameUser;
             OnGetGameUser?.Invoke(GameUser);
         }
 

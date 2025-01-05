@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11bdc50b7425d3749952c56122cde359, type: 3}
   m_Name: WebGL (Prod)
   m_EditorClassIdentifier: 
-  buildPath: Builds/WebGL/Prod/energy-assets
+  buildPath: Builds/WebGL/Prod/Brotli/energy-assets
   buildTarget: 20
   buildTargetGroup: 13
   standaloneBuildSubtarget: 0
@@ -36,8 +36,8 @@ MonoBehaviour:
   minifyType: 0
   keystoreSettingsFile: 
   webGLExceptionSupport: 1
-  dataCaching: 0
-  webGLcompressionFormat: 1
-  webGLdebugSymbolsMode: 2
+  dataCaching: 1
+  webGLcompressionFormat: 0
+  webGLdebugSymbolsMode: 1
   buildAdditionalMobileData: 0
   enableDevelopmentBuild: 0

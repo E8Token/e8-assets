@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11bdc50b7425d3749952c56122cde359, type: 3}
   m_Name: WebGL (Debug)
   m_EditorClassIdentifier: 
-  buildPath: Builds/WebGL/Debug/Energy8Assets
+  buildPath: Builds/WebGL/Debug/energy-assets
   buildTarget: 20
   buildTargetGroup: 13
   standaloneBuildSubtarget: 0

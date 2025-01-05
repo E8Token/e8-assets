@@ -53,12 +53,8 @@ var webHLSPlayer = {
         }
     },
     Play: function () {
-        if (window.hlsVideoElement) {
-            window.hlsVideoElement.addEventListener('loadedmetadata', () => {
-                window.hlsVideoElement.currentTime = window.hlsVideoElement.duration - 0.1;
-                window.hlsVideoElement.play().catch(console.error);
-            });
-        }
+        window.hlsVideoElement.currentTime = window.hlsVideoElement.duration - 0.1;
+        window.hlsVideoElement.play().catch(console.error);
     },
     Pause: function () {
         if (window.hlsVideoElement) {
