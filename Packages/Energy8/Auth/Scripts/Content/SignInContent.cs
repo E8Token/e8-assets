@@ -1,7 +1,5 @@
 using System.Text.RegularExpressions;
 using Cysharp.Threading.Tasks;
-using Energy8.Models;
-using Energy8.Models.User;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +14,7 @@ namespace Energy8.Auth.Content
         [SerializeField] TMP_InputField emailIF;
         [SerializeField] Button nextBut;
         [SerializeField] Button appleBut;
+        [SerializeField] Button telegramBut;
         [SerializeField] Button googleBut;
 
 
@@ -30,6 +29,8 @@ namespace Energy8.Auth.Content
 
             appleBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
                 new SignInContentResult(SignInMethod.Apple, string.Empty) as TResult));
+            telegramBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
+                new SignInContentResult(SignInMethod.Telegram, string.Empty) as TResult));
             googleBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
                 new SignInContentResult(SignInMethod.Google, string.Empty) as TResult));
             nextBut.onClick.AddListener(() => taskCompletionSource.TrySetResult(
@@ -48,11 +49,19 @@ namespace Energy8.Auth.Content
     public class SignInContentResult : AuthContentResultBase
     {
         public SignInMethod SignInMethod { get; set; }
-        public string Email {get; set;}
+        public string Email { get; set; }
         public SignInContentResult(SignInMethod signInMethod, string email)
         {
             SignInMethod = signInMethod;
             Email = email;
         }
+    }
+
+    public enum SignInMethod
+    {
+        Email,
+        Google,
+        Apple,
+        Telegram
     }
 }

@@ -1,59 +1,124 @@
 var firebaseAuth = {
-    InitializeAuth: function (config, objectName, signInCallback, signOutCallback) {
+    InitializeAuth: function (config, objectName, signInCallback, signOutCallback, telegramAuthCallback, errorCallback) {
         console.log("Initializing Firebase Auth...");
 
-        window.initializeFirebase(JSON.parse(UTF8ToString(config)));
         window.firebaseAuthObjectName = UTF8ToString(objectName);
+
+        window.signInCallback = UTF8ToString(signInCallback);
+        window.signOutCallback = UTF8ToString(signOutCallback);
+        window.telegramAuthCallback = UTF8ToString(telegramAuthCallback);
+        window.errorCallback = UTF8ToString(errorCallback);
+
+        window.initializeFirebase(JSON.parse(UTF8ToString(config)));
+        window.initializeTelegramAuth({ bot_id: 8114226239 },
+            function (user) {
+                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                    window.telegramAuthCallback, JSON.stringify(user));
+            },
+            function (error) {
+                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                    window.errorCallback, JSON.stringify(error));
+            });
 
         console.log("Firebase initialized with object name: " + window.firebaseAuthObjectName);
 
-        signInCallback = UTF8ToString(signInCallback);
-        signOutCallback = UTF8ToString(signOutCallback);
-
-        console.log("Callbacks assigned: signInCallback = " + signInCallback + ", signOutCallback = " + signOutCallback);
-
         window.firebaseAuth.onAuthStateChanged((user) => {
             if (user) {
-                console.log("User signed in: " + user.uid);
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName, signInCallback, JSON.stringify(user));
+                console.log("User signed in: " + JSON.stringify(user));
+                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                    window.signInCallback, JSON.stringify(user));
             } else {
                 console.log("User signed out.");
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName, signOutCallback);
+                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                    window.signOutCallback);
             }
         });
     },
 
-    SignInByTokenAsync: function (token, callback, fallback) {
+    SignInWithGoogle: function (addProvider) {
+        const provider = new window.firebaseAuth.GoogleAuthProvider();
+        
+        if (addProvider) {
+            const currentUser = window.firebaseAuth.getCurrentUser();
+            if (currentUser) {
+                window.firebaseAuth.linkWithPopup(provider)
+                    .catch((error) => {
+                        console.error("Google account linking error:", error);
+                        window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                            window.errorCallback, JSON.stringify(error));
+                    });
+            }
+        } else {
+            window.firebaseAuth.signInWithPopup(provider)
+                .catch((error) => {
+                    console.error("Google sign in error:", error);
+                    window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                        window.errorCallback, JSON.stringify(error));
+                });
+        }
+    },
+
+    SignInWithTelegram: function () {
+        window.signInWithTelegram()
+            .then((user) => {
+                console.log("Telegram sign in success:", user);
+                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                    window.telegramAuthCallback, JSON.stringify(user));
+            })
+            .catch((error) => {
+                console.error("Telegram sign in error:", error);
+                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                    window.errorCallback, JSON.stringify(error));
+            });
+    },
+
+    SignInWithApple: function (addProvider) {
+        const provider = new window.firebaseAuth.OAuthProvider('apple.com');
+        
+        if (addProvider) {
+            const currentUser = window.firebaseAuth.getCurrentUser();
+            if (currentUser) {
+                window.firebaseAuth.linkWithPopup(provider)
+                    .catch((error) => {
+                        console.error("Apple account linking error:", error);
+                        window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                            window.errorCallback, JSON.stringify(error));
+                    });
+            }
+        } else {
+            window.firebaseAuth.signInWithPopup(provider)
+                .catch((error) => {
+                    console.error("Apple sign in error:", error);
+                    window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                        window.errorCallback, JSON.stringify(error));
+                });
+        }
+    },
+
+    SignInWithTokenAsync: function (token) {
         console.log("Attempting to sign in with token...");
 
         var token = UTF8ToString(token);
-        var callback = UTF8ToString(callback);
-        var fallback = UTF8ToString(fallback);
 
         console.log("Token received: " + token);
-        console.log("Callback function: " + callback);
-        console.log("Fallback function: " + fallback);
 
         try {
             window.firebaseAuth.signInWithCustomToken(token).then(function (result) {
                 console.log("Sign-in successful. User UID: " + result.user.uid);
-                //window.unityInstance.SendMessage(window.firebaseAuthObjectName, callback, JSON.stringify(result.user));
             }).catch(function (error) {
                 console.error("Sign-in failed: " + error);
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName, fallback, error);
+                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                    window.errorCallback, error);
             });
         } catch (error) {
             console.error("Error during sign-in: " + error.message);
-            window.unityInstance.SendMessage(window.firebaseAuthObjectName, fallback, error);
+            window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                window.errorCallback, error);
         }
     },
-    GetIdToken: function (forceRefresh, callback, fallback) {
+    GetIdToken: function (forceRefresh) {
         console.log("Attempting to get ID token...");
 
-        var callback = UTF8ToString(callback);
-        var fallback = UTF8ToString(fallback);
-
-        // Get the currently authenticated user
         var user = window.firebaseAuth.getCurrentUser();
 
         if (user) {
@@ -62,15 +127,16 @@ var firebaseAuth = {
             user.getIdToken(forceRefresh)
                 .then(function (idToken) {
                     console.log("ID token retrieved successfully.");
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, callback, idToken);
+                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, "OnTokenReceivedCallback", idToken); //TODO 
                 })
                 .catch(function (error) {
                     console.error("Error retrieving ID token: " + error.message);
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, fallback, error);
+                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.errorCallback, error);
                 });
         } else {
             console.log("No user signed in.");
-            window.unityInstance.SendMessage(window.firebaseAuthObjectName, fallback, "No user is currently signed in.");
+            window.unityInstance.SendMessage(window.firebaseAuthObjectName,
+                window.errorCallback, "No user is currently signed in.");
         }
     },
 

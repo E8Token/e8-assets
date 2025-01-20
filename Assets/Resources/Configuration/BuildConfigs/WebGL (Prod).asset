@@ -39,5 +39,5 @@ MonoBehaviour:
   dataCaching: 1
   webGLcompressionFormat: 0
   webGLdebugSymbolsMode: 1
-  buildAdditionalMobileData: 0
+  buildAdditionalMobileData: 1
   enableDevelopmentBuild: 0

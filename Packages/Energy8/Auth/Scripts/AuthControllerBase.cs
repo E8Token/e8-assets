@@ -13,6 +13,8 @@ using System.Net;
 using Energy8.Models.Errors;
 using static Energy8.Requests.RequestsController;
 using System.Linq;
+using Newtonsoft.Json;
+
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Models.WebGL.Firebase;
@@ -140,8 +142,9 @@ namespace Energy8.Auth
                     return signInResult.SignInMethod switch
                     {
                         SignInMethod.Email => await SignInByEmailAsync(cancellationToken, signInResult.Email),
-                        SignInMethod.Google => null,
-                        SignInMethod.Apple => null,
+                        SignInMethod.Google => await SignInWithGoogleAsync(cancellationToken),
+                        SignInMethod.Apple => await SignInWithAppleAsync(cancellationToken),
+                        SignInMethod.Telegram => await SignInWithTelegramAsync(cancellationToken),
                         _ => null,
                     };
                 });
@@ -149,15 +152,16 @@ namespace Energy8.Auth
         }
 
         #region Email
-        async UniTask<FirebaseUser> SignInByEmailAsync(CancellationToken cancellationToken, string email)
+        async UniTask<FirebaseUser> SignInByEmailAsync(CancellationToken cancellationToken, string email, bool addProvider = false)
         {
             _logger.Log($"SignInByEmailAsync({email})");
             var confTokenResult = await SendSignInByEmailAsync(cancellationToken, email);
-            var authTokenResult = await ConfirmEmailByCodeAsync(cancellationToken, email, confTokenResult.Token);
-            return await SignInByCustomToken(cancellationToken, authTokenResult.AuthToken);
+            var authTokenResult = await ConfirmEmailByCodeAsync(cancellationToken, email, confTokenResult.Token, addProvider);
+            return addProvider ? AuthController.User :
+                await SignInByCustomToken(cancellationToken, authTokenResult.AuthToken);
         }
 
-        async UniTask<ConfirmSignInResponseData> ConfirmEmailByCodeAsync(CancellationToken cancellationToken, string email, string token)
+        async UniTask<ConfirmSignInResponseData> ConfirmEmailByCodeAsync(CancellationToken cancellationToken, string email, string token, bool addProvider)
         {
             _logger.Log($"ConfirmEmailByCodeAsync({email}, {token})");
             ConfirmSignInResponseData authTokenResult;
@@ -168,38 +172,82 @@ namespace Energy8.Auth
                 (status, authTokenResult) = await RunWithHandlingError(cancellationToken, async () =>
                 {
                     var codeContentResult = await AddAndProcessContentAsync<CodeContent, CodeContentResult>(cancellationToken);
-                    return await SendConfirmSignInAsync(cancellationToken, email.ToLower(), token, codeContentResult.Code);
+                    string authId = addProvider ? AuthController.User.UserId : null;
+                    return await SendConfirmSignInAsync(cancellationToken, token, codeContentResult.Code, authId);
                 });
             }
             while (status == RunWithHandlingErrorStatus.Cancelled);
 
             return authTokenResult;
         }
+
         async UniTask<FirebaseUser> SignInByCustomToken(CancellationToken cancellationToken, string token)
         {
             _logger.Log($"SignInByCustomToken({token})");
             async UniTask<object> sendAuthRequest() =>
-                await AuthController.SignInByTokenAsync(cancellationToken, token);
+                await AuthController.SignInWithTokenAsync(cancellationToken, token);
 
             return (FirebaseUser)(await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
                 LoadingContentType.Object, (Func<UniTask<object>>)sendAuthRequest)).ObjectResult;
         }
 
-        async UniTask<SignInByEmailResponseData> SendSignInByEmailAsync(
+        async UniTask<FirebaseUser> SignInWithGoogleAsync(CancellationToken cancellationToken, bool addProvider = false)
+        {
+            _logger.Log($"SignInWithGoogle()");
+            async UniTask<object> sendAuthRequest() =>
+                await AuthController.SignInWithGoogleAsync(cancellationToken, addProvider);
+
+            return (FirebaseUser)(await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
+                LoadingContentType.Object, (Func<UniTask<object>>)sendAuthRequest)).ObjectResult;
+        }
+
+        async UniTask<FirebaseUser> SignInWithAppleAsync(CancellationToken cancellationToken, bool addProvider = false)
+        {
+            _logger.Log($"SignInWithApple()");
+            async UniTask<object> sendAuthRequest() =>
+                await AuthController.SignInWithAppleAsync(cancellationToken, addProvider);
+
+            return (FirebaseUser)(await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
+                LoadingContentType.Object, (Func<UniTask<object>>)sendAuthRequest)).ObjectResult;
+        }
+
+        async UniTask<FirebaseUser> SignInWithTelegramAsync(CancellationToken cancellationToken, bool addProvider = false)
+        {
+            _logger.Log($"SignInWithTelegram()");
+            async UniTask<object> sendAuthRequest() =>
+                await AuthController.SignInWithTelegramAsync(cancellationToken);
+
+            (TelegramUserData user, string hash) = ((TelegramUserData, string))(await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(cancellationToken,
+                LoadingContentType.Object, (Func<UniTask<object>>)sendAuthRequest)).ObjectResult;
+
+            string authId = addProvider ? AuthController.User.UserId : null;
+
+            var authTokenResult = await SendConfirmTelegramByHashAsync(cancellationToken, user, hash, authId);
+            return addProvider ? AuthController.User :
+                await SignInByCustomToken(cancellationToken, authTokenResult.AuthToken);
+        }
+
+        async UniTask<SignInWithEmailResponseData> SendSignInByEmailAsync(
             CancellationToken cancellationToken, string email) =>
-                await SendRequestAsync<SignInByEmailResponseData>(
-                    cancellationToken, "SignInByEmail", "User/SignInByEmail", PostMethod, AuthorizationType.None, null, false, ("Email", email));
+                await SendRequestAsync<SignInWithEmailResponseData>(
+                    cancellationToken, "SignInByEmail", "User/SignInWithEmail", PostMethod, AuthorizationType.None, null, false, ("Email", email));
 
         async UniTask<ConfirmSignInResponseData> SendConfirmSignInAsync(
-            CancellationToken cancellationToken, string email, string token, string code) =>
+            CancellationToken cancellationToken, string token, string code, string authId) =>
                 await SendRequestAsync<EmailCodeRequestData, ConfirmSignInResponseData>(
-                    cancellationToken, "ConfirmSignInByEmail", "User/ConfirmSignInByEmail", PostMethod, AuthorizationType.None,
-                    null, new EmailCodeRequestData(email, token, code));
+                    cancellationToken, "ConfirmSignInWithEmail", "User/ConfirmSignInWithEmail", PostMethod, AuthorizationType.None,
+                    null, new EmailCodeRequestData(token, code, authId));
         async UniTask SendConfirmDeleteAccountAsync(
-        CancellationToken cancellationToken, string email, string token, string code) =>
-            await SendRequestAsync(cancellationToken, "ConfirmDeleteAccountByEmail",
-                "User/ConfirmDeleteAccountByEmail", DeleteMethod, AuthorizationType.Bearer,
-                () => AuthToken, new EmailCodeRequestData(email, token, code));
+        CancellationToken cancellationToken, string token, string code) =>
+            await SendRequestAsync(cancellationToken, "ConfirmDeleteAccountWithEmail",
+                "User/ConfirmDeleteAccountWithEmail", DeleteMethod, AuthorizationType.Bearer,
+                () => AuthToken, new EmailCodeRequestData(token, code));
+
+        async UniTask<ConfirmSignInResponseData> SendConfirmTelegramByHashAsync(
+        CancellationToken cancellationToken, TelegramUserData telegramUser, string hash, string authId = null) =>
+            await SendRequestAsync<TelegramHashRequestData, ConfirmSignInResponseData>(
+                cancellationToken, "ConfirmTelegramByHash", "User/ConfirmTelegramByHash", PostMethod, AuthorizationType.None,
+                null, new TelegramHashRequestData(telegramUser, hash, authId));
         #endregion
 
         #region Google
@@ -217,8 +265,8 @@ namespace Energy8.Auth
         #region  UserWindow
         private async UniTask ShowUserContentAsync(CancellationToken cancellationToken)
         {
-            await UniTask.WaitUntil(() => IsInitialized).
-                AttachExternalCancellation(cancellationToken);
+            // await UniTask.WaitUntil(() => IsInitialized).
+            //     AttachExternalCancellation(cancellationToken);
             await UpdateAuthTokenAsync(cancellationToken, true);
             do
             {
@@ -252,21 +300,18 @@ namespace Energy8.Auth
 
             if (userResult.ResultType == UserWindowAction.SignOut)
                 AuthController.SignOut();
-            else if (userResult.ResultType == UserWindowAction.DeleteAccount)
-                await AddAndProcessDeleteAccountContent(cancellationToken);
-            else
-            {
-                await AddAndProcessChangeNameContent(cancellationToken);
-            }
+            else if (userResult.ResultType == UserWindowAction.OpenSettings)
+                await AddAndProcessSettingsContentAsync(cancellationToken);
         }
+
         async UniTask AddAndProcessDeleteAccountContent(CancellationToken cancellationToken)
         {
             await RunWithHandlingError(cancellationToken, async () =>
             {
                 await AddAndProcessContentAsync<DeleteAccountContent, DeleteAccountContentResult>(cancellationToken);
-                var response = await SendRequestAsync<DeleteAccountByEmailResponseData>(cancellationToken, "DeleteAccount", "User/DeleteAccount", DeleteMethod, AuthorizationType.Bearer, () => AuthToken, false);
+                var response = await SendRequestAsync<DeleteAccountWithEmailResponseData>(cancellationToken, "DeleteAccount", "User/DeleteAccount", DeleteMethod, AuthorizationType.Bearer, () => AuthToken, false);
                 var codeContentResult = await AddAndProcessContentAsync<CodeContent, CodeContentResult>(cancellationToken);
-                await SendConfirmDeleteAccountAsync(cancellationToken, User.Email, response.Token, codeContentResult.Code);
+                await SendConfirmDeleteAccountAsync(cancellationToken, response.Token, codeContentResult.Code);
             });
         }
         async UniTask AddAndProcessChangeNameContent(CancellationToken cancellationToken)
@@ -275,6 +320,58 @@ namespace Energy8.Auth
             {
                 var changeNameContentResult = await AddAndProcessContentAsync<ChangeNameContent, ChangeNameContentResult>(cancellationToken);
                 await SendChangeNameRequestAsync(cancellationToken, changeNameContentResult.Name);
+            });
+        }
+
+        private protected async UniTask AddAndProcessSettingsContentAsync(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var settingsResult = await AddAndProcessContentAsync<SettingsContent, SettingsContentResult>(cancellationToken,
+                false, false, false, false, false);
+
+                switch (settingsResult.ResultType)
+                {
+                    case SettingsWindowAction.ChangeName:
+                        await AddAndProcessChangeNameContent(cancellationToken);
+                        continue;
+
+                    case SettingsWindowAction.DeleteAccount:
+                        await AddAndProcessDeleteAccountContent(cancellationToken);
+                        return;
+
+                    case SettingsWindowAction.AddGoogleProvider:
+                        await SignInWithGoogleAsync(cancellationToken, true);
+                        continue;
+
+                    case SettingsWindowAction.AddAppleProvider:
+                        await SignInWithAppleAsync(cancellationToken, true);
+                        continue;
+
+                    case SettingsWindowAction.AddTelegramProvider:
+                        await SignInWithTelegramAsync(cancellationToken, true);
+                        continue;
+
+                    case SettingsWindowAction.AddEmailProvider:
+                        await AddAndProcessAddEmailProviderContent(cancellationToken);
+                        continue;
+
+                    default:
+                        return;
+                }
+            }
+        }
+
+        async UniTask AddAndProcessAddEmailProviderContent(CancellationToken cancellationToken, bool addProvider = true)
+        {
+            await RunWithHandlingError(cancellationToken, async () =>
+            {
+                var emailResult = await AddAndProcessContentAsync<SignInContent, SignInContentResult>(cancellationToken);
+                if (emailResult.SignInMethod != SignInMethod.Email)
+                    return;
+
+                var confTokenResult = await SendSignInByEmailAsync(cancellationToken, emailResult.Email);
+                var authTokenResult = await ConfirmEmailByCodeAsync(cancellationToken, emailResult.Email, confTokenResult.Token, addProvider);
             });
         }
 
@@ -477,7 +574,7 @@ namespace Energy8.Auth
             throw exception;
         }
         protected async UniTask<TResponse> SendRequestAsync<TResponse>(CancellationToken cancellationToken,
-            string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, bool isBackground = false, params (string key, string value)[] requestDataFields)
+            string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, bool isBackground = false, params (string key, object value)[] requestDataFields)
             where TResponse : Data
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -523,7 +620,7 @@ namespace Energy8.Auth
         }
 
         protected async UniTask SendRequestAsync(CancellationToken cancellationToken,
-            string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, bool isBackground = false, params (string key, string value)[] requestDataFields)
+            string requestName, string endpoint, string method, AuthorizationType authType, Func<string> getAuthData, bool isBackground = false, params (string key, object value)[] requestDataFields)
         {
             cancellationToken.ThrowIfCancellationRequested();
             _logger.Log($"SendRequestAsync({requestName}, {endpoint}, {method}, {authType}, {isBackground}, {string.Join(" ", requestDataFields)})");
@@ -599,7 +696,7 @@ namespace Energy8.Auth
         {
             AuthController.OnSignedIn += (user) =>
             {
-                _logger.Log($"OnSignedIn({user})");
+                _logger.Log($"OnSignedIn({JsonConvert.SerializeObject(user)})");
                 OnSignedIn?.Invoke(User);
                 _onSignedInCTS?.Cancel();
                 _onSignedOutCTS = new();

@@ -7,6 +7,7 @@ using Energy8.Models;
 using System.Net;
 using Energy8.Models.Errors;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Energy8.Requests
 {
@@ -31,7 +32,7 @@ namespace Energy8.Requests
             AuthorizationType authorizationType = AuthorizationType.None,
             string authorizationData = "",
             Data requestData = null,
-            params (string key, string value)[] requestDataFields)
+            params (string key, object value)[] requestDataFields)
         {
             if (authorizationData is null)
                 return Send(CreateRequest(endpoint, PostMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
@@ -44,7 +45,7 @@ namespace Energy8.Requests
             AuthorizationType authorizationType = AuthorizationType.None,
             string authorizationData = "",
             Data requestData = null,
-            params (string key, string value)[] requestDataFields) where T : Data
+            params (string key, object value)[] requestDataFields) where T : Data
         {
             if (requestData is null)
                 return Send<T>(CreateRequest(endpoint, PostMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
@@ -57,7 +58,7 @@ namespace Energy8.Requests
             AuthorizationType authorizationType = AuthorizationType.None,
             string authorizationData = "",
             Data requestData = null,
-            params (string key, string value)[] requestDataFields)
+            params (string key, object value)[] requestDataFields)
         {
             if (requestData is null)
                 return Send(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
@@ -70,7 +71,7 @@ namespace Energy8.Requests
             AuthorizationType authorizationType = AuthorizationType.None,
             string authorizationData = "",
             Data requestData = null,
-            params (string key, string value)[] requestDataFields) where T : Data
+            params (string key, object value)[] requestDataFields) where T : Data
         {
             if (requestData is null)
                 return Send<T>(CreateRequest(endpoint, PutMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
@@ -84,7 +85,7 @@ namespace Energy8.Requests
             AuthorizationType authorizationType = AuthorizationType.None,
             string authorizationData = "",
             Data requestData = null,
-            params (string key, string value)[] requestDataFields)
+            params (string key, object value)[] requestDataFields)
         {
             if (requestData is null)
                 return Send(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
@@ -97,7 +98,7 @@ namespace Energy8.Requests
             AuthorizationType authorizationType = AuthorizationType.None,
             string authorizationData = "",
             Data requestData = null,
-            params (string key, string value)[] requestDataFields) where T : Data
+            params (string key, object value)[] requestDataFields) where T : Data
         {
             if (requestData is null)
                 return Send<T>(CreateRequest(endpoint, DeleteMethod, authorizationType, authorizationData, GetFormData(requestDataFields)));
@@ -110,35 +111,36 @@ namespace Energy8.Requests
             string endpoint,
             AuthorizationType authorizationType,
             string authorizationData = "",
-            params (string key, string value)[] headers) =>
+            params (string key, object value)[] headers) =>
                 Send(CreateRequest(endpoint, GetMethod, authorizationType, authorizationData, headers: GetRequestHeaders(headers)));
 
         public static UniTask<T> Get<T>(
             string endpoint,
             AuthorizationType authorizationType,
             string authorizationData = "",
-            params (string key, string value)[] headers) where T : Data =>
+            params (string key, object value)[] headers) where T : Data =>
                 Send<T>(CreateRequest(endpoint, GetMethod, authorizationType, authorizationData, headers: GetRequestHeaders(headers)));
 
-        static WWWForm GetFormData(params (string key, string value)[] fields)
+        static WWWForm GetFormData(params (string key, object value)[] fields)
         {
             WWWForm form = new();
             foreach (var (key, value) in fields)
-                form.AddField(key, value);
+                form.AddField(key, value.ToString());
             return form;
         }
         static WWWForm GetFormData(Data data)
         {
             WWWForm form = new();
             var headers = data?.ToDictionary();
+            _logger.Log($"FormData({JsonConvert.SerializeObject(headers)})");
             foreach (var key in headers.Keys)
-                form.AddField(key, headers[key]);
+                form.AddField(key, headers[key].ToString());
             return form;
         }
 
-        static Dictionary<string, string> GetRequestHeaders(params (string key, string value)[] headers) =>
+        static Dictionary<string, object> GetRequestHeaders(params (string key, object value)[] headers) =>
             headers.ToDictionary((header) => header.key, (header) => header.value);
-        static Dictionary<string, string> GetRequestHeaders(Data data) =>
+        static Dictionary<string, object> GetRequestHeaders(Data data) =>
             data.ToDictionary();
 
         static UnityWebRequest CreateRequest(
@@ -147,7 +149,7 @@ namespace Energy8.Requests
             AuthorizationType authorizationType,
             string authorizationData = "",
             WWWForm form = null,
-            Dictionary<string, string> headers = null)
+            Dictionary<string, object> headers = null)
         {
             UnityWebRequest request;
 
@@ -165,7 +167,7 @@ namespace Energy8.Requests
 
             if (headers is not null)
                 foreach (var key in headers.Keys)
-                    request.SetRequestHeader(key, headers[key]);
+                    request.SetRequestHeader(key, headers[key].ToString());
 
             return request;
         }

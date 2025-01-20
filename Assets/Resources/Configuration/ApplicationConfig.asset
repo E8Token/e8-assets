@@ -18,9 +18,9 @@ MonoBehaviour:
   - ipType: 1
     ipAddress: http://localhost:5001
   - ipType: 2
-    ipAddress: http://194.135.91.70:5001
+    ipAddress: http://176.223.131.88:5001
   - ipType: 3
-    ipAddress: https://games.energy8.io/debug
+    ipAddress: https://debug.energy8.io
   - ipType: 4
     ipAddress: http://176.223.131.88:5000
   - ipType: 5

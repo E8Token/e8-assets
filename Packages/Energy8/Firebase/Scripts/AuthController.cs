@@ -1,9 +1,9 @@
 using UnityEngine;
 using System;
 using Cysharp.Threading.Tasks;
-using System.Threading.Tasks;
 using System.Threading;
 using Energy8.Models.Errors;
+using Energy8.Models.SignIn;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Plugins.WebGL.Firebase;
@@ -22,6 +22,7 @@ namespace Energy8.Firebase
 #endif
 
         static FirebaseUser _user;
+        public static FirebaseUser User => _user;
 
         static readonly Logger logger = new(null, "AuthController", new Color(0.5f, 0.1f, 0.6f));
 
@@ -79,10 +80,10 @@ namespace Energy8.Firebase
 #endif
         }
 
-        public static async UniTask<FirebaseUser> SignInByTokenAsync(CancellationToken cancellationToken, string token)
+        public static async UniTask<FirebaseUser> SignInWithTokenAsync(CancellationToken cancellationToken, string token)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            return await FirebaseAuthWebGL.Instance.SignInByTokenAsync(cancellationToken, token);
+            return await FirebaseAuthWebGL.Instance.SignInWithTokenAsync(cancellationToken, token);
 #else
             try
             {
@@ -92,6 +93,36 @@ namespace Energy8.Firebase
             {
                 throw new ErrorDataException("Authorization Error", ex.Message, canProceed: true, mustSignOut: true);
             }
+#endif
+        }
+
+        public static async UniTask<FirebaseUser> SignInWithGoogleAsync(CancellationToken cancellationToken, bool addProvider)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return await FirebaseAuthWebGL.Instance.SignInWithGoogleAsync(cancellationToken, addProvider);
+#else
+            await UniTask.Yield();
+            return null;
+#endif
+        }
+
+        public static async UniTask<FirebaseUser> SignInWithAppleAsync(CancellationToken cancellationToken, bool addProvider)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return await FirebaseAuthWebGL.Instance.SignInWithAppleAsync(cancellationToken, addProvider);
+#else
+            await UniTask.Yield();
+            return null;
+#endif
+        }
+
+        public static async UniTask<(TelegramUserData, string)> SignInWithTelegramAsync(CancellationToken cancellationToken)
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            return await FirebaseAuthWebGL.Instance.SignInWithTelegramAsync(cancellationToken);
+#else
+            await UniTask.Yield();
+            return (null, "");
 #endif
         }
 
@@ -116,20 +147,6 @@ namespace Energy8.Firebase
         }
         public static void SignOut() => FirebaseAuthWebGL.SignOut();
 #else
-        public static async UniTask<AuthResult> SignInByGoogleAsync(string token, CancellationToken cancellationToken)
-        {
-            Credential credential = GoogleAuthProvider.GetCredential(token, null);
-            Task<AuthResult> task = auth.SignInAndRetrieveDataWithCredentialAsync(credential);
-            await task.AsUniTask().AttachExternalCancellation(cancellationToken);
-
-            if (task.IsCanceled)
-                throw new Exception("SignInAndRetrieveDataWithCredentialAsync was canceled.");
-            if (task.IsFaulted)
-                throw new Exception("SignInAndRetrieveDataWithCredentialAsync encountered an error: " + task.Exception);
-
-            return task.Result;
-        }
-
         static void AuthStateChanged(object sender, EventArgs eventArgs)
         {
             if (auth.CurrentUser != _user)
