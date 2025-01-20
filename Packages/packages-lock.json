@@ -14,6 +14,46 @@
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
+    "com.google.firebase.analytics": {
+      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.analytics-12.5.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "12.5.0"
+      }
+    },
+    "com.google.firebase.app": {
+      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.app-12.5.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.external-dependency-manager": "1.2.183"
+      }
+    },
+    "com.google.firebase.auth": {
+      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.auth-12.5.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "12.5.0"
+      }
+    },
+    "com.google.firebase.crashlytics": {
+      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.crashlytics-12.5.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "12.5.0"
+      }
+    },
+    "com.google.firebase.messaging": {
+      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.messaging-12.5.0.tgz",
+      "depth": 0,
+      "source": "local-tarball",
+      "dependencies": {
+        "com.google.firebase.app": "12.5.0"
+      }
+    },
     "com.unity.2d.animation": {
       "version": "10.1.4",
       "depth": 1,
