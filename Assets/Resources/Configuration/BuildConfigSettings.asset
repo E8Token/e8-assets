@@ -17,4 +17,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f6b4af44f65df2c40b6bba2777486dd9, type: 2}
   - {fileID: 11400000, guid: 4c25a6b7cf8a78c49a6bd13b7778a695, type: 2}
   - {fileID: 11400000, guid: ea885837e9ad80a438313c68a483ba03, type: 2}
-  selectedConfigIndex: 2
+  - {fileID: 11400000, guid: 223ee4c5dab89ed4daddf930900187be, type: 2}
+  selectedConfigIndex: 1

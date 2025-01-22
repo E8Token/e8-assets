@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11bdc50b7425d3749952c56122cde359, type: 3}
+  m_Name: Configuration5
+  m_EditorClassIdentifier: 
+  buildPath: Builds/
+  buildTarget: 0
+  buildTargetGroup: 0
+  standaloneBuildSubtarget: 0
+  compression: 0
+  ipType: 0
+  insecureHttpOption: 0
+  scenesToBuild: []
+  copyScenes: 0
+  buildScenesPath: Assets/Scenes/Build/
+  scriptingBackend: 0
+  compatibilityLevel: 0
+  il2CppCodeGeneration: 0
+  il2CppCompilerConfiguration: 0
+  dedicatedServerOptimizations: 0
+  prebakeCollisionMeshes: 0
+  managedStrippingLevel: 0
+  optimizeMeshData: 0
+  textureMipMapStriping: 0
+  useCustomKeystore: 0
+  minifyType: 0
+  keystoreSettingsFile: 
+  webGLExceptionSupport: 0
+  dataCaching: 0
+  webGLcompressionFormat: 0
+  webGLdebugSymbolsMode: 0
+  buildAdditionalMobileData: 0
+  enableDevelopmentBuild: 0

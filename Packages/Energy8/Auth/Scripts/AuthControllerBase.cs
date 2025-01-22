@@ -173,7 +173,7 @@ namespace Energy8.Auth
                 {
                     var codeContentResult = await AddAndProcessContentAsync<CodeContent, CodeContentResult>(cancellationToken);
                     string authId = addProvider ? AuthController.User.UserId : null;
-                    return await SendConfirmSignInAsync(cancellationToken, token, codeContentResult.Code, authId);
+                    return await SendConfirmSignInAsync(cancellationToken, token, codeContentResult.Code);
                 });
             }
             while (status == RunWithHandlingErrorStatus.Cancelled);
@@ -233,14 +233,14 @@ namespace Energy8.Auth
                     cancellationToken, "SignInByEmail", "User/SignInWithEmail", PostMethod, AuthorizationType.None, null, false, ("Email", email));
 
         async UniTask<ConfirmSignInResponseData> SendConfirmSignInAsync(
-            CancellationToken cancellationToken, string token, string code, string authId) =>
+            CancellationToken cancellationToken, string token, string code) =>
                 await SendRequestAsync<EmailCodeRequestData, ConfirmSignInResponseData>(
-                    cancellationToken, "ConfirmSignInWithEmail", "User/ConfirmSignInWithEmail", PostMethod, AuthorizationType.None,
-                    null, new EmailCodeRequestData(token, code, authId));
+                    cancellationToken, "ConfirmEmailWithCode", "User/ConfirmEmailWithCode", PostMethod, AuthorizationType.None,
+                    null, new EmailCodeRequestData(token, code));
         async UniTask SendConfirmDeleteAccountAsync(
         CancellationToken cancellationToken, string token, string code) =>
-            await SendRequestAsync(cancellationToken, "ConfirmDeleteAccountWithEmail",
-                "User/ConfirmDeleteAccountWithEmail", DeleteMethod, AuthorizationType.Bearer,
+            await SendRequestAsync(cancellationToken, "ConfirmEmailWithCode",
+                "User/ConfirmEmailWithCode", DeleteMethod, AuthorizationType.Bearer,
                 () => AuthToken, new EmailCodeRequestData(token, code));
 
         async UniTask<ConfirmSignInResponseData> SendConfirmTelegramByHashAsync(
@@ -328,7 +328,10 @@ namespace Energy8.Auth
             while (!cancellationToken.IsCancellationRequested)
             {
                 var settingsResult = await AddAndProcessContentAsync<SettingsContent, SettingsContentResult>(cancellationToken,
-                false, false, false, false, false);
+                User.Name, AuthController.User.Email,
+                User.AuthProviders.Contains("Google"),
+                User.AuthProviders.Contains("Google"),
+                User.AuthProviders.Contains("Google"));
 
                 switch (settingsResult.ResultType)
                 {
@@ -338,6 +341,7 @@ namespace Energy8.Auth
 
                     case SettingsWindowAction.DeleteAccount:
                         await AddAndProcessDeleteAccountContent(cancellationToken);
+                        AuthController.SignOut();
                         return;
 
                     case SettingsWindowAction.AddGoogleProvider:
@@ -353,7 +357,7 @@ namespace Energy8.Auth
                         continue;
 
                     case SettingsWindowAction.AddEmailProvider:
-                        await AddAndProcessAddEmailProviderContent(cancellationToken);
+                        await AddAndProcessChangeEmailContent(cancellationToken);
                         continue;
 
                     default:
@@ -362,14 +366,11 @@ namespace Energy8.Auth
             }
         }
 
-        async UniTask AddAndProcessAddEmailProviderContent(CancellationToken cancellationToken, bool addProvider = true)
+        async UniTask AddAndProcessChangeEmailContent(CancellationToken cancellationToken, bool addProvider = true)
         {
             await RunWithHandlingError(cancellationToken, async () =>
             {
-                var emailResult = await AddAndProcessContentAsync<SignInContent, SignInContentResult>(cancellationToken);
-                if (emailResult.SignInMethod != SignInMethod.Email)
-                    return;
-
+                var emailResult = await AddAndProcessContentAsync<ChangeEmailContent, ChangeEmailContentResult>(cancellationToken);
                 var confTokenResult = await SendSignInByEmailAsync(cancellationToken, emailResult.Email);
                 var authTokenResult = await ConfirmEmailByCodeAsync(cancellationToken, emailResult.Email, confTokenResult.Token, addProvider);
             });
@@ -509,7 +510,8 @@ namespace Energy8.Auth
                         await UniTask.Create(request);
                     else
                         await AddAndProcessContentAsync<LoadingContent, LoadingContentResult>(
-                            cancellationToken, LoadingContentType.WebRequest, request);
+                            cancellationToken, LoadingContentType.Empty, request);
+                    return;
                 }
                 catch (RequestErrorDataException ex)
                 {

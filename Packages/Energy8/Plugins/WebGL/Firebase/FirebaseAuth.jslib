@@ -1,11 +1,14 @@
 var firebaseAuth = {
-    InitializeAuth: function (config, objectName, signInCallback, signOutCallback, telegramAuthCallback, errorCallback) {
+    InitializeAuth: function (config, objectName, signInCallback, signOutCallback,
+        tokenReceivedCallback, telegramAuthCallback, errorCallback) {
+            
         console.log("Initializing Firebase Auth...");
 
         window.firebaseAuthObjectName = UTF8ToString(objectName);
 
         window.signInCallback = UTF8ToString(signInCallback);
         window.signOutCallback = UTF8ToString(signOutCallback);
+        window.tokenReceivedCallback = UTF8ToString(tokenReceivedCallback);
         window.telegramAuthCallback = UTF8ToString(telegramAuthCallback);
         window.errorCallback = UTF8ToString(errorCallback);
 
@@ -127,7 +130,7 @@ var firebaseAuth = {
             user.getIdToken(forceRefresh)
                 .then(function (idToken) {
                     console.log("ID token retrieved successfully.");
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, "OnTokenReceivedCallback", idToken); //TODO 
+                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.tokenReceivedCallback, idToken); 
                 })
                 .catch(function (error) {
                     console.error("Error retrieving ID token: " + error.message);

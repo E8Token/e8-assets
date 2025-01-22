@@ -1,5 +1,4 @@
 using Cysharp.Threading.Tasks;
-using System;
 using System.Linq;
 using UnityEngine.Networking;
 using UnityEngine;
@@ -26,6 +25,7 @@ namespace Energy8.Requests
 
         static readonly Logger _logger = new(null, "RequestsController", new Color(0.5f, 0.8f, 0f));
         static string RemoteAddress => ApplicationConfig.SelectedIP;
+
 
         public static UniTask Post(
             string endpoint,

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
@@ -11,21 +10,29 @@ namespace Energy8.Auth.Content
         [Header("UI (User)")]
         [SerializeField] TMP_Text titleText;
         [SerializeField] Button closeSettingsBut;
+
+        [SerializeField] TMP_Text nameText;
         [SerializeField] Button changeNameBut;
-        [SerializeField] Button addEmailBut;
+
+        [SerializeField] TMP_Text emailText;
+        [SerializeField] Button changeEmailBut;
+
         [SerializeField] Button addGoogleBut;
         [SerializeField] Button addAppleBut;
         [SerializeField] Button addTelegramBut;
+
         [SerializeField] Button deleteAccountBut;
 
         private protected override void Initialize<TResult>(UniTaskCompletionSource<TResult> taskCompletionSource, params object[] args)
         {
             base.Initialize(taskCompletionSource, args);
 
-            addEmailBut.interactable = !(bool)args[0];
-            addGoogleBut.interactable = !(bool)args[1];
-            addAppleBut.interactable = !(bool)args[2];
-            addTelegramBut.interactable = !(bool)args[3];
+            nameText.text = (string)args[0];
+            emailText.text = (string)args[1];
+
+            addGoogleBut.interactable = !(bool)args[2];
+            addAppleBut.interactable = !(bool)args[3];
+            addTelegramBut.interactable = !(bool)args[4];
 
             closeSettingsBut.onClick.AddListener(() =>
                 taskCompletionSource.TrySetResult(new SettingsContentResult(SettingsWindowAction.Close) as TResult));
@@ -35,14 +42,14 @@ namespace Energy8.Auth.Content
 
             deleteAccountBut.onClick.AddListener(() =>
                 taskCompletionSource.TrySetResult(new SettingsContentResult(SettingsWindowAction.DeleteAccount) as TResult));
-                
+
             addGoogleBut.onClick.AddListener(() =>
                 taskCompletionSource.TrySetResult(new SettingsContentResult(SettingsWindowAction.AddGoogleProvider) as TResult));
             addAppleBut.onClick.AddListener(() =>
                 taskCompletionSource.TrySetResult(new SettingsContentResult(SettingsWindowAction.AddAppleProvider) as TResult));
             addTelegramBut.onClick.AddListener(() =>
                 taskCompletionSource.TrySetResult(new SettingsContentResult(SettingsWindowAction.AddTelegramProvider) as TResult));
-            addEmailBut.onClick.AddListener(() =>
+            changeEmailBut.onClick.AddListener(() =>
                 taskCompletionSource.TrySetResult(new SettingsContentResult(SettingsWindowAction.AddEmailProvider) as TResult));
         }
     }

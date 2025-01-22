@@ -1598,7 +1598,7 @@ GameObject:
   - component: {fileID: 3722856550179562398}
   - component: {fileID: 5133470121335717917}
   m_Layer: 5
-  m_Name: GoogleAppleButtons
+  m_Name: ProvidersButtons
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
