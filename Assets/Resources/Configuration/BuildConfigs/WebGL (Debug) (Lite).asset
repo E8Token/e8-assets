@@ -9,22 +9,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11bdc50b7425d3749952c56122cde359, type: 3}
+  m_Script: {fileID: 11500000, guid: aae19c264bc65cb49beb636755019c31, type: 3}
   m_Name: WebGL (Debug) (Lite)
   m_EditorClassIdentifier: 
-  buildPath: Builds/WebGL/Debug/Energy8Assets_Lite
-  buildTarget: 20
-  buildTargetGroup: 13
+  buildPath: Builds/
+  buildTarget: 0
+  buildTargetGroup: 0
   standaloneBuildSubtarget: 0
-  compression: 3
-  ipType: 3
+  compression: 0
+  ipType: 0
   insecureHttpOption: 0
-  scenesToBuild:
-  - Assets/Scenes/Lite.unity
+  scenesToBuild: []
   copyScenes: 0
-  buildScenesPath: 
-  scriptingBackend: 1
-  compatibilityLevel: 6
+  buildScenesPath: Assets/Scenes/Build/
+  scriptingBackend: 0
+  compatibilityLevel: 0
   il2CppCodeGeneration: 0
   il2CppCompilerConfiguration: 0
   dedicatedServerOptimizations: 0
@@ -35,9 +34,9 @@ MonoBehaviour:
   useCustomKeystore: 0
   minifyType: 0
   keystoreSettingsFile: 
-  webGLExceptionSupport: 1
+  webGLExceptionSupport: 0
   dataCaching: 0
-  webGLcompressionFormat: 2
-  webGLdebugSymbolsMode: 2
-  buildAdditionalMobileData: 1
+  webGLcompressionFormat: 0
+  webGLdebugSymbolsMode: 0
+  buildAdditionalMobileData: 0
   enableDevelopmentBuild: 0

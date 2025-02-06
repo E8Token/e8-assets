@@ -1,0 +1,47 @@
+===============================================
+Build started for WebGL at 31.01.2025 19:51:35
+Version: 0.10.47
+Build Path: Builds/
+===============================================
+[19:51:35] Building project to Builds/
+[19:51:35] Configuring scripting backend...
+[19:51:35] Configured IL2CPP settings.
+[19:51:35] Configuring optimization settings...
+[19:51:35] Configuring WebGL publishing settings...
+[19:51:35] Starting build...
+[19:51:40][Warning] ProfileValueReference: GetValue called with empty id.
+UnityEditor.AddressableAssets.GUI.AddressableAssetsSettingsGroupEditor:BuildAddressablesWithResult (UnityEditor.AddressableAssets.GUI.AddressableAssetsSettingsGroupEditor/BuildMenuContext)
+AddressablesPlayerBuildProcessor:DefaultBuild (UnityEditor.AddressableAssets.Settings.AddressableAssetSettings) (at ./Library/PackageCache/com.unity.addressables@4f7e840f4cce/Editor/Build/AddressablesPlayerBuildProcessor.cs:143)
+AddressablesPlayerBuildProcessor:PrepareForPlayerbuild (UnityEditor.AddressableAssets.Settings.AddressableAssetSettings,UnityEditor.Build.BuildPlayerContext,bool) (at ./Library/PackageCache/com.unity.addressables@4f7e840f4cce/Editor/Build/AddressablesPlayerBuildProcessor.cs:100)
+AddressablesPlayerBuildProcessor:PrepareForBuild (UnityEditor.Build.BuildPlayerContext) (at ./Library/PackageCache/com.unity.addressables@4f7e840f4cce/Editor/Build/AddressablesPlayerBuildProcessor.cs:79)
+UnityEditor.BuildPipeline:BuildPlayer (UnityEditor.BuildPlayerOptions)
+Energy8.BuildScript:BuildProject (Energy8.BuildConfig,bool) (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildScript.cs:119)
+Energy8.BuildConfigSettingsProvider:DrawSettingsGUI () (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildConfigSettings.cs:208)
+Energy8.BuildConfigSettingsProvider/<>c:<CreateBuildConfigSettingsProvider>b__1_0 (string) (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildConfigSettings.cs:58)
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+[19:51:40][Log] Json build layout written to Library/com.unity.addressables/buildlayout.json
+[19:51:40][Log] Addressable content successfully built (duration : 0:00:05,021)
+[19:51:40][Warning] [ServicesCore]: To use Unity's dashboard services, you need to link your Unity project to a project ID. To do this, go to Project Settings to select your organization, select your project and then link a project ID. You also need to make sure your organization has access to the required products. Visit https://dashboard.unity3d.com to sign up.
+UnityEngine.Logger:LogWarning (string,object)
+Unity.Services.Core.Internal.CoreLogger:LogWarning (object) (at ./Library/PackageCache/com.unity.services.core@9e81a5e38245/Runtime/Core.Internal/Logging/CoreLogger.cs:15)
+Unity.Services.Core.Editor.ProjectUnlinkBuildWarning:OnPreprocessBuild (UnityEditor.Build.Reporting.BuildReport) (at ./Library/PackageCache/com.unity.services.core@9e81a5e38245/Editor/Core/Build/ProjectUnlinkBuildWarning.cs:29)
+UnityEditor.BuildPipeline:BuildPlayer (UnityEditor.BuildPlayerOptions)
+Energy8.BuildScript:BuildProject (Energy8.BuildConfig,bool) (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildScript.cs:119)
+Energy8.BuildConfigSettingsProvider:DrawSettingsGUI () (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildConfigSettings.cs:208)
+Energy8.BuildConfigSettingsProvider/<>c:<CreateBuildConfigSettingsProvider>b__1_0 (string) (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildConfigSettings.cs:58)
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+[19:51:42] Build failed with result: Cancelled
+[19:51:42] Build error: Build failed.
+[19:51:42][Error] System.Exception: Build failed.
+  at Energy8.BuildScript.BuildProject (Energy8.BuildConfig config, System.Boolean cleanBuild) [0x00372] in .\Packages\io.energy8games.identity\Core\Build\Editor\BuildScript.cs:134 
+UnityEngine.Debug:LogError (object)
+Energy8.BuildScript:BuildProject (Energy8.BuildConfig,bool) (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildScript.cs:140)
+Energy8.BuildConfigSettingsProvider:DrawSettingsGUI () (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildConfigSettings.cs:208)
+Energy8.BuildConfigSettingsProvider/<>c:<CreateBuildConfigSettingsProvider>b__1_0 (string) (at ./Packages/io.energy8games.identity/Core/Build/Editor/BuildConfigSettings.cs:58)
+UnityEngine.GUIUtility:ProcessEvent (int,intptr,bool&)
+
+Build completed at 19:51:42
+Build duration: 0:0:7
+===============================================

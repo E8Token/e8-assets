@@ -1,0 +1,19 @@
+{
+    "name": "Energy8.Identity.Runtime",
+    "rootNamespace": "Energy8.Identity.Runtime",
+    "references": [
+        "UniTask",
+        "Energy8.Identity.Core",
+        "Unity.TextMeshPro",
+        "Unity.Localization"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

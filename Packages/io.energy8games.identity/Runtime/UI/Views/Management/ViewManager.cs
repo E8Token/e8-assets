@@ -1,0 +1,68 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Energy8.Identity.Core.Logging;
+using Energy8.Identity.Views.Base;
+using Energy8.Identity.Views.Management.Data;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Energy8.Identity.Views.Management
+{
+    public class ViewManager : MonoBehaviour
+    {
+        [Header("Setup")]
+        [SerializeField] private Transform viewRoot;
+        [SerializeField] private ScrollRect scrollView;
+        [SerializeField] private ViewPrefabs prefabs;
+
+        private readonly ILogger<ViewManager> logger = new Logger<ViewManager>();
+        private IViewFactory factory;
+        private IViewPresenter presenter;
+        private readonly CancellationTokenSource lifetimeCts = new();
+
+        private void Awake()
+        {
+            factory = new ViewFactory(prefabs);
+            presenter = new ViewPresenter(factory, viewRoot, scrollView);
+            logger.LogInfo("ViewManager initialized");
+        }
+
+        public async UniTask<TResult> Show<TView, TParams, TResult>(
+            TParams @params,
+            CancellationToken ct = default
+        ) where TView : ViewBase<TParams, TResult>
+          where TParams : ViewParams
+          where TResult : ViewResult
+        {
+            try
+            {
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct, lifetimeCts.Token);
+                logger.LogDebug($"Showing view {typeof(TView).Name}");
+
+                var result = await presenter.ShowView<TView, TParams, TResult>(@params, cts.Token);
+
+                logger.LogDebug($"View {typeof(TView).Name} completed");
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogWarning($"View {typeof(TView).Name} was cancelled");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"View {typeof(TView).Name} failed: {ex.Message}");
+                throw;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            lifetimeCts.Cancel();
+            lifetimeCts.Dispose();
+            logger.LogDebug("ViewManager destroyed");
+        }
+    }
+}

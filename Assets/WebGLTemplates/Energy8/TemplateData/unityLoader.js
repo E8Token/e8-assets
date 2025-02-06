@@ -1,7 +1,17 @@
 (function () {
     function adjustDataFilePath(canvas, dataFile) {
         if (isASTCAvailable(canvas)) {
-            dataFile = dataFile.replace(".data", "_Mobile.data");
+            const mobileDataFile = dataFile.replace(".data", "-mobile.data");
+            const xhr = new XMLHttpRequest();
+            xhr.open('HEAD', "Build" + mobileDataFile, false);
+            try {
+            xhr.send();
+            if (xhr.status === 200) {
+                dataFile = mobileDataFile;
+            }
+            } catch (e) {
+            console.log("Mobile data file not found, using default");
+            }
         }
         return dataFile;
     }

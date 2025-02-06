@@ -1,0 +1,15 @@
+{
+  "name": "io.energy8games.identity",
+  "version": "1.0.0",
+  "displayName": "E8 Identity",
+  "description": "Package for Energy8 identity functionality",
+  "author": {
+    "name": "Energy8Games",
+    "email": "dlemoncake.work@gmail.com",
+    "url": "https://games.energy8.io/identity-sdk"
+  },
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.localization": "1.5.3"
+  }
+}

@@ -15,7 +15,7 @@
       "url": "https://package.openupm.com"
     },
     "com.google.firebase.analytics": {
-      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.analytics-12.5.0.tgz",
+      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.analytics-12.5.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
@@ -23,7 +23,7 @@
       }
     },
     "com.google.firebase.app": {
-      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.app-12.5.0.tgz",
+      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.app-12.5.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
@@ -31,7 +31,7 @@
       }
     },
     "com.google.firebase.auth": {
-      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.auth-12.5.0.tgz",
+      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.auth-12.5.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
@@ -39,7 +39,7 @@
       }
     },
     "com.google.firebase.crashlytics": {
-      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.crashlytics-12.5.0.tgz",
+      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.crashlytics-12.5.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
@@ -47,7 +47,7 @@
       }
     },
     "com.google.firebase.messaging": {
-      "version": "file:E:/Programs/firebase_unity_sdk_12.5.0/com.google.firebase.messaging-12.5.0.tgz",
+      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.messaging-12.5.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
@@ -68,7 +68,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.2d.aseprite": {
-      "version": "1.1.7",
+      "version": "1.1.8",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -202,7 +202,7 @@
         "com.unity.2d.spriteshape": "10.0.7",
         "com.unity.2d.tilemap": "1.0.0",
         "com.unity.2d.tilemap.extras": "4.1.0",
-        "com.unity.2d.aseprite": "1.1.7"
+        "com.unity.2d.aseprite": "1.1.8"
       }
     },
     "com.unity.ide.visualstudio": {
@@ -215,7 +215,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.inputsystem": {
-      "version": "1.11.2",
+      "version": "1.12.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -348,12 +348,11 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
-    "io.energy8games.assets": {
-      "version": "file:Energy8",
+    "io.energy8games.identity": {
+      "version": "file:io.energy8games.identity",
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
         "com.unity.nuget.newtonsoft-json": "3.2.1",
         "com.unity.localization": "1.5.3"
       }

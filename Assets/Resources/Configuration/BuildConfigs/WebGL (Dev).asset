@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aae19c264bc65cb49beb636755019c31, type: 3}
+  m_Name: WebGL (Dev)
+  m_EditorClassIdentifier: 
+  buildPath: Builds/WebGL/Dev
+  buildTarget: 20
+  buildTargetGroup: 13
+  standaloneBuildSubtarget: 0
+  compression: 3
+  ipType: 0
+  insecureHttpOption: 1
+  scenesToBuild:
+  - Assets/Scenes/Main.unity
+  copyScenes: 0
+  buildScenesPath: Assets/Scenes/Build/
+  scriptingBackend: 1
+  compatibilityLevel: 6
+  il2CppCodeGeneration: 0
+  il2CppCompilerConfiguration: 0
+  dedicatedServerOptimizations: 0
+  prebakeCollisionMeshes: 0
+  managedStrippingLevel: 0
+  optimizeMeshData: 0
+  textureMipMapStriping: 0
+  useCustomKeystore: 0
+  minifyType: 0
+  keystoreSettingsFile: 
+  webGLExceptionSupport: 3
+  dataCaching: 0
+  webGLcompressionFormat: 2
+  webGLdebugSymbolsMode: 2
+  buildAdditionalMobileData: 0
+  enableDevelopmentBuild: 1

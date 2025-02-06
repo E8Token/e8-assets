@@ -39,11 +39,6 @@ var TelegramLogin = {
             TelegramLogin.auth_callback(auth_result);
             return;
         }
-
-        // If no auth data found, call fallback
-        if (auth_fallback) {
-            TelegramLogin.auth_fallback(new Error("No auth data"));
-        }
     },
 
     auth: function () {
