@@ -39,7 +39,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         public static IdentityUIController Instance { get; private set; }
 
         [Header("Setup")]
-        [SerializeField] private ViewManager viewManager;
+        [SerializeField] private protected ViewManager viewManager;
 
         [Header("UI")]
         [SerializeField] private Button showButton;
@@ -52,13 +52,13 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         public bool IsOpen { get; private set; }
 
         private readonly ILogger<IdentityUIController> logger = new Logger<IdentityUIController>();
-        private IHttpClient httpClient;
+        protected IHttpClient httpClient;
         private IAuthProvider authProvider;
-        private IUserService userService;
-        private IIdentityService identityService;
+        private protected IUserService userService;
+        private protected IIdentityService identityService;
         private CancellationTokenSource lifetimeCts;
 
-        private void Awake()
+        protected virtual void Awake()
         {
             if (Instance != null)
             {
@@ -169,7 +169,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             }
         }
 
-        private async UniTask ShowUserFlow(CancellationToken ct)
+        private protected virtual async UniTask ShowUserFlow(CancellationToken ct)
         {
             SetOpenState(false);
 
@@ -210,7 +210,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             }
         }
 
-        private async UniTask ShowSettings(CancellationToken ct)
+        private protected async UniTask ShowSettings(CancellationToken ct)
         {
             while (!ct.IsCancellationRequested)
             {
