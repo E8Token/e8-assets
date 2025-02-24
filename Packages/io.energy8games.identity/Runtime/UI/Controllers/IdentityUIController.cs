@@ -39,7 +39,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         public static IdentityUIController Instance { get; private set; }
 
         [Header("Setup")]
-        [SerializeField] private protected ViewManager viewManager;
+        [SerializeField] protected ViewManager viewManager;
 
         [Header("UI")]
         [SerializeField] private Button showButton;
@@ -54,9 +54,11 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         private readonly ILogger<IdentityUIController> logger = new Logger<IdentityUIController>();
         protected IHttpClient httpClient;
         private IAuthProvider authProvider;
-        private protected IUserService userService;
-        private protected IIdentityService identityService;
+        protected IUserService userService;
+        protected IIdentityService identityService;
         private CancellationTokenSource lifetimeCts;
+
+        public event Action OnSignedOut;
 
         protected virtual void Awake()
         {
@@ -79,7 +81,11 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             identityService = new IdentityService(authProvider, userService, httpClient);
 
             identityService.OnSignedIn += (_) => ShowUserFlow(lifetimeCts.Token).Forget();
-            identityService.OnSignedOut += () => ShowAuthFlow(lifetimeCts.Token).Forget();
+            identityService.OnSignedOut += () =>
+            {
+                OnSignedOut?.Invoke();
+                ShowAuthFlow(lifetimeCts.Token).Forget();
+            };
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
@@ -169,7 +175,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             }
         }
 
-        private protected virtual async UniTask ShowUserFlow(CancellationToken ct)
+        protected virtual async UniTask ShowUserFlow(CancellationToken ct)
         {
             SetOpenState(false);
 
@@ -210,7 +216,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             }
         }
 
-        private protected async UniTask ShowSettings(CancellationToken ct)
+        protected async UniTask ShowSettings(CancellationToken ct)
         {
             while (!ct.IsCancellationRequested)
             {

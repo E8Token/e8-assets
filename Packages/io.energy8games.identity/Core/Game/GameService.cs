@@ -19,8 +19,8 @@ namespace Energy8.Identity.Core.Game.Services
         where TGameUserDto : GameUserDto
         where TGameSessionDto : GameSessionDto
     {
-        private readonly IHttpClient httpClient;
-        private readonly ILogger<GameService<TGameUserDto, TGameSessionDto>> logger;
+        protected readonly IHttpClient httpClient;
+        protected readonly ILogger<GameService<TGameUserDto, TGameSessionDto>> logger;
 
         protected virtual string Game { get; set; } = "Game";
 
@@ -53,12 +53,12 @@ namespace Energy8.Identity.Core.Game.Services
                 // Если понадобятся дополнительные данные для создания сессии, можно создать и передать GameSessionCreateDto
                 var createDto = new GameSessionCreateDto
                 {
-                    // Если требуется, заполните необходимые поля, например:
-                    ServerId = string.Empty
+                    ServerId = string.Empty,
+                    Data = string.Empty
                 };
 
                 // Вызов POST "session" для создания сессии
-                return await httpClient.PostAsync<GameSessionDto>("session", createDto, ct);
+                return await httpClient.PostAsync<GameSessionDto>($"{Game}/session", createDto, ct);
             }
             catch (Exception ex)
             {

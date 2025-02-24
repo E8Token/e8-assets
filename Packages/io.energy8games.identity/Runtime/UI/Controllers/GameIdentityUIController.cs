@@ -20,24 +20,43 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         where TGameUserDto : GameUserDto
         where TGameSessionDto : GameSessionDto
     {
+        public static new GameIdentityUIController<TGameService, TGameUserDto, TGameSessionDto>
+            Instance
+        => (GameIdentityUIController<TGameService, TGameUserDto, TGameSessionDto>)
+            IdentityUIController.Instance;
+
+        public event Action<TGameUserDto> OnGameUserGot;
+        public event Action<TGameSessionDto> OnGameSessionCreated;
+
+        protected string SessionId {get; set; }
+
         protected IGameService gameService;
 
         protected override void Awake()
         {
             base.Awake();
-            gameService = new GameService<TGameUserDto, TGameSessionDto>(httpClient, new Logger<GameService<TGameUserDto, TGameSessionDto>>());
+            OnGameSessionCreated += (resp) => SessionId = resp.SessionId;
+            InitializeGameService();
+        }
+
+        protected virtual void InitializeGameService()
+        {
+            gameService = new GameService<TGameUserDto, TGameSessionDto>(httpClient,
+                new Logger<GameService<TGameUserDto, TGameSessionDto>>());
         }
 
         /// <summary>
         /// Загружает информацию об игровом пользователе через GameService.
         /// Результат приводится к TGameUserDto.
         /// </summary>
-        public async UniTask<TGameUserDto> LoadGameUserAsync(CancellationToken ct)
+        public async UniTask<TGameUserDto> GetGameUserAsync(CancellationToken ct)
         {
             try
             {
                 GameUserDto gameUserDto = await gameService.GetUserAsync(ct);
-                return (TGameUserDto)(object)gameUserDto;
+                var result = (TGameUserDto)(object)gameUserDto;
+                OnGameUserGot?.Invoke(result);
+                return result;
             }
             catch (Exception ex)
             {
@@ -55,7 +74,9 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             try
             {
                 GameSessionDto sessionDto = await gameService.CreateSessionsAsync(ct);
-                return (TGameSessionDto)(object)sessionDto;
+                var result = (TGameSessionDto)(object)sessionDto;
+                OnGameSessionCreated?.Invoke(result);
+                return result;
             }
             catch (Exception ex)
             {
@@ -68,7 +89,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         /// Основной авторизационный цикл с дополнительным получением игровых данных.
         /// Метод скрывает одноимённый метод базового класса.
         /// </summary>
-        private protected override async UniTask ShowUserFlow(CancellationToken ct)
+        protected override async UniTask ShowUserFlow(CancellationToken ct)
         {
             SetOpenState(false);
             while (!ct.IsCancellationRequested)
@@ -78,9 +99,8 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                     // Получаем информацию о пользователе (identity)
                     UserDto identityUser = await userService.GetUserAsync(ct);
                     // Дополнительно получаем данные игрового персонажа
-                    TGameUserDto gameUser = await LoadGameUserAsync(ct);
+                    TGameUserDto gameUser = await GetGameUserAsync(ct);
 
-                    // Например, можно использовать имя из identity-пользователя для отображения
                     var result = await viewManager
                         .Show<UserView, UserViewParams, UserViewResult>(
                             new UserViewParams(identityUser.Name), ct);

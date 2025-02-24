@@ -1,9 +1,7 @@
 using System;
 using System.Net;
-using System.Net.Http;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Energy8.Core.Http.Models;
 using Energy8.Identity.Core.Logging;
 using Newtonsoft.Json;
 using UnityEngine.Networking;
