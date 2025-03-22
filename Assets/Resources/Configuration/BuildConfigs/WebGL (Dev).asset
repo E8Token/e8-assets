@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aae19c264bc65cb49beb636755019c31, type: 3}
   m_Name: WebGL (Dev)
   m_EditorClassIdentifier: 
-  buildPath: Builds/WebGL/Dev
+  buildPath: Builds/WebGL/Dev/assets
   buildTarget: 20
   buildTargetGroup: 13
   standaloneBuildSubtarget: 0
