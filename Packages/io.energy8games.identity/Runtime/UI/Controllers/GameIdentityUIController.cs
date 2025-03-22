@@ -60,7 +60,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка получения игровых данных пользователя: {ex.Message}");
+                Debug.LogError($"Failed to retrieve game user data: {ex.Message}");
                 throw;
             }
         }
@@ -80,7 +80,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Ошибка создания игровой сессии: {ex.Message}");
+                Debug.LogError($"Failed to create game session: {ex.Message}");
                 throw;
             }
         }

@@ -68,7 +68,8 @@ namespace Energy8.Identity.Core.Http
                         if (pair.Value != null)
                             formData.AddField(pair.Key, pair.Value.ToString());
                     }
-                    logger.LogDebug($"Request data (DtoBase): {JsonConvert.SerializeObject(model.ToDictionary())}");
+                    // Only log at debug level and avoid full serialization
+                    logger.LogDebug($"Request data (DtoBase)", $"{model.GetType().Name}");
                 }
                 else
                 {
@@ -79,7 +80,8 @@ namespace Energy8.Identity.Core.Http
                         if (pair.Value != null)
                             formData.AddField(pair.Key, pair.Value.ToString());
                     }
-                    logger.LogDebug($"Request data: {JsonConvert.SerializeObject(dictionary)}");
+                    // Only log field names at debug level, not values
+                    logger.LogDebug("Request data fields", string.Join(", ", dictionary.Keys));
                 }
 
                 request.uploadHandler = new UploadHandlerRaw(formData.data);
@@ -93,7 +95,7 @@ namespace Energy8.Identity.Core.Http
 
             try
             {
-                logger.LogDebug($"Sending {method} request to {url}");
+                logger.LogDebug($"{method} request", endpoint);
                 await request.SendWebRequest();
 
                 var responseText = request.downloadHandler.text;
@@ -101,17 +103,17 @@ namespace Energy8.Identity.Core.Http
 
                 if (request.result != UnityWebRequest.Result.Success || !response.Success)
                 {
-                    logger.LogError($"Request failed: [{request.responseCode}] {request.error}\nResponse: {responseText}");
+                    logger.LogError($"Request failed [{request.responseCode}]", request.error);
                     var error = response?.Error ?? ValiadateErrorResponse((HttpStatusCode)request.responseCode);
                     throw CreateException((HttpStatusCode)request.responseCode, error);
                 }
 
-                logger.LogDebug($"Request succeeded: [{request.responseCode}]\nResponse: {JsonConvert.SerializeObject(response, Formatting.Indented)}");
+                logger.LogDebug($"Request successful [{request.responseCode}]", endpoint);
                 return response.Data;
             }
             catch (Exception ex) when (ex is not ApiException)
             {
-                logger.LogError($"Request error: {ex.Message}\nStack trace: {ex.StackTrace}");
+                logger.LogError("Request error", ex.Message);
                 var error = ValiadateErrorResponse((HttpStatusCode)request.responseCode);
                 throw CreateException((HttpStatusCode)request.responseCode, error);
             }
@@ -137,7 +139,8 @@ namespace Energy8.Identity.Core.Http
                         if (pair.Value != null)
                             formData.AddField(pair.Key, pair.Value.ToString());
                     }
-                    logger.LogDebug($"Request data (DtoBase): {JsonConvert.SerializeObject(model.ToDictionary())}");
+                    // Only log at debug level and avoid full serialization
+                    logger.LogDebug($"Request data (DtoBase)", $"{model.GetType().Name}");
                 }
                 else
                 {
@@ -148,7 +151,8 @@ namespace Energy8.Identity.Core.Http
                         if (pair.Value != null)
                             formData.AddField(pair.Key, pair.Value.ToString());
                     }
-                    logger.LogDebug($"Request data: {JsonConvert.SerializeObject(dictionary)}");
+                    // Only log field names at debug level, not values
+                    logger.LogDebug("Request data fields", string.Join(", ", dictionary.Keys));
                 }
 
                 request.uploadHandler = new UploadHandlerRaw(formData.data);
@@ -162,21 +166,21 @@ namespace Energy8.Identity.Core.Http
 
             try
             {
-                logger.LogDebug($"Sending {method} request to {url}");
+                logger.LogDebug($"{method} request", endpoint);
                 await request.SendWebRequest();
 
                 if (request.result != UnityWebRequest.Result.Success)
                 {
-                    logger.LogError($"Request failed: [{request.responseCode}] {request.error}\n");
+                    logger.LogError($"Request failed [{request.responseCode}]", request.error);
                     var error = ValiadateErrorResponse((HttpStatusCode)request.responseCode);
                     throw CreateException((HttpStatusCode)request.responseCode, error);
                 }
 
-                logger.LogDebug($"Request succeeded: [{request.responseCode}]\n");
+                logger.LogDebug($"Request successful [{request.responseCode}]", endpoint);
             }
             catch (Exception ex) when (ex is not ApiException)
             {
-                logger.LogError($"Request error: {ex.Message}\nStack trace: {ex.StackTrace}");
+                logger.LogError("Request error", ex.Message);
                 var error = ValiadateErrorResponse((HttpStatusCode)request.responseCode);
                 throw CreateException((HttpStatusCode)request.responseCode, error);
             }

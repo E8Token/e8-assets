@@ -34,14 +34,14 @@ namespace Energy8.Identity.Core.Game.Services
         {
             try
             {
-                logger.LogInfo("Получение информации о игровом пользователе");
+                logger.LogDebug("Fetching game user");
                 var userDto = await httpClient.GetAsync<GameUserDto>($"{Game}/user", ct);
                 return userDto;
             }
             catch (Exception ex)
             {
-                logger.LogError($"Не удалось получить пользователя: {ex.Message}");
-                throw new GameServiceException("Не удалось получить информацию о пользователе", ex);
+                logger.LogError("Game user fetch failed", ex.Message);
+                throw new GameServiceException("Failed to retrieve game user", ex);
             }
         }
 
@@ -49,21 +49,20 @@ namespace Energy8.Identity.Core.Game.Services
         {
             try
             {
-                logger.LogInfo("Создание игровой сессии");
-                // Если понадобятся дополнительные данные для создания сессии, можно создать и передать GameSessionCreateDto
+                logger.LogInfo("Creating game session");
+                
                 var createDto = new GameSessionCreateDto
                 {
                     ServerId = string.Empty,
                     Data = string.Empty
                 };
 
-                // Вызов POST "session" для создания сессии
                 return await httpClient.PostAsync<GameSessionDto>($"{Game}/session", createDto, ct);
             }
             catch (Exception ex)
             {
-                logger.LogError($"Не удалось создать сессию: {ex.Message}");
-                throw new GameServiceException("Не удалось создать игровую сессию", ex);
+                logger.LogError("Game session creation failed", ex.Message);
+                throw new GameServiceException("Failed to create game session", ex);
             }
         }
     }

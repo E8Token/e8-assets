@@ -35,7 +35,7 @@ namespace Energy8.Identity.Views.Management
             }
 
             var instance = UnityEngine.Object.Instantiate(prefab, parent);
-            logger.LogDebug($"View {viewType} created successfully");
+            // Removed debug log for creation
 
             return UniTask.FromResult(instance);
         }
