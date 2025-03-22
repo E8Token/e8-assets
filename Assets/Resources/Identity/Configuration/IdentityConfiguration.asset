@@ -27,5 +27,5 @@ MonoBehaviour:
     config: {fileID: 4900000, guid: 5439415ee8707074eb8ffa89d14776b7, type: 3}
   - authType: 1
     config: {fileID: 4900000, guid: 29355a328f759df44871d287446aad04, type: 3}
-  selectedIPType: 0
-  selectedAuthType: 0
+  selectedIPType: 3
+  selectedAuthType: 1

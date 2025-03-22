@@ -22,10 +22,6 @@ using Energy8.Identity.Extensions;
 using Energy8.Core.Exceptions;
 using Energy8.Contracts.Dto.User;
 
-
-
-
-
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Identity.Core.Auth.Models;
 #else
@@ -102,7 +98,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
         private async UniTask StartIdentityFlow()
         {
-            logger.LogInfo("Starting identity flow");
+            logger.LogInfo("Initializing identity system");
             await identityService.Initialize(lifetimeCts.Token)
                 .WithLoading(lifetimeCts.Token);
         }
@@ -130,10 +126,27 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
                             Func<CancellationToken, UniTask<AuthResult>> confirmEmailCode = async (ct) =>
                             {
-                                var code = await ShowEmailVerification(ct);
+                                string code = null;
+                                string email = result.Email; // Store the email from sign-in result
+                                
+                                while (code == null)
+                                {
+                                    var codeResult = await viewManager.Show<CodeView, CodeViewParams, CodeViewResult>(
+                                        new CodeViewParams(), ct);
+
+                                    if (codeResult.Code == "RESEND")
+                                    {
+                                        // Resend the authentication code
+                                        await identityService.StartEmailFlow(email, ct).WithLoading(ct);
+                                        continue;
+                                    }
+                                    
+                                    code = codeResult.Code;
+                                }
+                                
                                 return await identityService
-                                .ConfirmEmailCode(code, ct)
-                                .WithLoading(ct);
+                                    .ConfirmEmailCode(code, ct)
+                                    .WithLoading(ct);
                             };
                             authResult = await confirmEmailCode.WithErrorHandler(ShowErrorAsync, ct);
 
@@ -307,17 +320,36 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
         private async UniTask ShowChangeEmail(CancellationToken ct)
         {
-            var result = await viewManager.Show<ChangeEmailView, ChangeEmailViewParams, ChangeEmailViewResult>(
+            var emailResult = await viewManager.Show<ChangeEmailView, ChangeEmailViewParams, ChangeEmailViewResult>(
                 new ChangeEmailViewParams(), ct);
 
-            Func<CancellationToken, UniTask<string>> changeEmail =
-                ct => userService.RequestEmailChangeAsync(result.Email, ct);
-
-            var token = await changeEmail.WithErrorHandler(ShowErrorAsync, ct);
+            string email = emailResult.Email;
+            string token = null;
+            
+            Func<CancellationToken, UniTask<string>> requestEmailChange = async (ct) => {
+                return await userService.RequestEmailChangeAsync(email, ct);
+            };
+            
+            token = await requestEmailChange.WithErrorHandler(ShowErrorAsync, ct);
 
             Func<CancellationToken, UniTask> confirmEmailCode = async (ct) =>
             {
-                var code = await ShowEmailVerification(ct);
+                string code = null;
+                while (code == null)
+                {
+                    var result = await viewManager.Show<CodeView, CodeViewParams, CodeViewResult>(
+                        new CodeViewParams(), ct);
+
+                    if (result.Code == "RESEND")
+                    {
+                        // Request a new email change code with the same email
+                        token = await userService.RequestEmailChangeAsync(email, ct).WithLoading(ct);
+                        continue;
+                    }
+                    
+                    code = result.Code;
+                }
+                
                 await userService
                     .ConfirmEmailChangeAsync(token, code, ct)
                     .WithLoading(ct);
@@ -328,11 +360,28 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
         private async UniTask ShowDeleteAccount(CancellationToken ct)
         {
-            var confirmed = await viewManager.Show<DeleteAccountView, DeleteAccountViewParams, DeleteAccountViewResult>(
+            await viewManager.Show<DeleteAccountView, DeleteAccountViewParams, DeleteAccountViewResult>(
                 new DeleteAccountViewParams(), ct);
 
-            var token = await userService.RequestDeleteAccountAsync(ct);
-            var code = await ShowEmailVerification(ct);
+            string token = null;
+            string code = null;
+            
+            while (code == null)
+            {
+                token = await userService.RequestDeleteAccountAsync(ct);
+                
+                var result = await viewManager.Show<CodeView, CodeViewParams, CodeViewResult>(
+                    new CodeViewParams(), ct);
+
+                if (result.Code == "RESEND")
+                {
+                    // Request a new deletion verification code
+                    continue;
+                }
+                
+                code = result.Code;
+            }
+            
             await userService.ConfirmDeleteAccountAsync(token, code, ct);
             await identityService.SignOut(ct);
         }
@@ -369,7 +418,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                 throw new ArgumentNullException(nameof(animation));
 
             showButton.onClick.AddListener(() => SetOpenState(!IsOpen));
-            logger.LogInfo("UI initialized");
         }
 
         public void SetOpenState(bool isOpen)
@@ -379,7 +427,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
             IsOpen = isOpen;
             animation.Play(isOpen ? openClipName : closeClipName);
-            logger.LogDebug($"Window state changed to: {isOpen}");
+            logger.LogDebug($"Identity UI state changed to: {(isOpen ? "open" : "closed")}");
         }
 
         private void Reset()

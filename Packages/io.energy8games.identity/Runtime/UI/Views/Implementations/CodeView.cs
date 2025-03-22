@@ -13,7 +13,8 @@ namespace Energy8.Identity.Views.Implementations
         [Header("UI")]
         [SerializeField] private TMP_InputField codeInputField;
         [SerializeField] private Button nextButton;
-       // [SerializeField] private TextButton cancelButton;
+        [SerializeField] private TextButton resendButton;
+        [SerializeField] private Button cancelButton;
 
         protected override IViewAnimation ShowAnimation =>
             new ViewFadeAnimation(canvasGroup, 0f, 1f, animationDuration);
@@ -32,15 +33,25 @@ namespace Energy8.Identity.Views.Implementations
             UnbindEvents();
             codeInputField.onValueChanged.AddListener(OnCodeChanged);
             nextButton.onClick.AddListener(OnNextButtonClick);
-            //cancelButton.OnClick += OnCancelButtonClick;
+            cancelButton.onClick.AddListener(OnCancelButtonClick);
+            
+            // Set up the resend button
+            if (resendButton != null)
+            {
+                resendButton.OnClick += OnResendButtonClick;
+            }
         }
 
         private void UnbindEvents()
         {
             codeInputField.onValueChanged.RemoveAllListeners();
             nextButton.onClick.RemoveAllListeners();
-            // if (cancelButton != null)
-            //     cancelButton.OnClick -= OnCancelButtonClick;
+            cancelButton.onClick.RemoveAllListeners();
+            
+            if (resendButton != null)
+            {
+                resendButton.OnClick -= OnResendButtonClick;
+            }
         }
 
         private void OnCodeChanged(string code)
@@ -53,9 +64,15 @@ namespace Energy8.Identity.Views.Implementations
             completionSource?.TrySetResult(new CodeViewResult(codeInputField.text));
         }
 
-        private void OnCancelButtonClick(string _)
+        private void OnCancelButtonClick()
         {
             completionSource?.TrySetCanceled();
+        }
+        
+        private void OnResendButtonClick(string linkId)
+        {
+            // Notify the controller that a resend was requested
+            completionSource?.TrySetResult(new CodeViewResult("RESEND"));
         }
 
         protected override void OnDestroy()

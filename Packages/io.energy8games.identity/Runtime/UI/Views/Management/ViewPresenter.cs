@@ -21,7 +21,7 @@ namespace Energy8.Identity.Views.Management
             this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
             this.parent = parent ?? throw new ArgumentNullException(nameof(parent));
             this.scrollView = scrollView ?? throw new ArgumentNullException(nameof(scrollView));
-            logger.LogDebug("ViewPresenter created");
+            // Removed debug log for creation
         }
 
         public async UniTask<TResult> ShowView<TView, TParams, TResult>(
@@ -38,7 +38,7 @@ namespace Energy8.Identity.Views.Management
             //     currentView = null;
             // }
 
-            logger.LogDebug($"Creating view {typeof(TView).Name}");
+            logger.LogDebug($"Showing {typeof(TView).Name}");
             var view = await factory.Create<TView, TParams, TResult>(parent);
             currentView = view;
 
@@ -58,7 +58,7 @@ namespace Energy8.Identity.Views.Management
             }
             catch (Exception ex)
             {
-                logger.LogWarning($"Error processing view {typeof(TView).Name}: {ex.Message}");
+                logger.LogWarning($"Error in {typeof(TView).Name}: {ex.Message}");
                 await view.Hide(ct);
 
                 UnityEngine.Object.Destroy(view.gameObject);

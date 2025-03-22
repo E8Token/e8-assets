@@ -26,7 +26,7 @@ namespace Energy8.Identity.Views.Management
         {
             factory = new ViewFactory(prefabs);
             presenter = new ViewPresenter(factory, viewRoot, scrollView);
-            logger.LogInfo("ViewManager initialized");
+            logger.LogInfo("View system initialized");
         }
 
         public async UniTask<TResult> Show<TView, TParams, TResult>(
@@ -39,20 +39,22 @@ namespace Energy8.Identity.Views.Management
             try
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct, lifetimeCts.Token);
-                logger.LogDebug($"Showing view {typeof(TView).Name}");
+                // Removed debug log for showing view
 
                 var result = await presenter.ShowView<TView, TParams, TResult>(@params, cts.Token);
 
-                logger.LogDebug($"View {typeof(TView).Name} completed");
+                // Removed debug log for view completion
                 return result;
             }
             catch (OperationCanceledException)
             {
+                // Kept warning log for cancellation as it's important
                 logger.LogWarning($"View {typeof(TView).Name} was cancelled");
                 throw;
             }
             catch (Exception ex)
             {
+                // Kept error log as it's critical information
                 logger.LogError($"View {typeof(TView).Name} failed: {ex.Message}");
                 throw;
             }
@@ -62,7 +64,7 @@ namespace Energy8.Identity.Views.Management
         {
             lifetimeCts.Cancel();
             lifetimeCts.Dispose();
-            logger.LogDebug("ViewManager destroyed");
+            // Removed debug log for destruction
         }
     }
 }

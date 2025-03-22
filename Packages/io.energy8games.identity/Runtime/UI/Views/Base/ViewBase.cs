@@ -43,7 +43,6 @@ namespace Energy8.Identity.Views.Base
         {
             Parameters = @params ?? throw new ArgumentNullException(nameof(@params));
             completionSource = new UniTaskCompletionSource<TResult>();
-            logger.LogDebug($"View {GetType().Name} initialized");
         }
 
         public virtual async UniTask<TResult> ProcessAsync(CancellationToken ct)
@@ -54,26 +53,21 @@ namespace Energy8.Identity.Views.Base
 
         public virtual async UniTask Show(CancellationToken ct)
         {
-            logger.LogDebug($"View {GetType().Name} showing");
             SetInteractable(false);
             await ShowAnimation.Play(ct);
             SetInteractable(true);
-            logger.LogInfo($"View {GetType().Name} showed");
         }
 
         public virtual async UniTask Hide(CancellationToken ct)
         {
-            logger.LogDebug($"View {GetType().Name} hiding");
             SetInteractable(false);
             await HideAnimation.Play(ct);
-            logger.LogInfo($"View {GetType().Name} hiden");
         }
 
         public void SetInteractable(bool state) => IsInteractable = state;
 
         protected virtual void OnDestroy()
         {
-            logger.LogDebug("View destroyed");
             completionSource?.TrySetCanceled();
         }
     }

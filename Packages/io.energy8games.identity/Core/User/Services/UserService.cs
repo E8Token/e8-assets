@@ -27,12 +27,12 @@ namespace Energy8.Identity.Core.User.Services
         {
             try
             {
-                logger.LogDebug("Getting user profile");
+                logger.LogDebug("Fetching user profile");
                 return await httpClient.GetAsync<UserDto>("user", ct);
             }
             catch (Exception ex)
             {
-                logger.LogError($"Failed to get user profile: {ex.Message}");
+                logger.LogError("User profile fetch failed", ex.Message);
                 throw new UserServiceException("Failed to get user profile", ex);
             }
         }
@@ -41,12 +41,12 @@ namespace Energy8.Identity.Core.User.Services
         {
             try
             {
-                logger.LogInfo($"Updating user name to: {name}");
+                logger.LogInfo("Updating user name", name);
                 await httpClient.PutAsync("user/name", new { Name = name }, ct);
             }
             catch (Exception ex)
             {
-                logger.LogError($"Failed to update user name: {ex.Message}");
+                logger.LogError("User name update failed", ex.Message);
                 throw new UserServiceException("Failed to update user name", ex);
             }
         }
@@ -55,7 +55,7 @@ namespace Energy8.Identity.Core.User.Services
         {
             try
             {
-                logger.LogInfo($"Requesting email change to: {newEmail}");
+                logger.LogInfo("Email change requested", newEmail);
                 var response = await httpClient.PutAsync<EmailVerificationTokenDto>(
                     "user/email",
                     new EmailChangeDto()
@@ -67,7 +67,7 @@ namespace Energy8.Identity.Core.User.Services
             }
             catch (Exception ex)
             {
-                logger.LogError($"Failed to request email change: {ex.Message}");
+                logger.LogError("Email change request failed", ex.Message);
                 throw new UserServiceException("Failed to request email change", ex);
             }
         }
@@ -88,7 +88,7 @@ namespace Energy8.Identity.Core.User.Services
             }
             catch (Exception ex)
             {
-                logger.LogError($"Failed to confirm email change: {ex.Message}");
+                logger.LogError("Email change confirmation failed", ex.Message);
                 throw new UserServiceException("Failed to confirm email change", ex);
             }
         }
@@ -97,7 +97,7 @@ namespace Energy8.Identity.Core.User.Services
         {
             try
             {
-                logger.LogInfo("Requesting account deletion");
+                logger.LogInfo("Account deletion requested");
                 var response = await httpClient.DeleteAsync<EmailVerificationTokenDto>(
                     "user",
                     ct);
@@ -105,7 +105,7 @@ namespace Energy8.Identity.Core.User.Services
             }
             catch (Exception ex)
             {
-                logger.LogError($"Failed to request account deletion: {ex.Message}");
+                logger.LogError("Account deletion request failed", ex.Message);
                 throw new UserServiceException("Failed to request account deletion", ex);
             }
         }
@@ -122,7 +122,7 @@ namespace Energy8.Identity.Core.User.Services
             }
             catch (Exception ex)
             {
-                logger.LogError($"Failed to confirm account deletion: {ex.Message}");
+                logger.LogError("Account deletion confirmation failed", ex.Message);
                 throw new UserServiceException("Failed to confirm account deletion", ex);
             }
         }
