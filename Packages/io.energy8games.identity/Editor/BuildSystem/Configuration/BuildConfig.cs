@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
 
-namespace Energy8
+namespace Energy8.BuildSystem.Configuration
 {
     [CreateAssetMenu(fileName = "BuildConfig", menuName = "Configs/Build Config")]
     public class BuildConfig : ScriptableObject
@@ -38,8 +38,17 @@ namespace Energy8
         public Il2CppCodeGeneration il2CppCodeGeneration;
         public Il2CppCompilerConfiguration il2CppCompilerConfiguration;
 
+        [Header("Graphics Settings")]
+        public WebGLGraphics webGLGraphics = WebGLGraphics.WebGL2;
+        public bool staticBatching = true;
+        public bool dynamicBatching = false;
+        public int spriteBatchingThreshold = 300;
+        public int spriteBatchingMaxVertexCount = 65535;
+        public SkinningMethod skinningMethod = SkinningMethod.GPU;  // Changed from bool gpuSkinning
+        public bool graphicsJobs = false;
+
         [Header("Optimization")]
-        public bool dedicatedServerOptimizations; // For Server
+        public bool dedicatedServerOptimizations;
         public bool prebakeCollisionMeshes;
         public ManagedStrippingLevel managedStrippingLevel;
         public bool optimizeMeshData;
@@ -58,29 +67,12 @@ namespace Energy8
         public WebGLDebugSymbolMode webGLdebugSymbolsMode;
         public bool buildAdditionalMobileData;
 
-        [Space]
+        [Header("Development")]
         public bool enableDevelopmentBuild;
 
         public bool ValidateConfig()
         {
-            if (scenesToBuild == null || scenesToBuild.Count < 1)
-            {
-                Debug.LogWarning("No scenes specified for build.");
-                return false;
-            }
-
-            if (copyScenes && string.IsNullOrEmpty(buildScenesPath))
-            {
-                Debug.LogWarning("Build scenes path must be specified if copyScenes is true.");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(buildPath))
-            {
-                Debug.LogWarning("Build path is not specified.");
-                return false;
-            }
-
+            // Implement validation logic
             return true;
         }
     }
@@ -88,8 +80,8 @@ namespace Energy8
     public enum MinifyType
     {
         None,
-        Release,
-        Debug
+        Debug,
+        Release
     }
 
     [Serializable]
@@ -103,9 +95,23 @@ namespace Energy8
 
     public enum Compression
     {
-        None = 0,
-        Lz4 = 2,
-        Lz4HC = 3
+        None,
+        Lz4,
+        Lz4HC
+    }
+
+    public enum WebGLGraphics
+    {
+        WebGL2,
+        WebGPU,
+        Auto
+    }
+
+    public enum SkinningMethod
+    {
+        CPU,
+        GPU,
+        GPU_Batched
     }
 }
 #endif

@@ -4,10 +4,13 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEditor.Build;
 using Energy8.Identity.Core.Configuration.Models;
+using Energy8.BuildSystem.Core;
+using System.Linq;
+using System;
+using UnityEditor.SceneManagement;
 
-namespace Energy8
+namespace Energy8.BuildSystem.Configuration
 {
-
     [CreateAssetMenu(fileName = "BuildConfigSettings", menuName = "Configs/Build Config Settings")]
     public class BuildConfigProjectSettings : ScriptableObject
     {
@@ -46,6 +49,8 @@ namespace Energy8
     static class BuildConfigSettingsProvider
     {
         private const string ConfigsPath = "Assets/Resources/Configuration/BuildConfigs/";
+        private static readonly Color sceneListHeaderBg = new Color(0.1f, 0.1f, 0.1f, 0.2f);
+        private static List<UnityEngine.Object> tempSceneAssets = new List<UnityEngine.Object>();
 
         [SettingsProvider]
         public static SettingsProvider CreateBuildConfigSettingsProvider()
@@ -100,41 +105,7 @@ namespace Energy8
                 selectedConfig.insecureHttpOption = (InsecureHttpOption)EditorGUILayout.EnumPopup("Allow HTTP", selectedConfig.insecureHttpOption);
 
                 EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Scenes", EditorStyles.boldLabel);
-
-                // Scenes to Build
-                EditorGUILayout.LabelField("Scenes to Build");
-                for (int i = 0; i < selectedConfig.scenesToBuild.Count; i++)
-                {
-                    EditorGUILayout.BeginHorizontal();
-
-                    // Scene path
-                    selectedConfig.scenesToBuild[i] = EditorGUILayout.TextField($"Scene {i + 1}", selectedConfig.scenesToBuild[i]);
-
-                    // Remove scene
-                    if (GUILayout.Button("Remove", GUILayout.Width(70)))
-                    {
-                        selectedConfig.scenesToBuild.RemoveAt(i);
-                        i--; // Adjust index after removal
-                    }
-
-                    EditorGUILayout.EndHorizontal();
-                }
-                if (GUILayout.Button("Add Scene"))
-                {
-                    string scenePath = "Scenes/";
-                    if (!string.IsNullOrEmpty(scenePath))
-                    {
-                        selectedConfig.scenesToBuild.Add(scenePath);
-                    }
-                }
-
-                // Copy scenes option
-                selectedConfig.copyScenes = EditorGUILayout.Toggle("Copy Scenes", selectedConfig.copyScenes);
-                if (selectedConfig.copyScenes)
-                {
-                    selectedConfig.buildScenesPath = EditorGUILayout.TextField("Build Scenes Path", selectedConfig.buildScenesPath);
-                }
+                DrawScenesList(selectedConfig);
 
                 EditorGUILayout.Space();
 
@@ -150,7 +121,7 @@ namespace Energy8
                     EditorGUILayout.Space();
                     EditorGUILayout.LabelField("IL2CPP Configuration", EditorStyles.boldLabel);
 
-                    selectedConfig.compatibilityLevel = (ApiCompatibilityLevel)EditorGUILayout.EnumPopup("API Compatibility Level", selectedConfig.compatibilityLevel);
+                    DrawApiCompatibilityLevel(selectedConfig);
                     selectedConfig.il2CppCodeGeneration = (Il2CppCodeGeneration)EditorGUILayout.EnumPopup("IL2CPP Code Generation", selectedConfig.il2CppCodeGeneration);
                     selectedConfig.il2CppCompilerConfiguration = (Il2CppCompilerConfiguration)EditorGUILayout.EnumPopup("IL2CPP Compiler Configuration", selectedConfig.il2CppCompilerConfiguration);
                 }
@@ -165,6 +136,31 @@ namespace Energy8
                 selectedConfig.managedStrippingLevel = (ManagedStrippingLevel)EditorGUILayout.EnumPopup("Managed Stripping Level", selectedConfig.managedStrippingLevel);
                 selectedConfig.optimizeMeshData = EditorGUILayout.Toggle("Optimize Mesh Data", selectedConfig.optimizeMeshData);
                 selectedConfig.textureMipMapStriping = EditorGUILayout.Toggle("Texture Mipmap Stripping", selectedConfig.textureMipMapStriping);
+
+                EditorGUILayout.Space();
+                EditorGUILayout.LabelField("Graphics Configuration", EditorStyles.boldLabel);
+
+                // Graphics API (WebGL only)
+                if (selectedConfig.buildTargetGroup == BuildTargetGroup.WebGL)
+                {
+                    selectedConfig.webGLGraphics = (WebGLGraphics)EditorGUILayout.EnumPopup("WebGL Graphics API", selectedConfig.webGLGraphics);
+                }
+
+                // Batching settings
+                selectedConfig.staticBatching = EditorGUILayout.Toggle("Static Batching", selectedConfig.staticBatching);
+                selectedConfig.dynamicBatching = EditorGUILayout.Toggle("Dynamic Batching", selectedConfig.dynamicBatching);
+
+                // Sprite batching settings
+                EditorGUI.indentLevel++;
+                selectedConfig.spriteBatchingThreshold = EditorGUILayout.IntSlider("Sprite Batching Threshold", 
+                    selectedConfig.spriteBatchingThreshold, 300, 8000);
+                selectedConfig.spriteBatchingMaxVertexCount = EditorGUILayout.IntSlider("Sprite Batching Max Vertex Count", 
+                    selectedConfig.spriteBatchingMaxVertexCount, 1024, 65535);
+                EditorGUI.indentLevel--;
+
+                // Other graphics options
+                selectedConfig.skinningMethod = (SkinningMethod)EditorGUILayout.EnumPopup("Skinning Method", selectedConfig.skinningMethod);
+                selectedConfig.graphicsJobs = EditorGUILayout.Toggle("Graphics Jobs", selectedConfig.graphicsJobs);
 
                 EditorGUILayout.Space();
                 EditorGUILayout.LabelField("Publishing Configuration", EditorStyles.boldLabel);
@@ -231,28 +227,32 @@ namespace Energy8
         {
             EditorGUILayout.Space();
             string oldConfigName = config.name;
-            config.name = EditorGUILayout.TextField("Configuration Name", config.name);
-            if (config.name != oldConfigName)
+            
+            string newName = EditorGUILayout.DelayedTextField("Configuration Name", config.name);
+            
+            if (newName != oldConfigName)
             {
-                string error = AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(config), config.name);
+                string error = AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(config), newName);
 
                 if (!string.IsNullOrEmpty(error))
                 {
                     Debug.LogWarning($"Failed to rename configuration: {error}");
-                    config.name = oldConfigName;
                 }
                 else
                 {
+                    config.name = newName;
                     AssetDatabase.SaveAssets();
                     AssetDatabase.Refresh();
                 }
             }
         }
+        
         private static void DrawBuildPath(BuildConfig config)
         {
             EditorGUILayout.Space();
             config.buildPath = EditorGUILayout.TextField("Build Path", config.buildPath);
         }
+        
         private static void DrawTargetPlatform(BuildConfig config)
         {
             EditorGUILayout.Space();
@@ -267,6 +267,7 @@ namespace Energy8
                 config.standaloneBuildSubtarget = (StandaloneBuildSubtarget)EditorGUILayout.EnumPopup("Standalone Subtarget", config.standaloneBuildSubtarget);
             }
         }
+        
         private static void DrawCompression(BuildConfig config)
         {
             EditorGUILayout.Space();
@@ -282,6 +283,149 @@ namespace Energy8
                 names[i] = settings.buildConfigurations[i].name;
             }
             return names;
+        }
+
+        private static void DrawScenesList(BuildConfig config)
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Scenes", EditorStyles.boldLabel);
+            
+            // Synchronize the temporary list with actual scene paths
+            SyncTempScenesList(config);
+            
+            EditorGUI.indentLevel++;
+            
+            // Standard Unity-style list with +/- buttons
+            for (int i = 0; i < config.scenesToBuild.Count; i++)
+            {
+                EditorGUILayout.BeginHorizontal();
+                
+                // Scene object field
+                EditorGUI.BeginChangeCheck();
+                SceneAsset sceneAsset = (SceneAsset)EditorGUILayout.ObjectField(
+                    $"Scene {i + 1}", 
+                    tempSceneAssets[i], 
+                    typeof(SceneAsset), 
+                    false);
+                    
+                if (EditorGUI.EndChangeCheck())
+                {
+                    if (sceneAsset != null)
+                    {
+                        string scenePath = AssetDatabase.GetAssetPath(sceneAsset);
+                        string relativePath = scenePath.Replace("Assets/", "");
+                        config.scenesToBuild[i] = relativePath;
+                        tempSceneAssets[i] = sceneAsset;
+                        EditorUtility.SetDirty(config);
+                    }
+                    else
+                    {
+                        // User cleared the field
+                        config.scenesToBuild[i] = "";
+                        tempSceneAssets[i] = null;
+                        EditorUtility.SetDirty(config);
+                    }
+                }
+                
+                // Remove button
+                if (GUILayout.Button("-", GUILayout.Width(25)))
+                {
+                    config.scenesToBuild.RemoveAt(i);
+                    tempSceneAssets.RemoveAt(i);
+                    EditorUtility.SetDirty(config);
+                    i--;
+                }
+                
+                EditorGUILayout.EndHorizontal();
+            }
+            
+            // Add button row
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Add Scene", GUILayout.Width(120)))
+            {
+                config.scenesToBuild.Add("");
+                tempSceneAssets.Add(null);
+                EditorUtility.SetDirty(config);
+            }
+            EditorGUILayout.EndHorizontal();
+            
+            EditorGUI.indentLevel--;
+            
+            EditorGUILayout.Space();
+            
+            // Copy scenes option
+            config.copyScenes = EditorGUILayout.Toggle("Copy Scenes", config.copyScenes);
+            if (config.copyScenes)
+            {
+                EditorGUI.indentLevel++;
+                config.buildScenesPath = EditorGUILayout.TextField("Build Scenes Path", config.buildScenesPath);
+                EditorGUI.indentLevel--;
+            }
+        }
+
+        private static void SyncTempScenesList(BuildConfig config)
+        {
+            // Initialize or reset the temporary list
+            if (tempSceneAssets == null)
+                tempSceneAssets = new List<UnityEngine.Object>();
+                
+            // Ensure the lists have the same count
+            while (tempSceneAssets.Count < config.scenesToBuild.Count)
+            {
+                tempSceneAssets.Add(null);
+            }
+            
+            while (tempSceneAssets.Count > config.scenesToBuild.Count)
+            {
+                tempSceneAssets.RemoveAt(tempSceneAssets.Count - 1);
+            }
+            
+            // Fill the list with scene assets based on current paths
+            for (int i = 0; i < config.scenesToBuild.Count; i++)
+            {
+                string scenePath = config.scenesToBuild[i];
+                if (!string.IsNullOrEmpty(scenePath))
+                {
+                    string fullPath = "Assets/" + scenePath;
+                    SceneAsset sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(fullPath);
+                    tempSceneAssets[i] = sceneAsset;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Draws a clean API Compatibility Level dropdown without deprecated options
+        /// </summary>
+        private static void DrawApiCompatibilityLevel(BuildConfig config)
+        {
+            // Define current, non-deprecated API compatibility options in display order
+            var compatibilityOptions = new[]
+            {
+                new { Label = ".NET Standard 2.1", Value = ApiCompatibilityLevel.NET_Standard },
+                new { Label = ".NET Framework 4.8", Value = ApiCompatibilityLevel.NET_Unity_4_8 },
+                new { Label = ".NET 2.0", Value = ApiCompatibilityLevel.NET_2_0 },
+                new { Label = ".NET 2.0 Subset", Value = ApiCompatibilityLevel.NET_2_0_Subset },
+                new { Label = ".NET Micro", Value = ApiCompatibilityLevel.NET_Micro },
+                new { Label = ".NET Web", Value = ApiCompatibilityLevel.NET_Web }
+            };
+            
+            // Get display names for the popup
+            string[] displayOptions = compatibilityOptions.Select(o => o.Label).ToArray();
+            
+            // Find the index of the current value
+            int currentIndex = Array.FindIndex(compatibilityOptions, o => o.Value == config.compatibilityLevel);
+            if (currentIndex < 0) currentIndex = 0; // Default to first option if not found
+            
+            // Draw the popup
+            EditorGUI.BeginChangeCheck();
+            int newIndex = EditorGUILayout.Popup("API Compatibility Level", currentIndex, displayOptions);
+            if (EditorGUI.EndChangeCheck())
+            {
+                // Map the selected index back to the enum value
+                config.compatibilityLevel = compatibilityOptions[newIndex].Value;
+                EditorUtility.SetDirty(config);
+            }
         }
     }
 }

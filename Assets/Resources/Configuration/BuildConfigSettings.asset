@@ -9,13 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 172f23bb0d9005844b541908cce5ff20, type: 3}
+  m_Script: {fileID: 11500000, guid: 8cb505a27db391b46801f2578a4b6b84, type: 3}
   m_Name: BuildConfigSettings
   m_EditorClassIdentifier: 
   buildConfigurations:
-  - {fileID: 11400000, guid: 6d7110fe4ca52f7419de1979f4dd7f20, type: 2}
-  - {fileID: 11400000, guid: 02fc76eaa084d8549a9ea79c2566bc56, type: 2}
-  - {fileID: 11400000, guid: f6b4af44f65df2c40b6bba2777486dd9, type: 2}
-  - {fileID: 11400000, guid: ea885837e9ad80a438313c68a483ba03, type: 2}
-  - {fileID: 11400000, guid: 4c25a6b7cf8a78c49a6bd13b7778a695, type: 2}
-  selectedConfigIndex: 1
+  - {fileID: 11400000, guid: 9cdda128e27e89946ab815012564f404, type: 2}
+  selectedConfigIndex: 0

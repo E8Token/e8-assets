@@ -9,21 +9,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aae19c264bc65cb49beb636755019c31, type: 3}
-  m_Name: WebGL (Debug) (Lite)
+  m_Script: {fileID: 11500000, guid: 93b17f89378131845bcb44c9b7e19d81, type: 3}
+  m_Name: WebGL Lite (Dev)
   m_EditorClassIdentifier: 
   buildPath: Builds/
-  buildTarget: 0
-  buildTargetGroup: 0
+  buildTarget: 20
+  buildTargetGroup: 13
   standaloneBuildSubtarget: 0
   compression: 0
   ipType: 0
   insecureHttpOption: 0
-  scenesToBuild: []
+  scenesToBuild:
+  - Scenes/Lite.unity
   copyScenes: 0
   buildScenesPath: Assets/Scenes/Build/
   scriptingBackend: 0
-  compatibilityLevel: 0
+  compatibilityLevel: 6
   il2CppCodeGeneration: 0
   il2CppCompilerConfiguration: 0
   dedicatedServerOptimizations: 0
@@ -34,9 +35,9 @@ MonoBehaviour:
   useCustomKeystore: 0
   minifyType: 0
   keystoreSettingsFile: 
-  webGLExceptionSupport: 0
+  webGLExceptionSupport: 3
   dataCaching: 0
-  webGLcompressionFormat: 0
-  webGLdebugSymbolsMode: 0
+  webGLcompressionFormat: 2
+  webGLdebugSymbolsMode: 2
   buildAdditionalMobileData: 0
-  enableDevelopmentBuild: 0
+  enableDevelopmentBuild: 1
