@@ -13,19 +13,19 @@ MonoBehaviour:
   m_Name: FirebaseConfig
   m_EditorClassIdentifier: 
   requiredPackages:
-  - PackageId: com.google.firebase.app
-    MinimumVersion: 12.7.0
-    AutoUpdate: 0
-  - PackageId: com.google.firebase.auth
-    MinimumVersion: 12.7.0
-    AutoUpdate: 0
-  - PackageId: com.google.firebase.messaging
+  - PackageId: com.google.firebase.analytics
     MinimumVersion: 12.7.0
     AutoUpdate: 0
   - PackageId: com.google.firebase.crashlytics
     MinimumVersion: 12.7.0
     AutoUpdate: 0
-  - PackageId: com.google.firebase.analytics
+  - PackageId: com.google.firebase.messaging
+    MinimumVersion: 12.7.0
+    AutoUpdate: 0
+  - PackageId: com.google.firebase.auth
+    MinimumVersion: 12.7.0
+    AutoUpdate: 0
+  - PackageId: com.google.firebase.app
     MinimumVersion: 12.7.0
     AutoUpdate: 0
   checkUpdatesOnStartup: 1
