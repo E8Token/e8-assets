@@ -48,7 +48,7 @@ namespace Energy8
                 {
                     screenOrientation = Screen.orientation;
                     controllers.ForEach((controller) => controller.OnChangeScreenOrientation(Screen.safeArea));
-                    logger.Log($"Orientation changed: {screenOrientation}");
+                    logger.Log(LogLevel.Information, $"Orientation changed:", screenOrientation);
                 }
                 await UniTask.Yield(PlayerLoopTiming.Update);
             }
