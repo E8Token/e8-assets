@@ -8,50 +8,50 @@
       "hash": "b0d01ca75fc890b76e81202d655d17c1f4214a18"
     },
     "com.google.external-dependency-manager": {
-      "version": "1.2.183",
-      "depth": 0,
+      "version": "1.2.185",
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
     "com.google.firebase.analytics": {
-      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.analytics-12.5.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.analytics-12.7.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.5.0"
+        "com.google.firebase.app": "12.7.0"
       }
     },
     "com.google.firebase.app": {
-      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.app-12.5.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.app-12.7.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.external-dependency-manager": "1.2.183"
+        "com.google.external-dependency-manager": "1.2.185"
       }
     },
     "com.google.firebase.auth": {
-      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.auth-12.5.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.auth-12.7.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.5.0"
+        "com.google.firebase.app": "12.7.0"
       }
     },
     "com.google.firebase.crashlytics": {
-      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.crashlytics-12.5.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.crashlytics-12.7.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.5.0"
+        "com.google.firebase.app": "12.7.0"
       }
     },
     "com.google.firebase.messaging": {
-      "version": "file:E:/SDK/firebase_unity_sdk_12.5.0/com.google.firebase.messaging-12.5.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.messaging-12.7.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.5.0"
+        "com.google.firebase.app": "12.7.0"
       }
     },
     "com.unity.2d.animation": {
@@ -352,8 +352,14 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
-    "io.energy8games.identity": {
-      "version": "file:io.energy8games.identity",
+    "io.energy8.firebase-manager": {
+      "version": "file:io.energy8.firebase-manager",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "io.energy8.identity": {
+      "version": "file:io.energy8.identity",
       "depth": 0,
       "source": "embedded",
       "dependencies": {

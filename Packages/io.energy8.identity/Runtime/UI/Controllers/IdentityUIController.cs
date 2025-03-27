@@ -386,7 +386,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             await identityService.SignOut(ct);
         }
 
-        private async UniTask<ErrorHandlingMethod> ShowErrorAsync(Energy8Exception e8Exception, CancellationToken ct)
+        protected async UniTask<ErrorHandlingMethod> ShowErrorAsync(Energy8Exception e8Exception, CancellationToken ct)
         {
             var result = await viewManager.Show<ErrorView, ErrorViewParams, ErrorViewResult>(
                 new ErrorViewParams(
