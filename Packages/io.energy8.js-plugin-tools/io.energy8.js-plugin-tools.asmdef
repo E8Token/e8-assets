@@ -1,0 +1,16 @@
+{
+    "name": "io.energy8.js-plugin-tools",
+    "rootNamespace": "",
+    "references": [
+        "GUID:aa34ee0958460154abbc8720817da2c3"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

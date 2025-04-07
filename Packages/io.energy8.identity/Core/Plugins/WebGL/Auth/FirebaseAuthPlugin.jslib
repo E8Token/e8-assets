@@ -1,175 +1,181 @@
 var FirebaseAuthPlugin = {
-    InitializeAuth: function (config, objectName, signInCallback, signOutCallback, tokenCallback, telegramCallback, errorCallback) {
-        window.firebaseAuthObjectName = UTF8ToString(objectName);
-        window.signInCallback = UTF8ToString(signInCallback);
-        window.signOutCallback = UTF8ToString(signOutCallback);
-        window.tokenCallback = UTF8ToString(tokenCallback);
-        window.telegramCallback = UTF8ToString(telegramCallback);
-        window.errorCallback = UTF8ToString(errorCallback);
-
-        window.initializeFirebase(JSON.parse(UTF8ToString(config)));
-        window.initializeTelegramAuth({ bot_id: 8114226239 },
-            function (user) {
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                    window.telegramCallback, JSON.stringify(user));
-            },
-            function (error) {
-                 window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                     window.errorCallback, JSON.stringify(error));
-            });
-
-        console.log("Firebase initialized with object name: " + window.firebaseAuthObjectName);
-
-        window.firebaseAuth.onAuthStateChanged((user) => {
-            if (user) {
-                console.log("User signed in: " + JSON.stringify(user));
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                    window.signInCallback, JSON.stringify(user));
-            } else {
-                console.log("User signed out.");
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                    window.signOutCallback);
-            }
-        });
+    sendUnityMessage: function(callbackName, param) {
+        if (param) {
+            window.unityInstance.SendMessage(window.firebaseAuthObjectName, callbackName, param);
+        } else {
+            window.unityInstance.SendMessage(window.firebaseAuthObjectName, callbackName);
+        }
     },
 
-    SignInWithTokenAsync: function (token) {
-        console.log("Attempting to sign in with token...");
+    handleError: function(context, error) {
+        console.error(context + ":", error);
+        
+        // Конвертируем ошибку в строку если это объект
+        let errorMessage = error;
+        if (typeof error === 'object') {
+            try {
+                errorMessage = JSON.stringify(error);
+            } catch (e) {
+                errorMessage = error.toString();
+            }
+        }
+        
+        this._sendUnityMessage(window.errorCallback, errorMessage);
+    },
 
-        var token = UTF8ToString(token);
-
-        console.log("Token received: " + token);
-
+    signInWithProvider: function(provider, addAsProvider) {
         try {
-            window.firebaseAuth.signInWithCustomToken(token).then(function (result) {
-                console.log("Sign-in successful. User UID: " + result.user.uid);
-            }).catch(function (error) {
-                console.error("Sign-in failed: " + error);
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                    window.errorCallback, error);
+            if (addAsProvider) {
+                const currentUser = window.firebaseAuth.currentUser;
+                if (currentUser) {
+                    window.firebaseAuth.linkWithPopup(provider)
+                        .catch((error) => {
+                            this._handleError("Account linking error", error);
+                        });
+                } else {
+                    this._handleError("Account linking error", "No user is signed in");
+                }
+            } else {
+                window.firebaseAuth.signInWithPopup(provider)
+                    .catch((error) => {
+                        this._handleError("Sign in error", error);
+                    });
+            }
+        } catch (error) {
+            this._handleError("Sign in error", error);
+        }
+    },
+
+    // Основные функции плагина
+    InitializeAuth: function(config, objectName, signInCallback, signOutCallback, tokenCallback, telegramCallback, errorCallback) {
+        try {
+            // Сохраняем имя объекта и колбэки в window для всех функций
+            window.firebaseAuthObjectName = UTF8ToString(objectName);
+            window.signInCallback = UTF8ToString(signInCallback);
+            window.signOutCallback = UTF8ToString(signOutCallback);
+            window.tokenCallback = UTF8ToString(tokenCallback);
+            window.telegramCallback = UTF8ToString(telegramCallback);
+            window.errorCallback = UTF8ToString(errorCallback);
+
+            // Инициализируем Firebase
+            window.initializeFirebase(JSON.parse(UTF8ToString(config)));
+            console.log("Firebase initialized with object name:", window.firebaseAuthObjectName);
+
+            // Настраиваем отслеживание состояния аутентификации
+            window.firebaseAuth.onAuthStateChanged((user) => {
+                if (user) {
+                    console.log("User signed in:", user.uid);
+                    this._sendUnityMessage(window.signInCallback, JSON.stringify(user));
+                } else {
+                    console.log("User signed out");
+                    this._sendUnityMessage(window.signOutCallback);
+                }
             });
         } catch (error) {
-            console.error("Error during sign-in: " + error.message);
-            window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                window.errorCallback, error);
+            console.error("Error initializing Firebase Auth:", error);
         }
     },
 
-    SignInWithGoogle: function (addProvider) {
+    InitializeTelegramAuth: function(botId) {
+        try {
+            const parsedBotId = botId ? JSON.parse(UTF8ToString(botId)) : 8114226239;
+            const self = this; // Сохраняем ссылку на текущий 'this'
+            
+            console.log("Telegram init: " + parsedBotId);
+
+            window.initializeTelegramAuth({ bot_id: parsedBotId },
+                function(user) {
+                    console.log("Telegram auth initialized" + window.telegramCallback);
+                    self._sendUnityMessage(window.telegramCallback, JSON.stringify(user));
+                },
+                function(error) {
+                    //self._handleError("Telegram auth error", error);
+                }
+            );
+        } catch (error) {
+            //Nthis._handleError("Telegram initialization error", error);
+        }
+    },
+
+    SignInWithTokenAsync: function(token) {
+        const customToken = UTF8ToString(token);
+        console.log("Attempting to sign in with token");
+        
+        try {
+            window.firebaseAuth.signInWithCustomToken(customToken)
+                .then((result) => {
+                    console.log("Sign-in successful. User UID:", result.user.uid);
+                })
+                .catch((error) => {
+                    this._handleError("Sign-in with token failed", error);
+                });
+        } catch (error) {
+            this._handleError("Error during token sign-in", error);
+        }
+    },
+
+    SignInWithGoogle: function(addProvider) {
         const provider = new window.firebaseAuth.GoogleAuthProvider();
-
-        if (addProvider) {
-            const currentUser = window.firebaseAuth.currentUser;
-            if (currentUser) {
-                window.firebaseAuth.linkWithPopup(provider)
-                    .catch((error) => {
-                        console.error("Google account linking error:", error);
-                        window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                            window.errorCallback, JSON.stringify(error));
-                    });
-            }
-        } else {
-            window.firebaseAuth.signInWithPopup(provider)
-                .catch((error) => {
-                    console.error("Google sign in error:", error);
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                        window.errorCallback, JSON.stringify(error));
-                });
-        }
+        this._signInWithProvider(provider, addProvider);
     },
 
-    SignInWithApple: function (addProvider) {
+    SignInWithApple: function(addProvider) {
         const provider = new window.firebaseAuth.OAuthProvider('apple.com');
+        this._signInWithProvider(provider, addProvider);
+    },
 
-        if (addProvider) {
-            const currentUser = window.firebaseAuth.currentUser;
-            if (currentUser) {
-                window.firebaseAuth.linkWithPopup(provider)
-                    .catch((error) => {
-                        console.error("Apple account linking error:", error);
-                        window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                            window.errorCallback, JSON.stringify(error));
-                    });
-            }
-        } else {
-            window.firebaseAuth.signInWithPopup(provider)
+    SignInWithTelegram: function() {
+        console.log("Starting Telegram sign in...");
+        
+        try {
+            window.signInWithTelegram()
+                .then((user) => {
+                    console.log("Telegram sign in success");
+                    this._sendUnityMessage(window.telegramCallback, JSON.stringify(user));
+                })
                 .catch((error) => {
-                    console.error("Apple sign in error:", error);
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                        window.errorCallback, JSON.stringify(error));
+                    this._handleError("Telegram sign in error", error);
                 });
+        } catch (error) {
+            this._handleError("Error starting Telegram sign in", error);
         }
     },
 
-    SignInWithTelegram: function () {
-        console.log("Starting Telegram sign in...");
-        window.signInWithTelegram()
-            .then(function (user) {
-                console.log("Telegram sign in success:", user);
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                    window.telegramCallback, JSON.stringify(user));
-            })
-            .catch(function (error) {
-                console.error("Telegram sign in error:", error);
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                    window.errorCallback, JSON.stringify(error));
-            });
-    },
-
-    GetCurrentUser: function () {
-        var user = window.firebaseAuth.currentUser;
+    GetCurrentUser: function() {
+        const user = window.firebaseAuth.currentUser;
         if (user) {
             return JSON.stringify(user);
         }
         return null;
     },
 
-    InitializeTelegramAuth: function (botId) {
-        window.initializeTelegramAuth({ bot_id: JSON.parse(UTF8ToString(botId)) },
-            function (user) {
-                console.log("Telegram auth initialized:", user);
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                    window.telegramCallback, JSON.stringify(user));
-            },
-            function (error) {
-                console.error("Telegram auth error:", error);
-                window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                    window.errorCallback, JSON.stringify(error));
-            });
-    },
-
-    GetIdToken: function (forceRefresh) {
+    GetIdToken: function(forceRefresh) {
         console.log("Attempting to get ID token...");
-
-        var user = window.firebaseAuth.currentUser;
-
+        const user = window.firebaseAuth.currentUser;
+        
         if (user) {
-            console.log("User found, attempting to get ID token...");
-
             user.getIdToken(forceRefresh)
-                .then(function (idToken) {
-                    console.log("ID token retrieved successfully.");
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.tokenCallback, idToken);
+                .then((idToken) => {
+                    console.log("ID token retrieved successfully");
+                    this._sendUnityMessage(window.tokenCallback, idToken);
                 })
-                .catch(function (error) {
-                    console.error("Error retrieving ID token: " + error.message);
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.errorCallback, error);
+                .catch((error) => {
+                    this._handleError("Error retrieving ID token", error);
                 });
         } else {
-            console.log("No user signed in.");
-            window.unityInstance.SendMessage(window.firebaseAuthObjectName,
-                window.errorCallback, "No user is currently signed in.");
+            this._handleError("ID token error", "No user is currently signed in");
         }
     },
 
-    SignOut: function () {
+    SignOut: function() {
         console.log("Signing out user...");
+        
         window.firebaseAuth.signOut()
-            .then(function () {
-                console.log("User signed out successfully.");
+            .then(() => {
+                console.log("User signed out successfully");
             })
-            .catch(function (error) {
-                console.error("Error signing out: " + error.message);
+            .catch((error) => {
+                this._handleError("Error signing out", error);
             });
     }
 };

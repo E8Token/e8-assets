@@ -1,6 +1,8 @@
 #if UNITY_WEBGL //&& !UNITY_EDITOR
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Energy8.Identity.Core.Plugins.WebGL.Auth
@@ -67,8 +69,10 @@ namespace Energy8.Identity.Core.Plugins.WebGL.Auth
             instance = this;
         }
 
-        public void Initialize(string config, string botId = "8114226239")
+        public async Task Initialize(string config, string botId = "8114226239")
         {
+            Debug.Log("Initialize Firebase WebGL");
+
             InitializeAuth(
                 config,
                 gameObject.name,
@@ -78,6 +82,8 @@ namespace Energy8.Identity.Core.Plugins.WebGL.Auth
                 nameof(HandleTelegramAuth),
                 nameof(HandleError)
             );
+
+            await UniTask.Delay(2000);
 
             InitializeTelegramAuth(botId);
         }

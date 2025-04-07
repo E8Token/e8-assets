@@ -15,15 +15,15 @@
       "url": "https://package.openupm.com"
     },
     "com.google.firebase.analytics": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.analytics-12.7.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.analytics-12.8.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.7.0"
+        "com.google.firebase.app": "12.8.0"
       }
     },
     "com.google.firebase.app": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.app-12.7.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.app-12.8.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
@@ -31,27 +31,27 @@
       }
     },
     "com.google.firebase.auth": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.auth-12.7.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.auth-12.8.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.7.0"
+        "com.google.firebase.app": "12.8.0"
       }
     },
     "com.google.firebase.crashlytics": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.crashlytics-12.7.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.crashlytics-12.8.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.7.0"
+        "com.google.firebase.app": "12.8.0"
       }
     },
     "com.google.firebase.messaging": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.messaging-12.7.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.messaging-12.8.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.7.0"
+        "com.google.firebase.app": "12.8.0"
       }
     },
     "com.unity.2d.animation": {
@@ -147,7 +147,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.addressables": {
-      "version": "2.3.16",
+      "version": "2.4.1",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -157,7 +157,7 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
         "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.scriptablebuildpipeline": "2.2.11",
+        "com.unity.scriptablebuildpipeline": "2.3.0",
         "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
       },
       "url": "https://packages.unity.com"
@@ -187,9 +187,8 @@
     "com.unity.ext.nunit": {
       "version": "2.0.5",
       "depth": 2,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
+      "source": "builtin",
+      "dependencies": {}
     },
     "com.unity.feature.2d": {
       "version": "2.0.1",
@@ -216,7 +215,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.inputsystem": {
-      "version": "1.13.1",
+      "version": "1.14.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -276,7 +275,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.scriptablebuildpipeline": {
-      "version": "2.2.11",
+      "version": "2.3.0",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -313,15 +312,14 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
-      "version": "1.4.6",
+      "version": "1.5.1",
       "depth": 1,
-      "source": "registry",
+      "source": "builtin",
       "dependencies": {
         "com.unity.ext.nunit": "2.0.3",
         "com.unity.modules.imgui": "1.0.0",
         "com.unity.modules.jsonserialize": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
+      }
     },
     "com.unity.test-framework.performance": {
       "version": "3.0.3",
@@ -352,6 +350,15 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "io.energy8.build-deploy-system": {
+      "version": "file:io.energy8.build-deploy-system",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      }
+    },
     "io.energy8.firebase-manager": {
       "version": "file:io.energy8.firebase-manager",
       "depth": 0,
@@ -376,6 +383,15 @@
         "com.unity.modules.uielements": "1.0.0",
         "com.unity.ugui": "2.0.0",
         "com.unity.inputsystem": "1.12.0"
+      }
+    },
+    "io.energy8.js-plugin-tools": {
+      "version": "file:io.energy8.js-plugin-tools",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.1",
+        "com.unity.modules.unitywebrequest": "1.0.0"
       }
     },
     "com.unity.modules.accessibility": {

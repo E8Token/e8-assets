@@ -19,14 +19,14 @@ MonoBehaviour:
   - PackageId: com.google.firebase.crashlytics
     MinimumVersion: 12.7.0
     AutoUpdate: 0
-  - PackageId: com.google.firebase.messaging
-    MinimumVersion: 12.7.0
-    AutoUpdate: 0
   - PackageId: com.google.firebase.auth
     MinimumVersion: 12.7.0
     AutoUpdate: 0
   - PackageId: com.google.firebase.app
     MinimumVersion: 12.7.0
+    AutoUpdate: 0
+  - PackageId: com.google.firebase.messaging
+    MinimumVersion: 12.8.0
     AutoUpdate: 0
   checkUpdatesOnStartup: 1
   autoUpdateRequired: 1

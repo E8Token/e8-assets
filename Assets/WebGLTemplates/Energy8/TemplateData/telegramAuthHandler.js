@@ -27,8 +27,11 @@ var TelegramLogin = {
         TelegramLogin.auth_callback = auth_callback;
         TelegramLogin.auth_fallback = auth_fallback;
 
+        console.log("Telgram init")
+
         // Check Telegram Web App data
         if (window.Telegram?.WebApp?.initData) {
+            console.log("Telgram WebAPP Data found: " + window.Telegram?.WebApp?.initData)
             TelegramLogin.auth_callback(window.Telegram.WebApp.initDatah);
             return;
         }

@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 403ce754950775e4ebe657acd9629255, type: 3}
+  m_Name: E8LoggerConfig
+  m_EditorClassIdentifier: 
+  DefaultLogLevel: 0
+  NamespaceConfigs:
+  - Namespace: Energy8.Test
+    MinLogLevel: 1
+  IncludeTimestamp: 1
+  IncludeLogLevel: 1
+  IncludeSource: 1
+  TimeFormat: HH:mm:ss.fff
+  Enabled: 1

@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const isLiteVersion = window.location.pathname.includes('/Lite');
+  const isLiteVersion = xwindow.location.pathname.endsWith('-lite');
   const requiredOrientation = isLiteVersion ? 'portrait' : 'landscape';
 
   function checkOrientation() {
@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showOrientationWarning() {
+    return;
     const message = isLiteVersion
       ? 'Please rotate your device to portrait mode.'
       : 'Please rotate your device to landscape mode.';

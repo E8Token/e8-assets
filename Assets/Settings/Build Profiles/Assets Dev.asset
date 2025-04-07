@@ -21,7 +21,7 @@ MonoBehaviour:
   m_OverrideGlobalSceneList: 1
   m_Scenes:
   - m_enabled: 1
-    m_path: Assets/Scenes/Main.unity
+    m_path: Assets/Samples/JS Plugin Tools/1.0.0/Basic Demo/DemoScene.unity
   m_ScriptingDefines: []
   m_PlayerSettingsYaml:
     m_Settings:
@@ -828,7 +828,7 @@ MonoBehaviour:
     - line: '|   spritePackerPolicy: '
     - line: '|   webGLMemorySize: 32'
     - line: '|   webGLExceptionSupport: 3'
-    - line: '|   webGLNameFilesAsHashes: 1'
+    - line: '|   webGLNameFilesAsHashes: 0'
     - line: '|   webGLShowDiagnostics: 1'
     - line: '|   webGLDataCaching: 0'
     - line: '|   webGLDebugSymbols: 2'
