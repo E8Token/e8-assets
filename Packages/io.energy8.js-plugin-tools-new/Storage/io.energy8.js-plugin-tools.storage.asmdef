@@ -1,0 +1,17 @@
+{
+    "name": "io.energy8.js-plugin-tools.storage",
+    "rootNamespace": "Energy8.JSPluginTools.Storage",
+    "references": [
+        "GUID:ae19fe1186c3527469686bd015c27779",
+        "GUID:a97eaae8b3030134bb4875f74de71259"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

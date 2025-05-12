@@ -1,0 +1,26 @@
+{
+    "name": "Energy8.JSPluginTools.Communication.Tests.EditMode",
+    "rootNamespace": "Energy8.JSPluginTools.Communication.Tests.EditMode",
+    "references": [
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:ae19fe1186c3527469686bd015c27779",
+        "GUID:a97eaae8b3030134bb4875f74de71259"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

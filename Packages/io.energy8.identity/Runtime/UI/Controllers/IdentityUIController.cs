@@ -21,6 +21,7 @@ using Energy8.Identity.Core.Configuration;
 using Energy8.Identity.Extensions;
 using Energy8.Core.Exceptions;
 using Energy8.Contracts.Dto.User;
+using System.Collections;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Identity.Core.Auth.Models;
@@ -30,20 +31,22 @@ using Firebase.Auth;
 
 namespace Energy8.Identity.Runtime.UI.Controllers
 {
+    [RequireComponent(typeof(Canvas))]
     public class IdentityUIController : MonoBehaviour
     {
         public static IdentityUIController Instance { get; private set; }
 
         [Header("Setup")]
         [SerializeField] protected ViewManager viewManager;
+        [SerializeField] private bool isLite = false;
 
         [Header("UI")]
         [SerializeField] private Button showButton;
-        [SerializeField] private new Animation animation;
+        [SerializeField] private Canvas canvas;
 
         [Header("Animation")]
-        [SerializeField] private string openClipName = "Open";
-        [SerializeField] private string closeClipName = "Close";
+        [SerializeField] private float animationDuration = 0.5f;
+        [SerializeField] private AnimationCurve animationCurve;
 
         public bool IsOpen { get; private set; }
 
@@ -54,6 +57,9 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         protected IIdentityService identityService;
         private CancellationTokenSource lifetimeCts;
 
+        private RectTransform containerRectTransform;
+        private Coroutine currentAnimationCoroutine;
+        
         public event Action OnSignedOut;
 
         protected virtual void Awake()
@@ -86,7 +92,24 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
+            containerRectTransform = viewManager?.GetComponent<RectTransform>();
+
+            // Apply default animation curve if not set
+            if (animationCurve == null || animationCurve.keys.Length == 0)
+            {
+                animationCurve = new AnimationCurve(
+                    new Keyframe(0, 0, 0, 1),
+                    new Keyframe(1, 1, 1, 0)
+                );
+            }
+
             InitializeUI();
+
+            // Apply Lite Mode settings if enabled
+            if (isLite)
+            {
+                ApplyLiteMode();
+            }
 
             viewManager.InitializeLoading();
         }
@@ -128,7 +151,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                             {
                                 string code = null;
                                 string email = result.Email; // Store the email from sign-in result
-                                
+
                                 while (code == null)
                                 {
                                     var codeResult = await viewManager.Show<CodeView, CodeViewParams, CodeViewResult>(
@@ -140,10 +163,10 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                                         await identityService.StartEmailFlow(email, ct).WithLoading(ct);
                                         continue;
                                     }
-                                    
+
                                     code = codeResult.Code;
                                 }
-                                
+
                                 return await identityService
                                     .ConfirmEmailCode(code, ct)
                                     .WithLoading(ct);
@@ -325,11 +348,12 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
             string email = emailResult.Email;
             string token = null;
-            
-            Func<CancellationToken, UniTask<string>> requestEmailChange = async (ct) => {
+
+            Func<CancellationToken, UniTask<string>> requestEmailChange = async (ct) =>
+            {
                 return await userService.RequestEmailChangeAsync(email, ct);
             };
-            
+
             token = await requestEmailChange.WithErrorHandler(ShowErrorAsync, ct);
 
             Func<CancellationToken, UniTask> confirmEmailCode = async (ct) =>
@@ -346,10 +370,10 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                         token = await userService.RequestEmailChangeAsync(email, ct).WithLoading(ct);
                         continue;
                     }
-                    
+
                     code = result.Code;
                 }
-                
+
                 await userService
                     .ConfirmEmailChangeAsync(token, code, ct)
                     .WithLoading(ct);
@@ -365,11 +389,11 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
             string token = null;
             string code = null;
-            
+
             while (code == null)
             {
                 token = await userService.RequestDeleteAccountAsync(ct);
-                
+
                 var result = await viewManager.Show<CodeView, CodeViewParams, CodeViewResult>(
                     new CodeViewParams(), ct);
 
@@ -378,10 +402,10 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                     // Request a new deletion verification code
                     continue;
                 }
-                
+
                 code = result.Code;
             }
-            
+
             await userService.ConfirmDeleteAccountAsync(token, code, ct);
             await identityService.SignOut(ct);
         }
@@ -414,8 +438,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         {
             if (showButton == null)
                 throw new ArgumentNullException(nameof(showButton));
-            if (animation == null)
-                throw new ArgumentNullException(nameof(animation));
 
             showButton.onClick.AddListener(() => SetOpenState(!IsOpen));
         }
@@ -426,16 +448,120 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                 return;
 
             IsOpen = isOpen;
-            animation.Play(isOpen ? openClipName : closeClipName);
+
+            if (containerRectTransform != null)
+            {
+                // Stop any running animation
+                if (currentAnimationCoroutine != null)
+                {
+                    StopCoroutine(currentAnimationCoroutine);
+                }
+
+                // Start new animation
+                currentAnimationCoroutine = StartCoroutine(AnimateRectTransform(isOpen));
+            }
+
             logger.LogDebug($"Identity UI state changed to: {(isOpen ? "open" : "closed")}");
+        }
+
+        private IEnumerator AnimateRectTransform(bool opening)
+        {
+            float startTime = Time.time;
+            float startX = containerRectTransform.anchoredPosition.x;
+
+            // Calculate the target position based on the new formula: Screen.Width / Canvas.Scale.X
+            float targetWidth = containerRectTransform.sizeDelta.x;
+
+            float endX = opening ? 0 : targetWidth;
+
+            logger.LogDebug($"Animating panel: opening={opening}, targetWidth={targetWidth}, canvas scale={canvas.scaleFactor}");
+
+            while (Time.time < startTime + animationDuration)
+            {
+                float elapsed = (Time.time - startTime) / animationDuration;
+                float curveValue = animationCurve.Evaluate(elapsed);
+
+                // Calculate the current position
+                float currentX = Mathf.Lerp(startX, endX, curveValue);
+                Vector2 newPosition = containerRectTransform.anchoredPosition;
+                newPosition.x = currentX;
+
+                // Apply the position
+                containerRectTransform.anchoredPosition = newPosition;
+
+                yield return null;
+            }
+
+            // Ensure final position is exact
+            Vector2 finalPosition = containerRectTransform.anchoredPosition;
+            finalPosition.x = endX;
+            containerRectTransform.anchoredPosition = finalPosition;
+
+            currentAnimationCoroutine = null;
         }
 
         private void Reset()
         {
+            TryGetComponent(out canvas);
+
             if (transform.Find("Scroll View").TryGetComponent(out ScrollRect scroll))
             {
-                scroll.TryGetComponent(out animation);
                 scroll.transform.Find("OpenBut").TryGetComponent(out showButton);
+            }
+        }
+
+        /// <summary>
+        /// Applies the lite mode settings by adjusting the ViewManager's width based on Screen.Width / Canvas.Scale.X
+        /// </summary>
+        private void ApplyLiteMode()
+        {
+            if (viewManager != null)
+            {
+                // Calculate the desired width using the formula Screen.Width / Canvas.Scale.X
+                float desiredWidth = Screen.width / canvas.scaleFactor;
+
+                // Get the scroll rect component from the view manager
+                var scrollRect = viewManager.GetComponent<ScrollRect>();
+                if (scrollRect != null)
+                {
+                    // Adjust the width of the scroll rect using the calculated width
+                    RectTransform rectTransform = scrollRect.GetComponent<RectTransform>();
+                    if (rectTransform != null)
+                    {
+                        // Store for animation use
+                        containerRectTransform = rectTransform;
+
+                        // Set sizeDelta to the calculated width for the X component
+                        Vector2 sizeDelta = rectTransform.sizeDelta;
+                        sizeDelta.x = desiredWidth;
+                        rectTransform.sizeDelta = sizeDelta;
+
+                        // Position the panel based on current open state without animation
+                        Vector2 position = rectTransform.anchoredPosition;
+                        position.x = IsOpen ? 0 : desiredWidth;
+                        rectTransform.anchoredPosition = position;
+
+                        logger.LogDebug($"Lite mode applied: Set width to {desiredWidth}, position.x={position.x} (IsOpen={IsOpen})");
+                    }
+                }
+            }
+        }
+
+        // Add screen size change detection
+        private Vector2 lastScreenSize;
+
+        private void Update()
+        {
+            if (isLite)
+            {
+                Vector2 currentScreenSize = new Vector2(Screen.width, Screen.height);
+
+                // Check if screen size has changed
+                if (currentScreenSize != lastScreenSize)
+                {
+                    lastScreenSize = currentScreenSize;
+                    ApplyLiteMode(); // Recalculate and apply when screen size changes
+                }
             }
         }
 

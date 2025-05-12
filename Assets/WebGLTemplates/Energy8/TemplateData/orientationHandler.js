@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const isLiteVersion = xwindow.location.pathname.endsWith('-lite');
+  const isLiteVersion = window.location.pathname.endsWith('-lite');
   const requiredOrientation = isLiteVersion ? 'portrait' : 'landscape';
 
   function checkOrientation() {

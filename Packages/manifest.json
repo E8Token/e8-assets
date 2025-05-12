@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
     "com.google.external-dependency-manager": "1.2.183",
     "com.google.firebase.analytics": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.analytics-12.8.0.tgz",
     "com.google.firebase.app": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.app-12.8.0.tgz",
@@ -8,9 +9,9 @@
     "com.google.firebase.crashlytics": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.crashlytics-12.8.0.tgz",
     "com.google.firebase.messaging": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.messaging-12.8.0.tgz",
     "com.unity.feature.2d": "2.0.1",
-    "com.unity.ide.visualstudio": "2.0.22",
+    "com.unity.ide.visualstudio": "2.0.23",
     "com.unity.inputsystem": "1.14.0",
-    "com.unity.localization": "1.5.3",
+    "com.unity.localization": "1.5.4",
     "com.unity.nuget.newtonsoft-json": "3.2.1",
     "com.unity.purchasing": "4.12.2",
     "com.unity.toolchain.win-x86_64-linux-x86_64": "2.0.10",

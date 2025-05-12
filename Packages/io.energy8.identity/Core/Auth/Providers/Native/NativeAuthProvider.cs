@@ -26,6 +26,9 @@ namespace Energy8.Identity.Core.Auth.Providers
         public bool IsSignedIn => auth?.CurrentUser != null && auth.CurrentUser.IsValid();
         public FirebaseUser CurrentUser => auth?.CurrentUser;
 
+        // В нативной версии мы не поддерживаем автоаутентификацию Telegram
+        public bool HasTelegramAutoAuthData => false;
+
         public event Action<FirebaseUser> OnSignedIn;
         public event Action OnSignedOut;
 

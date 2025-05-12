@@ -1,0 +1,16 @@
+{
+    "name": "io.energy8.js-plugin-tools.communication",
+    "rootNamespace": "Energy8.JSPluginTools.Communication",
+    "references": [
+        "Energy8.JSPluginTools.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
