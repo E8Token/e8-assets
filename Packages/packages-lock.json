@@ -15,50 +15,50 @@
       "hash": "fe31ad0904abee296b5ea72c6073157accba59e8"
     },
     "com.google.external-dependency-manager": {
-      "version": "1.2.185",
+      "version": "1.2.186",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
     "com.google.firebase.analytics": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.analytics-12.8.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.analytics-12.9.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.8.0"
+        "com.google.firebase.app": "12.9.0"
       }
     },
     "com.google.firebase.app": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.app-12.8.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.app-12.9.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.external-dependency-manager": "1.2.185"
+        "com.google.external-dependency-manager": "1.2.186"
       }
     },
     "com.google.firebase.auth": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.auth-12.8.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.auth-12.9.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.8.0"
+        "com.google.firebase.app": "12.9.0"
       }
     },
     "com.google.firebase.crashlytics": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.crashlytics-12.8.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.crashlytics-12.9.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.8.0"
+        "com.google.firebase.app": "12.9.0"
       }
     },
     "com.google.firebase.messaging": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.messaging-12.8.0.tgz",
+      "version": "file:E:/Projects/Energy8/e8-assets/Assets\\..\\Firebase\\com.google.firebase.messaging-12.9.0.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.8.0"
+        "com.google.firebase.app": "12.9.0"
       }
     },
     "com.unity.2d.animation": {
@@ -158,7 +158,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.addressables": {
-      "version": "2.4.3",
+      "version": "2.4.6",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -168,7 +168,7 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0",
         "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.scriptablebuildpipeline": "2.3.2",
+        "com.unity.scriptablebuildpipeline": "2.3.8",
         "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
       },
       "url": "https://packages.unity.com"
@@ -286,7 +286,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.scriptablebuildpipeline": {
-      "version": "2.3.2",
+      "version": "2.3.8",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -396,14 +396,11 @@
         "com.unity.inputsystem": "1.12.0"
       }
     },
-    "io.energy8.js-plugin-tools-new": {
-      "version": "file:io.energy8.js-plugin-tools-new",
+    "io.energy8.js-plugin-tools": {
+      "version": "file:io.energy8.js-plugin-tools",
       "depth": 0,
       "source": "embedded",
-      "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.2.1",
-        "com.unity.modules.unitywebrequest": "1.0.0"
-      }
+      "dependencies": {}
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",

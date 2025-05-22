@@ -1,0 +1,82 @@
+using UnityEngine;
+
+namespace Energy8.JSPluginTools.Examples
+{
+    // NOTE: This is an example implementation only and is not part of the core package.
+    // It's provided as a reference for developers implementing their own plugins.
+    
+    /// <summary>
+    /// Example plugin implementation that demonstrates basic usage of the JSPluginTools system.
+    /// </summary>
+    public class ExamplePlugin : JSPluginBase
+    {
+        /// <summary>
+        /// Gets the unique plugin identifier.
+        /// </summary>
+        public override string PluginName => "ExamplePlugin";
+
+        /// <summary>
+        /// Initializes the plugin instance.
+        /// </summary>
+        public override void Initialize()
+        {
+            Debug.Log("ExamplePlugin initialized");
+            
+            // Example of sending a message to JavaScript
+            this.SendMessageToJS("initialized", JsonUtility.ToJson(new { timestamp = System.DateTime.Now.ToString() }));
+        }
+
+        /// <summary>
+        /// Handles a message from the JavaScript side.
+        /// </summary>
+        /// <param name="method">The method name being called</param>
+        /// <param name="payload">The JSON payload containing the method parameters</param>
+        public override void OnMessage(string method, string payload)
+        {
+            Debug.Log($"ExamplePlugin received message: {method} with payload: {payload}");
+            
+            // Example of handling different message types
+            switch (method)
+            {
+                case "sayHello":
+                    HandleSayHello(payload);
+                    break;
+                    
+                case "getStatus":
+                    HandleGetStatus();
+                    break;
+                
+                default:
+                    Debug.LogWarning($"Unknown method: {method}");
+                    break;
+            }
+        }
+        
+        private void HandleSayHello(string payload)
+        {
+            // Parse the payload using JsonUtility
+            var data = JsonUtility.FromJson<HelloMessage>(payload);
+            Debug.Log($"Hello, {data.name}!");
+            
+            // Send a response back to JavaScript
+            this.SendMessageToJS("helloResponse", JsonUtility.ToJson(new { 
+                message = $"Hello from Unity, {data.name}!" 
+            }));
+        }
+        
+        private void HandleGetStatus()
+        {
+            // Send plugin status back to JavaScript
+            this.SendMessageToJS("statusResponse", JsonUtility.ToJson(new { 
+                status = "running",
+                timestamp = System.DateTime.Now.ToString()
+            }));
+        }
+        
+        [System.Serializable]
+        private class HelloMessage
+        {
+            public string name;
+        }
+    }
+}
