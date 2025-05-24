@@ -396,12 +396,6 @@
         "com.unity.inputsystem": "1.12.0"
       }
     },
-    "io.energy8.js-plugin-tools": {
-      "version": "file:io.energy8.js-plugin-tools",
-      "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
-    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,

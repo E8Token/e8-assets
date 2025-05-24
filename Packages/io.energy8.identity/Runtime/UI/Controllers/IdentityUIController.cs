@@ -22,6 +22,8 @@ using Energy8.Identity.Extensions;
 using Energy8.Core.Exceptions;
 using Energy8.Contracts.Dto.User;
 using System.Collections;
+using Energy8.Identity.Core.Analytics.Services;
+using Energy8.Identity.Core.Analytics.Providers;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Identity.Core.Auth.Models;
@@ -49,17 +51,17 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         [SerializeField] private AnimationCurve animationCurve;
 
         public bool IsOpen { get; private set; }
-
         private readonly ILogger<IdentityUIController> logger = new Logger<IdentityUIController>();
         protected IHttpClient httpClient;
         private IAuthProvider authProvider;
         protected IUserService userService;
         protected IIdentityService identityService;
+        private IAnalyticsService analyticsService;
         private CancellationTokenSource lifetimeCts;
 
         private RectTransform containerRectTransform;
         private Coroutine currentAnimationCoroutine;
-        
+
         public event Action OnSignedOut;
 
         protected virtual void Awake()
@@ -70,17 +72,18 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                 return;
             }
 
-            lifetimeCts = new CancellationTokenSource();
-
-            httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
+            lifetimeCts = new CancellationTokenSource(); httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
 #if UNITY_WEBGL && !UNITY_EDITOR
             authProvider = new WebGLAuthProvider();
+            var analyticsProvider = new WebGLAnalyticsProvider();
 #else
             authProvider = new NativeAuthProvider(httpClient);
+            var analyticsProvider = new DefaultAnalyticsProvider();
 #endif
 
             userService = new UserService(httpClient, authProvider);
-            identityService = new IdentityService(authProvider, userService, httpClient);
+            analyticsService = new AnalyticsService(analyticsProvider);
+            identityService = new IdentityService(authProvider, userService, httpClient, analyticsService);
 
             identityService.OnSignedIn += (_) => ShowUserFlow(lifetimeCts.Token).Forget();
             identityService.OnSignedOut += () =>

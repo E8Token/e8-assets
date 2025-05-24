@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Energy8.Identity.Core.Logging;
 using Energy8.Identity.Core.Auth.Providers;
 using Energy8.Identity.Core.Http;
 using Energy8.Identity.Core.User.Services;
+using Energy8.Identity.Core.Analytics.Services;
 using System.Threading;
 using UnityEngine;
 using Energy8.Contracts.Dto.Auth;
@@ -23,6 +25,7 @@ namespace Energy8.Identity.Runtime.Services
         private readonly IAuthProvider authProvider;
         private readonly IUserService userService;
         private readonly IHttpClient httpClient;
+        private readonly IAnalyticsService analyticsService;
         private string pendingEmailToken;
         
         private bool autoAuthenticationAttempted = false;
@@ -39,26 +42,39 @@ namespace Energy8.Identity.Runtime.Services
         public IdentityService(
             IAuthProvider authProvider,
             IUserService userService,
-            IHttpClient httpClient)
+            IHttpClient httpClient,
+            IAnalyticsService analyticsService)
         {
             this.authProvider = authProvider;
             this.userService = userService;
             this.httpClient = httpClient;
+            this.analyticsService = analyticsService;
 
             authProvider.OnSignedIn += HandleSignedIn;
             authProvider.OnSignedOut += HandleSignedOut;
-        }
-
-        public async UniTask Initialize(CancellationToken ct)
+        }        public async UniTask Initialize(CancellationToken ct)
         {
             try
             {
                 logger.LogInfo("Initializing Identity Service");
                 await authProvider.Initialize(ct);
+                
+                // Initialize Analytics Service
+                if (analyticsService != null)
+                {
+                    try
+                    {
+                        await analyticsService.Initialize(ct);
+                        logger.LogInfo("Analytics Service initialized");
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogError($"Analytics initialization failed, but continuing: {ex.Message}");
+                    }
+                }
 
                 IsInitialized = true;
                 logger.LogInfo("Identity Service initialized");
-                
                 if (HasTelegramAutoAuthData && !IsSignedIn)
                 {
                     logger.LogInfo("Found Telegram auto-auth data, attempting auto sign-in");
@@ -98,6 +114,13 @@ namespace Energy8.Identity.Runtime.Services
             try
             {
                 logger.LogInfo("Signing out");
+                
+                // Log sign-out event to analytics
+                if (analyticsService != null && analyticsService.IsInitialized)
+                {
+                    analyticsService.LogSignOut();
+                }
+                
                 authProvider.SignOut();
             }
             catch (Exception ex)
@@ -105,14 +128,27 @@ namespace Energy8.Identity.Runtime.Services
                 logger.LogError($"Sign out failed: {ex.Message}");
                 throw;
             }
-        }
-
-        private async void HandleSignedIn(FirebaseUser user)
+        }        private async void HandleSignedIn(FirebaseUser user)
         {
             try
             {
                 var token = await authProvider.GetToken(false, CancellationToken.None);
                 httpClient.SetAuthToken(token);
+
+                // Log sign-in event to analytics
+                if (analyticsService != null && analyticsService.IsInitialized)
+                {
+                    analyticsService.SetUserId(user.UserId);
+                    analyticsService.LogSignIn("firebase");
+                    
+                    var userProps = new Dictionary<string, object>
+                    {
+                        { "display_name", user.DisplayName ?? "" },
+                        { "email", user.Email ?? "" },
+                        { "provider_id", user.ProviderId ?? "" }
+                    };
+                    analyticsService.SetUserProperties(userProps);
+                }
 
                 OnSignedIn?.Invoke(authProvider.CurrentUser);
             }

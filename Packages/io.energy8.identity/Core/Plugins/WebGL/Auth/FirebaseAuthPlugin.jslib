@@ -125,7 +125,7 @@ var FirebaseAuthPlugin = {
                         params.append('photo_url', user.photo_url || "");
                         params.append('auth_date', user.auth_date);
                         params.append('hash', user.hash);
-                        
+
                         // Добавляем поля language_code и allows_write_to_pm
                         if (user.language_code) {
                             params.append('language_code', user.language_code);
@@ -133,7 +133,7 @@ var FirebaseAuthPlugin = {
                         if (typeof user.allows_write_to_pm !== 'undefined') {
                             params.append('allows_write_to_pm', user.allows_write_to_pm ? 'true' : 'false');
                         }
-                        
+
                         // Добавляем query_id если он доступен
                         if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.query_id) {
                             params.append('query_id', tgWebApp.initDataUnsafe.query_id);
@@ -233,12 +233,50 @@ var FirebaseAuthPlugin = {
 
     SignInWithGoogle: function (addProvider) {
         var provider = new window.firebaseAuth.GoogleAuthProvider();
-        this.signInWithProvider(provider, addProvider);
+        try {
+            if (addProvider) {
+                var currentUser = window.firebaseAuth.currentUser;
+                if (currentUser) {
+                    window.firebaseAuth.linkWithPopup(provider)
+                        .catch(function (error) {
+                            console.error("Account linking error:", error);
+                        });
+                } else {
+                    console.error("Account linking error:", "No user is signed in");
+                }
+            } else {
+                window.firebaseAuth.signInWithPopup(provider)
+                    .catch(function (error) {
+                        console.error("Sign in error:", error);
+                    });
+            }
+        } catch (error) {
+            console.error("Sign in error:", error);
+        }
     },
 
     SignInWithApple: function (addProvider) {
         var provider = new window.firebaseAuth.OAuthProvider('apple.com');
-        this.signInWithProvider(provider, addProvider);
+        try {
+            if (addProvider) {
+                var currentUser = window.firebaseAuth.currentUser;
+                if (currentUser) {
+                    window.firebaseAuth.linkWithPopup(provider)
+                        .catch(function (error) {
+                            console.error("Account linking error:", error);
+                        });
+                } else {
+                    console.error("Account linking error:", "No user is signed in");
+                }
+            } else {
+                window.firebaseAuth.signInWithPopup(provider)
+                    .catch(function (error) {
+                        console.error("Sign in error:", error);
+                    });
+            }
+        } catch (error) {
+            console.error("Sign in error:", error);
+        }
     },
 
     SignInWithTelegram: function () {

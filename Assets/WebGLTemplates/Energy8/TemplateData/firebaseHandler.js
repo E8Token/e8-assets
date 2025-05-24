@@ -1,9 +1,13 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js';
 import { getAuth, signInWithCustomToken, signInWithPopup, linkWithPopup, GoogleAuthProvider, OAuthProvider } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js';
+import { getAnalytics, logEvent, setUserId, setUserProperties } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-analytics.js';
 
 async function initializeFirebase(firebaseConfig) {
+  document.cookie = "debug_mode=true";
+
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const analytics = getAnalytics(app);
 
   window.firebaseApp = app;
   window.firebaseAuth = {
@@ -17,7 +21,18 @@ async function initializeFirebase(firebaseConfig) {
     get currentUser() { return auth.currentUser; }
   };
 
-  console.log("Firebase app and auth initialized, methods available globally.");
+  window.firebaseAnalytics = {
+    logEvent: (eventName, params) => logEvent(analytics, eventName, params),
+    setUserId: (userId) => setUserId(analytics, userId),
+    setUserProperties: (properties) => setUserProperties(analytics, properties),
+    resetAnalyticsData: () => {
+      // Сброс данных аналитики путем очистки идентификатора пользователя
+      setUserId(analytics, null);
+      console.log("Firebase Analytics: Reset analytics data");
+    }
+  };
+
+  console.log("Firebase app, auth, and analytics initialized, methods available globally.");
 }
 
 export { initializeFirebase };
