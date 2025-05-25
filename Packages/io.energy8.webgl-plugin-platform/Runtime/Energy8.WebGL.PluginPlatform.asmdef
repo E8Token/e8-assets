@@ -1,0 +1,17 @@
+{
+    "name": "Energy8.WebGL.PluginPlatform",
+    "rootNamespace": "Energy8.WebGL.PluginPlatform",
+    "references": [],
+    "includePlatforms": [
+        "Editor",
+        "WebGL"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,9 @@
+{
+  "name": "SamplePlugin",
+  "displayName": "Sample WebGL Plugin",
+  "version": "1.0.0",
+  "description": "Пример плагина для демонстрации возможностей WebGL Plugin Platform",
+  "unity": "2021.3",
+  "author": "Energy8",
+  "priority": 50
+}

@@ -1,0 +1,25 @@
+{
+  "name": "io.energy8.webgl-plugin-platform",
+  "displayName": "WebGL Plugin Platform",
+  "version": "1.0.0",
+  "description": "Platform for developing WebGL plugins that improve communication between Unity and browser",
+  "unity": "2021.3",  "author": {
+    "name": "Energy8"
+  },
+  "category": "WebGL",
+  "keywords": [
+    "WebGL",
+    "Plugin",
+    "JavaScript",
+    "Communication",
+    "Platform"
+  ],
+  "dependencies": {},
+  "samples": [
+    {
+      "displayName": "Sample Plugin",
+      "description": "Sample plugin demonstrating platform capabilities",
+      "path": "Samples~/SamplePlugin"
+    }
+  ]
+}

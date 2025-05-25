@@ -396,6 +396,12 @@
         "com.unity.inputsystem": "1.12.0"
       }
     },
+    "io.energy8.webgl-plugin-platform": {
+      "version": "file:io.energy8.webgl-plugin-platform",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
