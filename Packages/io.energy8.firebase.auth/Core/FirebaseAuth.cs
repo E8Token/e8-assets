@@ -206,14 +206,6 @@ namespace Energy8.Firebase.Auth
         }        /// <summary>
         /// Initialize Firebase Auth with configuration
         /// </summary>
-        public static async Task InitializeAsync(CancellationToken ct = default)
-        {
-            await InitializeAsync();
-        }
-        
-        /// <summary>
-        /// Initialize Firebase Auth with configuration
-        /// </summary>
         public static async Task InitializeAsync()
         {
             // Initialize Firebase Core first
