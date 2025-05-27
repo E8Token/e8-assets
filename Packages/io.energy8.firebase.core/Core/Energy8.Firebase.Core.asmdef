@@ -1,0 +1,14 @@
+{
+    "name": "Energy8.Firebase.Core",
+    "rootNamespace": "Energy8.Firebase.Core",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

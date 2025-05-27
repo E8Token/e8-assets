@@ -1,0 +1,16 @@
+{
+    "name": "Energy8.Firebase.Analytics",
+    "rootNamespace": "Energy8.Firebase.Analytics",
+    "references": [
+        "Energy8.Firebase.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

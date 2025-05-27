@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee3d5d041ae9bc6438362fb7a4dae2d6, type: 3}
+  m_Name: FirebaseCoreConfiguration
+  m_EditorClassIdentifier: 
+  sdkEnvironmentConfigs:
+  - environment: 0
+    platform: 0
+    config: {fileID: 4900000, guid: 5439415ee8707074eb8ffa89d14776b7, type: 3}
+    isEnabled: 1
+  - environment: 1
+    platform: 0
+    config: {fileID: 4900000, guid: 29355a328f759df44871d287446aad04, type: 3}
+    isEnabled: 1
+  webEnvironmentConfigs:
+  - environment: 1
+    platform: 1
+    config: {fileID: 4900000, guid: f2dbc74a472b54b4ea95c3e78c5620a2, type: 3}
+    isEnabled: 1
+  - environment: 0
+    platform: 1
+    config: {fileID: 4900000, guid: 611664c296eed6d448ded7c73ee7982f, type: 3}
+    isEnabled: 1
+  autoInitialize: 1
+  defaultEnvironment: 0

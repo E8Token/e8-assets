@@ -1,0 +1,20 @@
+{
+    "name": "Energy8.Firebase.Analytics.WebGL",
+    "rootNamespace": "Energy8.Firebase.Analytics.WebGL",
+    "references": [
+        "Energy8.Firebase.Analytics",
+        "Energy8.WebGL.PluginPlatform"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "WebGL"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

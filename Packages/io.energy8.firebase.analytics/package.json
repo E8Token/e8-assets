@@ -1,0 +1,17 @@
+{
+  "name": "io.energy8.firebase.analytics",
+  "version": "1.0.0",
+  "displayName": "Energy8 Firebase Analytics",
+  "description": "Cross-platform Firebase Analytics API for Unity",
+  "unity": "2022.3",
+  "keywords": [
+    "firebase",
+    "analytics",
+    "energy8"
+  ],
+  "category": "Firebase",
+  "dependencies": {
+    "io.energy8.firebase.core": "1.0.0",
+    "io.energy8.webgl-plugin-platform": "1.0.0"
+  }
+}
