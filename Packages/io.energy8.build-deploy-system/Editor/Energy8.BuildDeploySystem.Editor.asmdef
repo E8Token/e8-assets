@@ -1,0 +1,19 @@
+{
+    "name": "Energy8.BuildDeploySystem.Editor",
+    "rootNamespace": "Energy8.BuildDeploySystem.Editor",
+    "references": [
+        "Energy8.BuildDeploySystem",
+        "Unity.Nuget.Newtonsoft-Json"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,16 +1,25 @@
 {
   "name": "io.energy8.build-deploy-system",
   "version": "1.0.0",
-  "displayName": "build-deploy-system",
-  "description": "Package for Energy8 identity functionality",
+  "displayName": "Energy8 Build Deploy System",
+  "description": "Unity build and deployment system with multiple build profiles, texture compression options, and SSH deployment capabilities",
   "author": {
     "name": "Energy8",
     "email": "dlemoncake.work@gmail.com",
-    "url": "https://games.energy8.io/identity-sdk"
+    "url": "https://games.energy8.io"
   },
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.2.1",
     "com.unity.modules.unitywebrequest": "1.0.0"
   },
+  "keywords": [
+    "build",
+    "deploy",
+    "automation",
+    "webgl",
+    "texture-compression"
+  ],
+  "unity": "2021.3",
+  "unityRelease": "0f1",
   "scopedRegistries": []
 }

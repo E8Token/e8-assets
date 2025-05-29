@@ -1,0 +1,16 @@
+{
+    "name": "Energy8.BuildDeploySystem",
+    "rootNamespace": "Energy8.BuildDeploySystem",
+    "references": [
+        "Unity.Nuget.Newtonsoft-Json"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

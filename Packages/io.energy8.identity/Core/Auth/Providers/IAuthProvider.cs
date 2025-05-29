@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Energy8.Contracts.Dto.Auth;
 using Energy8.Contracts.Dto.Common;
 using Newtonsoft.Json;
 
