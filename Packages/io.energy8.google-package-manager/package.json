@@ -1,0 +1,21 @@
+{
+  "name": "io.energy8.google-package-manager",
+  "version": "1.0.0",
+  "displayName": "Energy8 Google Package Manager",
+  "description": "Automatic manager for Google Unity packages with installation, update notifications, and package management through Unity's Package Manager.",
+  "unity": "2020.1",
+  "keywords": [
+    "google",
+    "firebase",
+    "android",
+    "package-management",
+    "auto-update",
+    "energy8"
+  ],
+  "author": {
+    "name": "Energy8",
+    "email": "dev@energy8.com"
+  },
+  "dependencies": {},
+  "samples": []
+}

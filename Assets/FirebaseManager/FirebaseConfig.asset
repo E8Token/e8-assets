@@ -12,21 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c856a5546de7064081599df209fbcea, type: 3}
   m_Name: FirebaseConfig
   m_EditorClassIdentifier: 
-  requiredPackages:
-  - PackageId: com.google.firebase.analytics
-    MinimumVersion: 12.7.0
-    AutoUpdate: 0
-  - PackageId: com.google.firebase.crashlytics
-    MinimumVersion: 12.7.0
-    AutoUpdate: 0
-  - PackageId: com.google.firebase.auth
-    MinimumVersion: 12.7.0
-    AutoUpdate: 0
+  trackedPackages:
   - PackageId: com.google.firebase.app
-    MinimumVersion: 12.7.0
-    AutoUpdate: 0
+    SelectedVersion: 12.9.0
+    LastInstalledVersion: 
+  - PackageId: com.google.firebase.auth
+    SelectedVersion: 12.9.0
+    LastInstalledVersion: 
   - PackageId: com.google.firebase.messaging
-    MinimumVersion: 12.8.0
-    AutoUpdate: 0
-  checkUpdatesOnStartup: 1
-  autoUpdateRequired: 1
+    SelectedVersion: 12.9.0
+    LastInstalledVersion: 
+  - PackageId: com.google.firebase.analytics
+    SelectedVersion: 12.9.0
+    LastInstalledVersion: 
+  - PackageId: com.google.firebase.crashlytics
+    SelectedVersion: 12.9.0
+    LastInstalledVersion: 
+  - PackageId: com.google.firebase.app-check
+    SelectedVersion: 12.9.0
+    LastInstalledVersion: 
+  autoUpdateOnStartup: 1

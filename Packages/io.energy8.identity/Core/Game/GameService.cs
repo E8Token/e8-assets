@@ -30,7 +30,7 @@ namespace Energy8.Identity.Core.Game.Services
             this.logger = logger;
         }
 
-        public async UniTask<GameUserDto> GetUserAsync(CancellationToken ct)
+        public virtual async UniTask<GameUserDto> GetUserAsync(CancellationToken ct)
         {
             try
             {
@@ -45,7 +45,7 @@ namespace Energy8.Identity.Core.Game.Services
             }
         }
 
-        public async UniTask<GameSessionDto> CreateSessionsAsync(CancellationToken ct)
+        public virtual async UniTask<GameSessionDto> CreateSessionsAsync(CancellationToken ct)
         {
             try
             {
