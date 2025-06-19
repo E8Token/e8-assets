@@ -8,10 +8,11 @@ using HtmlAgilityPack;
 using Energy8.GooglePackageManager.Data;
 
 namespace Energy8.GooglePackageManager.Utilities
-{    public class GooglePackageParser
+{
+    public class GooglePackageParser
     {
         private const string GOOGLE_PACKAGES_URL = "https://developers.google.com/unity/archive";
-          // Настройка для детального логирования
+        // Настройка для детального логирования
         private static bool EnableDetailedLogging => GooglePackageSettings.Instance.enableDebugLogging;
 
         public async Task<GooglePackageDatabase> ParsePackagesAsync()
@@ -41,7 +42,7 @@ namespace Energy8.GooglePackageManager.Utilities
                 // Итоговая сводка
                 int totalPackages = GetTotalPackagesCount(database);
                 Debug.Log($"✅ Parsing completed: {database.categories.Count} categories, {totalPackages} packages total");
-                
+
                 if (EnableDetailedLogging)
                 {
                     foreach (var category in database.categories)
@@ -49,7 +50,7 @@ namespace Energy8.GooglePackageManager.Utilities
                         Debug.Log($"  📁 {category.displayName}: {category.packages.Count} packages");
                     }
                 }
-                
+
                 return database;
             }
             catch (Exception ex)
@@ -79,7 +80,8 @@ namespace Energy8.GooglePackageManager.Utilities
                     return null;
                 }
             }
-        }        private void ParseWithHtmlAgilityPack(string htmlContent, GooglePackageDatabase database)
+        }
+        private void ParseWithHtmlAgilityPack(string htmlContent, GooglePackageDatabase database)
         {
             try
             {
@@ -92,7 +94,7 @@ namespace Energy8.GooglePackageManager.Utilities
                 if (groupHeaders == null || groupHeaders.Count == 0)
                 {
                     Debug.LogWarning("No group headers found in HTML");
-                    
+
                     if (EnableDetailedLogging)
                     {
                         // Альтернативный поиск групп для отладки
@@ -113,7 +115,8 @@ namespace Energy8.GooglePackageManager.Utilities
                     Debug.Log($"Found {groupHeaders.Count} group headers");
 
                 foreach (var groupHeader in groupHeaders)
-                {                    try
+                {
+                    try
                     {
                         var groupName = groupHeader.GetAttributeValue("data-text", "");
                         var groupId = groupHeader.GetAttributeValue("id", "");
@@ -145,7 +148,7 @@ namespace Energy8.GooglePackageManager.Utilities
                             {
                                 package.category = groupName;
                                 category.packages.Add(package);
-                                
+
                                 if (EnableDetailedLogging)
                                     Debug.Log($"  Added package: {package.displayName} ({package.packageName})");
                             }
@@ -170,20 +173,22 @@ namespace Energy8.GooglePackageManager.Utilities
                         if (EnableDetailedLogging)
                             Debug.LogError($"Stack trace: {ex.StackTrace}");
                     }
-                }            }
+                }
+            }
             catch (Exception ex)
             {
                 Debug.LogError($"Error in ParseWithHtmlAgilityPack: {ex.Message}");
                 if (EnableDetailedLogging)
                     Debug.LogError($"Stack trace: {ex.StackTrace}");
             }
-        }private List<HtmlNode> FindPackageHeadersAfterGroup(HtmlNode groupHeader)
+        }
+        private List<HtmlNode> FindPackageHeadersAfterGroup(HtmlNode groupHeader)
         {
             var packageHeaders = new List<HtmlNode>();
 
             // Используем XPath для поиска всех h3 элементов после текущей группы
             var allH3Elements = groupHeader.OwnerDocument.DocumentNode.SelectNodes("//h3[@data-text]");
-            
+
             if (allH3Elements == null)
             {
                 if (EnableDetailedLogging)
@@ -193,11 +198,11 @@ namespace Energy8.GooglePackageManager.Utilities
 
             // Получаем позицию текущей группы в документе
             int groupPosition = groupHeader.StreamPosition;
-            
+
             // Ищем следующую группу для определения границ
             var nextGroupPosition = int.MaxValue;
             var allGroups = groupHeader.OwnerDocument.DocumentNode.SelectNodes("//h2[@data-text]");
-            
+
             if (allGroups != null)
             {
                 foreach (var group in allGroups)
@@ -224,7 +229,7 @@ namespace Energy8.GooglePackageManager.Utilities
 
             return packageHeaders;
         }
-        
+
         private GooglePackageInfo ParsePackageFromHeader(HtmlNode packageHeader)
         {
             try
@@ -242,7 +247,8 @@ namespace Energy8.GooglePackageManager.Utilities
                     if (EnableDetailedLogging)
                         Debug.LogWarning("Empty package name, skipping");
                     return null;
-                }                var package = new GooglePackageInfo
+                }
+                var package = new GooglePackageInfo
                 {
                     displayName = packageName,
                     availableVersions = new List<GooglePackageVersion>()
@@ -279,9 +285,10 @@ namespace Energy8.GooglePackageManager.Utilities
                         var codeNodes = element.SelectNodes(".//code");
                         if (codeNodes != null)
                         {
-                            foreach (var codeNode in codeNodes)                            {
+                            foreach (var codeNode in codeNodes)
+                            {
                                 var text = codeNode.InnerText.Trim();
-                                
+
                                 if (EnableDetailedLogging)
                                     Debug.Log($"Code content: '{text}'");
 
@@ -365,7 +372,7 @@ namespace Energy8.GooglePackageManager.Utilities
                 return null;
             }
         }
-        
+
         private void ParseVersionsFromTable(HtmlNode table, GooglePackageInfo package)
         {
             try
@@ -432,7 +439,8 @@ namespace Energy8.GooglePackageManager.Utilities
                         // Извлекаем зависимости из 5-й колонки (если есть)
                         if (cells.Count > 4)
                         {
-                            version.dependencies = ExtractDependencies(cells[4]);                        }
+                            version.dependencies = ExtractDependencies(cells[4]);
+                        }
                         else
                         {
                             version.dependencies = "None";
@@ -467,7 +475,7 @@ namespace Energy8.GooglePackageManager.Utilities
                     Debug.LogError($"Stack trace: {ex.StackTrace}");
             }
         }
-        
+
         private void ExtractDownloadLinks(HtmlNode downloadCell, GooglePackageVersion version)
         {
             try
@@ -489,7 +497,8 @@ namespace Energy8.GooglePackageManager.Utilities
                             version.downloadUrlTgz = href;
                         }
                         else if (href.EndsWith(".unitypackage"))
-                        {                            version.downloadUrlUnityPackage = href;
+                        {
+                            version.downloadUrlUnityPackage = href;
                         }
                         else if (href.Contains("download") || href.Contains("package"))
                         {

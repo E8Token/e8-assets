@@ -1,0 +1,25 @@
+{
+  "name": "io.energy8.build-deploy-system",
+  "version": "2.1.0",
+  "displayName": "Energy8 Build Deploy System",
+  "description": "Advanced Unity package for automated build management with Unity Build Profiles integration. Features collapsible configurations with platform-specific settings, including WebGL multi-format texture builds (DXT/ASTC/ETC2) and auto-deployment capabilities.",
+  "unity": "2022.3",
+  "keywords": [
+    "build",
+    "deploy",
+    "automation",
+    "build-profiles",
+    "unity"
+  ],
+  "author": {
+    "name": "Energy8",
+    "email": "dev@energy8.io"
+  },  "dependencies": {},
+  "samples": [
+    {
+      "displayName": "Basic Build Info Example",
+      "description": "Example of using BuildInfo component to display build information at runtime",
+      "path": "Samples/BasicExample"
+    }
+  ]
+}

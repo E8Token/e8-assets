@@ -1,0 +1,14 @@
+{
+    "name": "Energy8.BuildDeploySystem.Runtime",
+    "rootNamespace": "Energy8.BuildDeploySystem",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

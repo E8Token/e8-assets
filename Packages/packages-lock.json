@@ -419,6 +419,12 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
+    "io.energy8.build-deploy-system": {
+      "version": "file:io.energy8.build-deploy-system",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "io.energy8.google-package-manager": {
       "version": "file:io.energy8.google-package-manager",
       "depth": 0,

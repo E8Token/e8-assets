@@ -525,7 +525,7 @@ MonoBehaviour:
     - line: '|   m_BuildTargetBatching:'
     - line: '|   - m_BuildTarget: WebGL'
     - line: '|     m_StaticBatching: 1'
-    - line: '|     m_DynamicBatching: 1'
+    - line: '|     m_DynamicBatching: 0'
     - line: '|   m_BuildTargetShaderSettings: []'
     - line: '|   m_BuildTargetGraphicsJobs:'
     - line: '|   - m_BuildTarget: MacStandaloneSupport'
@@ -829,9 +829,9 @@ MonoBehaviour:
     - line: '|   spritePackerPolicy: '
     - line: '|   webGLMemorySize: 32'
     - line: '|   webGLExceptionSupport: 2'
-    - line: '|   webGLNameFilesAsHashes: 0'
+    - line: '|   webGLNameFilesAsHashes: 1'
     - line: '|   webGLShowDiagnostics: 0'
-    - line: '|   webGLDataCaching: 0'
+    - line: '|   webGLDataCaching: 1'
     - line: '|   webGLDebugSymbols: 1'
     - line: '|   webGLEmscriptenArgs: '
     - line: '|   webGLModulesDirectory: '
@@ -1005,7 +1005,7 @@ MonoBehaviour:
     - rid: 4864807410666831872
       type: {class: WebGLPlatformSettings, ns: UnityEditor.WebGL, asm: UnityEditor.WebGL.Extensions}
       data:
-        m_Development: 1
+        m_Development: 0
         m_ConnectProfiler: 0
         m_BuildWithDeepProfilingSupport: 0
         m_AllowDebugging: 0
@@ -1019,4 +1019,4 @@ MonoBehaviour:
         m_CodeOptimization: 3
         m_WebGLClientBrowserPath: 
         m_WebGLClientBrowserType: 0
-        m_WebGLTextureSubtarget: 0
+        m_WebGLTextureSubtarget: 3
