@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GooglePackageSettings
   m_EditorClassIdentifier: 
   enableAutoUpdateCheck: 1
-  enableStartupUpdateCheck: 0
+  enableStartupUpdateCheck: 1
   enableUpdateNotifications: 1
   updateCheckIntervalHours: 24
   downloadCachePath: Library/GooglePackageCache
