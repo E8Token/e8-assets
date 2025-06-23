@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="{{{ PRODUCT_NAME }}} - Debug Build">
+    <meta name="keywords" content="Energy8, WebGL, Unity, Debug, Development">
+    <meta name="author" content="{{{ COMPANY_NAME }}}">
+    <title>{{{ PRODUCT_NAME }}} [DEBUG]</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    <link rel="stylesheet" href="TemplateData/debug-theme.css">
+</head>
+
+<body data-version="debug">
+    <!-- Debug Header -->
+    <div id="debug-header" class="debug-header">
+        <div class="debug-info">
+            <span class="debug-label">DEBUG BUILD</span>
+            <span class="debug-version">v{{{ VERSION }}}</span>
+            <span class="debug-timestamp" id="build-time"></span>
+        </div>
+        <div class="debug-controls">
+            <button id="debug-toggle" class="debug-btn">🔧</button>
+            <button id="console-toggle" class="debug-btn">📋</button>
+            <button id="performance-toggle" class="debug-btn">📊</button>
+        </div>
+    </div>
+
+    <!-- Unity Container -->
+    <div id="unity-container" class="unity-debug" aria-hidden="true">
+        <canvas id="unity-canvas" aria-label="Game canvas"></canvas>
+    </div>
+
+    <!-- Enhanced Loading Screen with Debug Info -->
+    <div id="loading-screen" aria-label="Loading screen">
+        <div id="loading-ring" class="loading-ring-debug">
+            <svg width="100%" height="100%" viewBox="0 0 100 100">
+                <circle id="ring-background" cx="50" cy="50" r="45" stroke="#ddd" stroke-width="6" fill="none"></circle>
+                <circle id="ring-progress" cx="50" cy="50" r="45" stroke="#ff6b6b" stroke-width="6" fill="none"
+                    stroke-dasharray="282.743" stroke-dashoffset="282.743"></circle>
+            </svg>
+            <img src="TemplateData/loadingIcon.png" alt="Unity Logo">
+        </div>
+        <div id="loading-text" class="loading-text-debug">
+            <h3>Loading Debug Build</h3>
+            <p>Status: <span id="loading-stage">Initializing</span></p>
+            <p>Progress: <span id="loading-percentage">0%</span></p>
+            <div class="debug-loading-details">
+                <div>File: <span id="loading-current-file">--</span></div>
+                <div>Speed: <span id="loading-speed">--</span></div>
+                <div>Memory: <span id="loading-memory">--</span></div>
+                <div>Time: <span id="loading-elapsed">0s</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Progress Tracking -->
+    <div id="progress-container" class="progress-container-debug" style="display: none;">
+        <div class="progress-header-debug">
+            <h3 id="progress-title">Loading Assets</h3>
+            <div class="progress-stats">
+                <span id="progress-percentage">0%</span>
+                <span>|</span>
+                <span id="progress-files">0/0</span>
+                <span>|</span>
+                <span id="progress-size">0 MB</span>
+            </div>
+        </div>
+        <div class="progress-bar-debug">
+            <div id="progress-fill" class="progress-fill-debug"></div>
+        </div>
+        <div class="progress-details-debug">
+            <div>Current: <span id="progress-current-file">--</span></div>
+            <div>Speed: <span id="progress-speed">--</span></div>
+            <div>ETA: <span id="progress-eta">--</span></div>
+        </div>
+    </div>
+
+    <!-- Debug Console -->
+    <div id="debug-console" class="debug-console" style="display: none;">
+        <div class="console-header">
+            <span>Debug Console</span>
+            <div class="console-controls">
+                <button id="console-clear" class="console-btn">Clear</button>
+                <button id="console-export" class="console-btn">Export</button>
+                <button id="console-close" class="console-btn">×</button>
+            </div>
+        </div>
+        <div id="console-content" class="console-content">
+            <!-- Console logs will appear here -->
+        </div>
+        <div class="console-input">
+            <input type="text" id="console-command" placeholder="Enter Unity command..." />
+            <button id="console-send">Send</button>
+        </div>
+    </div>
+
+    <!-- Performance Monitor -->
+    <div id="performance-monitor" class="performance-monitor-debug" style="display: none;">
+        <div class="perf-header">Performance Monitor</div>
+        <div class="perf-grid">
+            <div class="perf-item">
+                <span class="perf-label">FPS:</span>
+                <span id="fps-counter" class="perf-value">--</span>
+            </div>
+            <div class="perf-item">
+                <span class="perf-label">Frame Time:</span>
+                <span id="frame-time" class="perf-value">--ms</span>
+            </div>
+            <div class="perf-item">
+                <span class="perf-label">Memory:</span>
+                <span id="memory-usage" class="perf-value">--MB</span>
+            </div>
+            <div class="perf-item">
+                <span class="perf-label">GPU Memory:</span>
+                <span id="gpu-memory" class="perf-value">--MB</span>
+            </div>
+            <div class="perf-item">
+                <span class="perf-label">Draw Calls:</span>
+                <span id="draw-calls" class="perf-value">--</span>
+            </div>
+            <div class="perf-item">
+                <span class="perf-label">Triangles:</span>
+                <span id="triangles" class="perf-value">--</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div id="debug-panel" class="debug-panel" style="display: none;">
+        <div class="debug-panel-header">
+            <span>Debug Tools</span>
+            <button id="debug-panel-close" class="debug-btn">×</button>
+        </div>
+        <div class="debug-panel-content">
+            <div class="debug-section">
+                <h4>Quality Settings</h4>
+                <select id="quality-level">
+                    <option value="0">Very Low</option>
+                    <option value="1">Low</option>
+                    <option value="2" selected>Medium</option>
+                    <option value="3">High</option>
+                    <option value="4">Very High</option>
+                </select>
+            </div>
+            <div class="debug-section">
+                <h4>Time Scale</h4>
+                <input type="range" id="time-scale" min="0" max="3" step="0.1" value="1">
+                <span id="time-scale-value">1.0x</span>
+            </div>
+            <div class="debug-section">
+                <h4>Screen Resolution</h4>
+                <select id="screen-resolution">
+                    <option value="auto">Auto</option>
+                    <option value="1920x1080">1920x1080</option>
+                    <option value="1280x720">1280x720</option>
+                    <option value="800x600">800x600</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Warning Modal -->
+    <div id="warning-modal" class="warning-modal" style="display: none;" aria-hidden="true">
+        <div class="warning-modal-content">
+            <div id="warning-message" aria-live="polite"></div>
+            <div id="warning-buttons" class="warning-buttons">
+                <!-- Buttons will be added dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- All Scripts including Debug Tools -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script type="module" src="TemplateData/firebaseHandler.js"></script>
+    <script src="TemplateData/telegramAuthHandler.js"></script>
+    <script src="TemplateData/warningModal.js"></script>
+    <script src="TemplateData/platformHandler.js"></script>
+    <script src="TemplateData/orientationHandler.js"></script>
+    <script src="TemplateData/progressManager.js"></script>
+    <script src="TemplateData/performanceMonitor.js"></script>
+    <script src="TemplateData/debugConsole.js"></script>
+    <script src="TemplateData/debugPanel.js"></script>
+    <script src="TemplateData/unityLoader.js"></script>
+
+    <script>
+        // Initialize debug tools
+        document.addEventListener('DOMContentLoaded', () => {
+            // Show build timestamp
+            document.getElementById('build-time').textContent = new Date().toLocaleString();
+            
+            // Initialize Eruda for mobile debugging
+            if (typeof eruda !== 'undefined') {
+                eruda.init();
+            }
+            
+            // Debug mode indicators
+            console.log('%c🐛 DEBUG BUILD LOADED', 'color: #ff6b6b; font-size: 16px; font-weight: bold;');
+            console.log('Version: {{{ VERSION }}}');
+            console.log('Build: {{{ BUILD_TARGET }}}');
+        });
+    </script>
+
+    <!-- Enhanced Analytics with Debug Info -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G4FMC73VHL"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-G4FMC73VHL', {
+            custom_map: {
+                'custom_parameter_1': 'debug_build',
+                'custom_parameter_2': 'version'
+            }
+        });
+        // Track debug build usage
+        gtag('event', 'debug_build_loaded', {
+            'version': '{{{ VERSION }}}',
+            'build_target': '{{{ BUILD_TARGET }}}'
+        });
+    </script>
+</body>
+
+</html>

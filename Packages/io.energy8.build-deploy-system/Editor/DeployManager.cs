@@ -1,13 +1,61 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
+using System.Net;
+using Debug = UnityEngine.Debug;
 
 namespace Energy8.BuildDeploySystem.Editor
-{
-    public static class DeployManager
+{    public interface IDeployMonitor
     {
-        public static async Task<bool> DeployBuild(BuildConfiguration config, string buildPath)
+        void AddLog(string message, UnityEngine.LogType type = UnityEngine.LogType.Log);
+        void UpdateDeployProgress(float progress, string message = null);
+        void CompleteDeployment(bool success);
+    }
+    
+    public class ConsoleDeployMonitor : IDeployMonitor
+    {
+        public void AddLog(string message, UnityEngine.LogType type = UnityEngine.LogType.Log)
+        {
+            switch (type)
+            {
+                case UnityEngine.LogType.Error:
+                case UnityEngine.LogType.Exception:
+                    Debug.LogError(message);
+                    break;
+                case UnityEngine.LogType.Warning:
+                    Debug.LogWarning(message);
+                    break;
+                default:
+                    Debug.Log(message);
+                    break;
+            }
+        }
+        
+        public void UpdateDeployProgress(float progress, string message = null)
+        {
+            if (!string.IsNullOrEmpty(message))
+            {
+                Debug.Log($"[{progress * 100:F0}%] {message}");
+            }
+        }
+        
+        public void CompleteDeployment(bool success)
+        {
+            if (success)
+            {
+                Debug.Log("✅ [DeploySystem] Deployment completed successfully!");
+            }
+            else
+            {
+                Debug.LogError("❌ [DeploySystem] Deployment failed!");
+            }
+        }
+    }
+      public static class DeployManager
+    {
+        public static async Task<bool> DeployBuild(BuildConfiguration config, string buildPath, IDeployMonitor monitor = null)
         {
             var deploySettings = config.DeploySettings;
             
@@ -23,50 +71,266 @@ namespace Energy8.BuildDeploySystem.Editor
                 return false;
             }
             
-            Debug.Log($"Starting deploy to {deploySettings.ServerHost}:{deploySettings.ServerPort}");
+            // Используем переданный монитор или создаем консольный
+            IDeployMonitor deployMonitor = monitor ?? new ConsoleDeployMonitor();
+            deployMonitor.AddLog($"[DeploySystem] Starting deployment...", UnityEngine.LogType.Log);
             
             try
             {
+                bool result;
                 switch (deploySettings.Method)
-                {
-                    case DeployMethod.FTP:
-                        return await DeployViaFTP(deploySettings, buildPath);
+                {                    case DeployMethod.FTP:
+                        result = await DeployViaFTP(deploySettings, buildPath, deployMonitor);
+                        break;
                     case DeployMethod.SFTP:
-                        return await DeployViaSFTP(deploySettings, buildPath);
+                        result = await DeployViaSFTP(deploySettings, buildPath, deployMonitor);
+                        break;
                     default:
                         Debug.LogError($"Unsupported deploy method: {deploySettings.Method}");
+                        deployMonitor.AddLog($"❌ Unsupported deploy method: {deploySettings.Method}", UnityEngine.LogType.Error);
+                        deployMonitor.CompleteDeployment(false);
                         return false;
                 }
+                
+                deployMonitor.CompleteDeployment(result);
+                return result;
             }
             catch (Exception ex)
             {
                 Debug.LogError($"Deploy failed: {ex.Message}");
+                deployMonitor.AddLog($"❌ Deploy failed: {ex.Message}", UnityEngine.LogType.Error);
+                deployMonitor.CompleteDeployment(false);
                 return false;
+            }
+        }        private static async Task<bool> DeployViaFTP(DeploySettings settings, string buildPath, IDeployMonitor monitor)
+        {
+            Debug.Log($"Starting FTP deploy to {settings.ServerHost}:{settings.ServerPort}");
+            monitor.AddLog($"🌐 Starting FTP deploy to {settings.ServerHost}:{settings.ServerPort}");
+            
+            try
+            {
+                ValidateDeployPath(buildPath);
+                var filesToDeploy = GetFilesToDeploy(settings, buildPath);
+                
+                monitor.AddLog($"📁 Found {filesToDeploy.Length} files to deploy");
+                
+                for (int i = 0; i < filesToDeploy.Length; i++)
+                {
+                    var filePath = filesToDeploy[i];
+                    var relativePath = Path.GetRelativePath(buildPath, filePath);
+                    
+                    monitor.UpdateDeployProgress((float)i / filesToDeploy.Length, $"📤 Uploading: {relativePath}");
+                    await UploadFileViaFTP(settings, filePath, buildPath);
+                }
+                
+                Debug.Log("[DeploySystem] FTP Deployment completed successfully!");
+                monitor.AddLog("✅ FTP Deployment completed successfully!");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[DeploySystem] FTP Deploy failed: {ex.Message}");
+                monitor.AddLog($"❌ FTP Deploy failed: {ex.Message}", UnityEngine.LogType.Error);
+                return false;
+            }
+        }        private static async Task<bool> DeployViaSFTP(DeploySettings settings, string buildPath, IDeployMonitor monitor)
+        {
+            Debug.Log($"Starting SFTP deploy to {settings.ServerHost}:{settings.ServerPort}");
+            
+            try
+            {
+                ValidateDeployPath(buildPath);
+                var filesToDeploy = GetFilesToDeploy(settings, buildPath);
+                
+                Debug.Log($"[DeploySystem] Found {filesToDeploy.Length} files to deploy");
+                Debug.Log($"[DeploySystem] Target: {settings.Username}@{settings.ServerHost}:{settings.RemotePath}");
+                Debug.Log($"[DeploySystem] Auth method: {settings.AuthMethod}");
+                
+                // Создаем временную папку для архива
+                string tempDir = Path.Combine(Path.GetTempPath(), "Energy8Deploy_" + System.Guid.NewGuid().ToString("N")[..8]);
+                Directory.CreateDirectory(tempDir);
+                
+                try
+                {
+                    // Создаем архив билда
+                    string archiveName = $"build_{DateTime.Now:yyyyMMdd_HHmmss}.tar.gz";
+                    string archivePath = Path.Combine(tempDir, archiveName);
+                    
+                    await CreateArchive(buildPath, archivePath);
+                    
+                    // Загружаем через SCP
+                    bool uploadSuccess = await UploadViaSCP(settings, archivePath, archiveName);
+                    
+                    if (uploadSuccess)
+                    {
+                        // Распаковываем на сервере
+                        bool extractSuccess = await ExtractOnServer(settings, archiveName);
+                        
+                        if (extractSuccess)
+                        {
+                            Debug.Log("[DeploySystem] SFTP Deployment completed successfully!");
+                            return true;
+                        }
+                    }
+                    
+                    return false;
+                }
+                finally
+                {
+                    // Очищаем временные файлы
+                    if (Directory.Exists(tempDir))
+                    {
+                        Directory.Delete(tempDir, true);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[DeploySystem] SFTP Deploy failed: {ex.Message}");
+                return false;
+            }
+        }        
+        private static async Task CreateArchive(string sourcePath, string archivePath)
+        {
+            Debug.Log($"[DeploySystem] Creating archive: {Path.GetFileName(archivePath)}");
+            
+            // Используем tar для создания архива (работает на Windows 10+ и всех Unix системах)
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = "tar",
+                Arguments = $"-czf \"{archivePath}\" -C \"{sourcePath}\" .",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+              using (var process = Process.Start(processInfo))
+            {
+                await Task.Run(() => process.WaitForExit());
+                
+                if (process.ExitCode != 0)
+                {
+                    string error = await process.StandardError.ReadToEndAsync();
+                    throw new Exception($"Archive creation failed: {error}");
+                }
+            }
+            
+            Debug.Log($"[DeploySystem] Archive created: {new FileInfo(archivePath).Length / 1024} KB");
+        }
+        
+        private static async Task<bool> UploadViaSCP(DeploySettings settings, string localFile, string remoteFileName)
+        {
+            Debug.Log($"[DeploySystem] Uploading via SCP: {remoteFileName}");
+            
+            string remotePath = $"{settings.Username}@{settings.ServerHost}:{settings.RemotePath}/{remoteFileName}";
+            
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = "scp",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            
+            // Настраиваем аргументы в зависимости от метода аутентификации
+            if (settings.AuthMethod == AuthenticationMethod.PrivateKey && !string.IsNullOrEmpty(settings.PrivateKeyPath))
+            {
+                processInfo.Arguments = $"-P {settings.ServerPort} -i \"{settings.PrivateKeyPath}\" \"{localFile}\" {remotePath}";
+            }
+            else
+            {
+                processInfo.Arguments = $"-P {settings.ServerPort} \"{localFile}\" {remotePath}";
+                // Для password auth нужно будет использовать sshpass или аналог
+                Debug.LogWarning("[DeploySystem] Password authentication requires sshpass. Consider using SSH keys.");
+            }
+              Debug.Log($"[DeploySystem] SCP command: scp {processInfo.Arguments}");
+            
+            using (var process = Process.Start(processInfo))
+            {
+                await Task.Run(() => process.WaitForExit());
+                
+                if (process.ExitCode == 0)
+                {
+                    Debug.Log("[DeploySystem] Upload completed successfully!");
+                    return true;
+                }
+                else
+                {
+                    string error = await process.StandardError.ReadToEndAsync();
+                    Debug.LogError($"[DeploySystem] SCP upload failed: {error}");
+                    return false;
+                }
             }
         }
         
-        private static async Task<bool> DeployViaFTP(DeploySettings settings, string buildPath)
+        private static async Task<bool> ExtractOnServer(DeploySettings settings, string archiveFileName)
         {
-            Debug.Log("FTP Deploy implementation pending...");
+            Debug.Log($"[DeploySystem] Extracting archive on server: {archiveFileName}");
             
-            // TODO: Реализация FTP деплоя
-            // Будет использовать System.Net.FtpWebRequest или внешнюю библиотеку
+            string sshCommand = $"cd {settings.RemotePath} && tar -xzf {archiveFileName} && rm {archiveFileName}";
             
-            await Task.Delay(1000); // Имитация работы
-            Debug.Log("FTP Deploy completed (mock)");
-            return true;
+            var processInfo = new ProcessStartInfo
+            {
+                FileName = "ssh",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            
+            // Настраиваем SSH команду
+            if (settings.AuthMethod == AuthenticationMethod.PrivateKey && !string.IsNullOrEmpty(settings.PrivateKeyPath))
+            {
+                processInfo.Arguments = $"-p {settings.ServerPort} -i \"{settings.PrivateKeyPath}\" {settings.Username}@{settings.ServerHost} \"{sshCommand}\"";
+            }
+            else
+            {
+                processInfo.Arguments = $"-p {settings.ServerPort} {settings.Username}@{settings.ServerHost} \"{sshCommand}\"";
+            }
+              Debug.Log($"[DeploySystem] SSH command: ssh {processInfo.Arguments}");
+            
+            using (var process = Process.Start(processInfo))
+            {
+                await Task.Run(() => process.WaitForExit());
+                
+                if (process.ExitCode == 0)
+                {
+                    Debug.Log("[DeploySystem] Archive extracted successfully!");
+                    return true;
+                }
+                else
+                {
+                    string error = await process.StandardError.ReadToEndAsync();
+                    Debug.LogError($"[DeploySystem] SSH extraction failed: {error}");
+                    return false;
+                }
+            }
         }
         
-        private static async Task<bool> DeployViaSFTP(DeploySettings settings, string buildPath)
+        private static async Task UploadFileViaFTP(DeploySettings settings, string localFilePath, string buildBasePath)
         {
-            Debug.Log("SFTP Deploy implementation pending...");
+            var relativePath = Path.GetRelativePath(buildBasePath, localFilePath);
+            var remoteUrl = $"ftp://{settings.ServerHost}:{settings.ServerPort}{settings.RemotePath}/{relativePath.Replace('\\', '/')}";
             
-            // TODO: Реализация SFTP деплоя  
-            // Будет использовать SSH.NET или аналогичную библиотеку
+            var request = (FtpWebRequest)WebRequest.Create(remoteUrl);
+            request.Method = WebRequestMethods.Ftp.UploadFile;
+            request.Credentials = new NetworkCredential(settings.Username, settings.Password);
+            request.UseBinary = true;
+            request.UsePassive = true;
             
-            await Task.Delay(1000); // Имитация работы
-            Debug.Log("SFTP Deploy completed (mock)");
-            return true;
+            var fileContents = await File.ReadAllBytesAsync(localFilePath);
+            request.ContentLength = fileContents.Length;
+            
+            using (var requestStream = await request.GetRequestStreamAsync())
+            {
+                await requestStream.WriteAsync(fileContents, 0, fileContents.Length);
+            }
+            
+            using (var response = (FtpWebResponse)await request.GetResponseAsync())
+            {
+                Debug.Log($"[DeploySystem] Uploaded: {relativePath} ({response.StatusDescription})");
+            }
         }
         
         private static void ValidateDeployPath(string path)

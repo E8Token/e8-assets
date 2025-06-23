@@ -187,9 +187,9 @@ namespace Energy8.BuildDeploySystem
 
     [Serializable]
     public class DeploySettings
-    {
-        [Header("Deploy Configuration")]
+    {        [Header("Deploy Configuration")]
         [SerializeField] private bool enableDeploy = false;
+        [SerializeField] private bool alwaysDeploy = false;
         [SerializeField] private DeployMethod deployMethod = DeployMethod.FTP;
         
         [Header("Server Settings")]
@@ -207,12 +207,16 @@ namespace Energy8.BuildDeploySystem
         [Header("Deploy Options")]
         [SerializeField] private bool deleteExistingFiles = false;
         [SerializeField] private bool createBackup = true;
-        [SerializeField] private bool deployZipOnly = false;
-
-        public bool EnableDeploy
+        [SerializeField] private bool deployZipOnly = false;        public bool EnableDeploy
         {
             get => enableDeploy;
             set => enableDeploy = value;
+        }
+
+        public bool AlwaysDeploy
+        {
+            get => alwaysDeploy;
+            set => alwaysDeploy = value;
         }
 
         public DeployMethod Method

@@ -14,23 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buildProfileGUID: 92bc16ec2a93c7641a03e6e5751c9d55
   buildProfileName: Assets Debug
-  outputPath: Builds/Debug/WebGL/Assets
-  autoGeneratePath: 0
+  outputPath: Builds/Debug/{{{PLATFORM}}}/{{{VERSION}}}_{{{DATE}}}/Assets
   cleanBeforeBuild: 0
-  createZipArchive: 0
   customBuildName: 
   deploySettings:
     enableDeploy: 0
-    deployMethod: 1
-    serverHost: 
-    serverPort: 21
-    remotePath: /
-    authMethod: 0
-    username: 
+    alwaysDeploy: 0
+    deployMethod: 2
+    serverHost: 176.223.131.88
+    serverPort: 58976
+    remotePath: /var/www/html/debug/assets
+    authMethod: 1
+    username: deployer
     password: 
-    privateKeyPath: 
+    privateKeyPath: C:/Users/dlemo/.ssh/deployer-key
     privateKeyPassphrase: 
-    deleteExistingFiles: 0
+    deleteExistingFiles: 1
     createBackup: 1
     deployZipOnly: 0
   webGLSettings:

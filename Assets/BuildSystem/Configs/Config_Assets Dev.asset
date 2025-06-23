@@ -15,12 +15,11 @@ MonoBehaviour:
   buildProfileGUID: ffd5e6db18510474da72b5cc32a48770
   buildProfileName: Assets Dev
   outputPath: Builds/Dev/WebGL/Assets
-  autoGeneratePath: 1
   cleanBeforeBuild: 0
-  createZipArchive: 0
   customBuildName: 
   deploySettings:
-    enableDeploy: 0
+    enableDeploy: 1
+    alwaysDeploy: 0
     deployMethod: 2
     serverHost: debug.energy8.io
     serverPort: 58976

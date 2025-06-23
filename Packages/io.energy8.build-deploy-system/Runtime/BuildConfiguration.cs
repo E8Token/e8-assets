@@ -9,17 +9,13 @@ namespace Energy8.BuildDeploySystem
 {
     [CreateAssetMenu(fileName = "BuildConfiguration", menuName = "Energy8/Build Configuration")]
     public class BuildConfiguration : ScriptableObject
-    {
-        [Header("Build Profile Reference")]
+    {        [Header("Build Profile Reference")]
         [SerializeField] private string buildProfileGUID;
         [SerializeField] private string buildProfileName;
         
-        [Header("Deploy Settings")]
+        [Header("Build Settings")]
         [SerializeField] private string outputPath;
-        [SerializeField] private bool autoGeneratePath = true;
         [SerializeField] private bool cleanBeforeBuild = true;
-          [Header("Additional Options")]
-        [SerializeField] private bool createZipArchive = false;
         [SerializeField] private string customBuildName;
         
         [Header("Deploy Settings")]
@@ -54,15 +50,12 @@ namespace Energy8.BuildDeploySystem
         {
             if (profile != null)
             {
-                var assetPath = AssetDatabase.GetAssetPath(profile);
-                buildProfileGUID = AssetDatabase.AssetPathToGUID(assetPath);
+                var assetPath = AssetDatabase.GetAssetPath(profile);                buildProfileGUID = AssetDatabase.AssetPathToGUID(assetPath);
                 buildProfileName = profile.name;
                 cachedBuildProfile = profile;
                 
-                if (autoGeneratePath)
-                {
-                    GenerateOutputPath();
-                }
+                // Автоматически генерируем путь сборки
+                GenerateOutputPath();
                 
                 EditorUtility.SetDirty(this);
             }
@@ -88,14 +81,11 @@ namespace Energy8.BuildDeploySystem
                 var assetPath = AssetDatabase.GUIDToAssetPath(buildProfileGUID);
                 if (!string.IsNullOrEmpty(assetPath))
                 {
-                    var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(assetPath);
-                    if (profile != null && profile.name != buildProfileName)
+                    var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(assetPath);                    if (profile != null && profile.name != buildProfileName)
                     {
                         buildProfileName = profile.name;
-                        if (autoGeneratePath)
-                        {
-                            GenerateOutputPath();
-                        }
+                        // Автоматически обновляем путь сборки
+                        GenerateOutputPath();
                         EditorUtility.SetDirty(this);
                     }
                 }
@@ -115,24 +105,7 @@ namespace Energy8.BuildDeploySystem
 #if UNITY_EDITOR
                 EditorUtility.SetDirty(this);
 #endif
-            }
-        }
-
-        public bool AutoGeneratePath
-        {
-            get => autoGeneratePath;
-            set 
-            { 
-                autoGeneratePath = value;
-#if UNITY_EDITOR
-                if (value && BuildProfile != null)
-                {
-                    GenerateOutputPath();
-                }
-                EditorUtility.SetDirty(this);
-#endif
-            }
-        }
+            }        }
 
         public bool CleanBeforeBuild
         {
@@ -140,18 +113,6 @@ namespace Energy8.BuildDeploySystem
             set 
             { 
                 cleanBeforeBuild = value;
-#if UNITY_EDITOR
-                EditorUtility.SetDirty(this);
-#endif
-            }
-        }
-
-        public bool CreateZipArchive
-        {
-            get => createZipArchive;
-            set 
-            { 
-                createZipArchive = value;
 #if UNITY_EDITOR
                 EditorUtility.SetDirty(this);
 #endif
@@ -213,9 +174,14 @@ namespace Energy8.BuildDeploySystem
 #endif
         }
 
+        /// <summary>
+        /// Возвращает отображаемое имя конфигурации
+        /// </summary>
         public string GetDisplayName()
         {
-            return !string.IsNullOrEmpty(customBuildName) ? customBuildName : buildProfileName;
+            return !string.IsNullOrEmpty(buildProfileName) ? 
+                buildProfileName : 
+                "Unknown Profile";
         }
 
         public DeploySettings DeploySettings
@@ -231,6 +197,24 @@ namespace Energy8.BuildDeploySystem
         }        public string GetMainWebGLTextureFormat()
         {
 #if UNITY_EDITOR
+            if (BuildProfile != null)
+            {
+                try
+                {
+                    // Простой fallback - пока не можем надежно читать из Build Profile
+                    // Возвращаем формат из текущих настроек редактора
+                    Debug.Log($"Getting WebGL texture format for Build Profile: {BuildProfile.name}");
+                    
+                    // TODO: Implement proper Build Profile texture format reading when Unity API allows it
+                    // Пока используем fallback
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"Failed to get WebGL texture format from profile: {ex.Message}");
+                }
+            }
+            
+            // Fallback к глобальным настройкам если профиль недоступен
             switch (EditorUserBuildSettings.webGLBuildSubtarget)
             {
                 case WebGLTextureSubtarget.DXT:

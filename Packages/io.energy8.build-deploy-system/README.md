@@ -4,6 +4,22 @@
 
 Автоматически сканирует ваши Build Profiles и создает мощные надстройки для развертывания с GUID-based привязкой к ассетам для корректного переименования.
 
+## 🎯 Плейсхолдеры в Output Path
+
+В поле **Output Path** можно использовать плейсхолдеры, которые автоматически заменяются при сборке:
+
+- `{{{VERSION}}}` - Версия проекта (например: `1.2.3`)
+- `{{{PLATFORM}}}` - Целевая платформа (`Windows`, `WebGL`, `Android`, `iOS`, `macOS`, `Linux`)  
+- `{{{DATE}}}` - Текущая дата (`yyyy-MM-dd`)
+- `{{{DATETIME}}}` - Дата и время (`yyyy-MM-dd_HH-mm`)
+
+**Примеры:**
+```
+Builds/{{{PLATFORM}}}/{{{VERSION}}}          →  Builds/WebGL/1.2.3
+Releases/{{{DATE}}}_{{{PLATFORM}}}_v{{{VERSION}}}  →  Releases/2025-06-22_Windows_v1.2.3
+Output/{{{PLATFORM}}}/Build_{{{DATETIME}}}   →  Output/Android/Build_2025-06-22_14-30
+```
+
 ## ✨ Новое в v2.1
 
 ### 🗂️ Сворачиваемые конфигурации
