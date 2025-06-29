@@ -7,13 +7,6 @@
       "dependencies": {},
       "hash": "b0d01ca75fc890b76e81202d655d17c1f4214a18"
     },
-    "com.github-glitchenzo.nugetforunity": {
-      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "fe31ad0904abee296b5ea72c6073157accba59e8"
-    },
     "com.google.external-dependency-manager": {
       "version": "file:E:/Projects/Energy8/e8-assets/Assets/../Library/GooglePackageCache/com.google.external-dependency-manager-1.2.186.tgz",
       "depth": 0,
