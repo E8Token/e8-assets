@@ -20,7 +20,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         
         [Header("Controller Settings")]
         [SerializeField] private string controllerName = "IdentityController";
-        [SerializeField] private bool dontDestroyOnLoad = true;
         [SerializeField] private bool autoCreateOnStart = true;
         
         [Header("State Management")]
@@ -75,10 +74,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         {
             base.Start();
             
-            if (autoCreateOnStart)
-            {
-                CreateInitialController();
-            }
+            // Создание контроллера теперь происходит в OnManagerInitialized
         }
 
         #endregion
@@ -92,6 +88,17 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                 
             lastOrientation = initialContext.orientation;
             EnsureCorrectController(initialContext.orientation);
+        }
+
+        protected override void OnManagerInitialized()
+        {
+            if (debugLogging)
+                logger.LogInfo("ViewportManager initialized, creating initial controller");
+            
+            if (autoCreateOnStart)
+            {
+                CreateInitialController();
+            }
         }
 
         protected override void OnOrientationChanged(VMScreenOrientation fromOrientation, VMScreenOrientation toOrientation) 
@@ -168,7 +175,7 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         /// <summary>
         /// Пересоздает контроллер для указанной ориентации
         /// </summary>
-        private async void RecreateController(VMScreenOrientation orientation)
+        private void RecreateController(VMScreenOrientation orientation)
         {
             if (isTransitioning) return;
             
@@ -227,18 +234,9 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             GameObject controllerGO = Instantiate(prefab);
             controllerGO.name = controllerName;
             
-            // Настраиваем DontDestroyOnLoad
-            if (dontDestroyOnLoad)
-            {
-                DontDestroyOnLoad(controllerGO);
-            }
-            
             // Получаем компонент контроллера
             currentController = controllerGO.GetComponent<IdentityUIController>();
-            
-            // Переназначаем Instance
-            SetIdentityInstance(currentController);
-            
+                        
             if (debugLogging)
                 logger.LogInfo($"Created controller: {controllerGO.name} from prefab: {prefab.name}");
         }
@@ -257,12 +255,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                 }
                 
                 string controllerName = currentController.name;
-                
-                // Очищаем Instance если это текущий контроллер
-                if (IdentityUIController.Instance == currentController)
-                {
-                    SetIdentityInstance(null);
-                }
                 
                 // Уничтожаем GameObject
                 if (Application.isPlaying)
@@ -413,29 +405,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             
             if (debugLogging)
                 logger.LogInfo($"Applied configuration {configuration.ToString()} to controller");
-        }
-
-        /// <summary>
-        /// Устанавливает Instance для IdentityUIController через рефлексию
-        /// </summary>
-        private void SetIdentityInstance(IdentityUIController controller)
-        {
-            try
-            {
-                var instanceProperty = typeof(IdentityUIController).GetProperty("Instance", 
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
-                if (instanceProperty != null && instanceProperty.CanWrite)
-                {
-                    instanceProperty.SetValue(null, controller);
-                    
-                    if (debugLogging)
-                        logger.LogInfo($"Set IdentityUIController.Instance to: {controller?.name ?? "null"}");
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError($"Failed to set IdentityUIController.Instance: {ex.Message}");
-            }
         }
 
         /// <summary>

@@ -41,10 +41,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         [Header("Setup")]
         [SerializeField] protected ViewManager viewManager;
         [SerializeField] private bool isLite = false;
-        
-        [Header("Viewport Management")]
-        [SerializeField] private bool useViewportManager = true;
-        [SerializeField] private bool forceMode = false;
 
         [Header("UI")]
         [SerializeField] private Button showButton;
@@ -67,10 +63,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         private Coroutine currentAnimationCoroutine;
 
         public event Action OnSignedOut;
-        
-        // Viewport management
-        private string currentQualityProfile = "Medium";
-        private bool isCurrentlyLite = false;
 
         protected virtual void Awake()
         {
@@ -80,7 +72,8 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                 return;
             }
 
-            lifetimeCts = new CancellationTokenSource(); httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
+            lifetimeCts = new CancellationTokenSource();
+            httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
 #if UNITY_WEBGL && !UNITY_EDITOR
             authProvider = new WebGLAuthProvider();
             var analyticsProvider = new WebGLAnalyticsProvider();
@@ -115,10 +108,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             }
 
             InitializeUI();
-
-            // Initialize viewport management
-            InitializeViewportManagement();
-
             viewManager.InitializeLoading();
         }
 
@@ -132,15 +121,29 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             logger.LogInfo("Initializing identity system");
             await identityService.Initialize(lifetimeCts.Token)
                 .WithLoading(lifetimeCts.Token);
+                
+            // Проверяем, авторизован ли пользователь
+            if (identityService.IsSignedIn)
+            {
+                logger.LogInfo("User is already signed in, showing user flow");
+                ShowUserFlow(lifetimeCts.Token).Forget();
+            }
+            else
+            {
+                logger.LogInfo("User is not signed in, showing auth flow");
+                ShowAuthFlow(lifetimeCts.Token).Forget();
+            }
         }
 
         private async UniTask ShowAuthFlow(CancellationToken ct)
         {
-            SetOpenState(true);
             while (!ct.IsCancellationRequested)
             {
                 try
                 {
+                    // Открываем окно только когда нужно показать форму авторизации
+                    SetOpenState(true);
+                    
                     var result = await viewManager
                         .Show<SignInView, SignInViewParams, SignInViewResult>(
                             new SignInViewParams(), ct);
@@ -205,6 +208,8 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                             break;
                     }
 
+                    // Закрываем окно после успешной авторизации
+                    SetOpenState(false);
                     return;
                 }
                 catch (OperationCanceledException)
@@ -221,8 +226,8 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
         protected virtual async UniTask ShowUserFlow(CancellationToken ct)
         {
-            SetOpenState(false);
-
+            // Не закрываем окно автоматически - пользователь может хотеть видеть профиль
+            
             while (!ct.IsCancellationRequested)
             {
                 try
@@ -436,8 +441,11 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             if (showButton != null)
                 showButton.onClick.RemoveAllListeners();
 
-            // Cleanup viewport management
-            // TODO: Add ViewportManager.OnConfigurationChanged -= OnViewportConfigurationChanged when available
+            // Очищаем Instance если это текущий экземпляр
+            if (Instance == this)
+            {
+                Instance = null;
+            }
 
             lifetimeCts?.Cancel();
             lifetimeCts?.Dispose();
@@ -451,20 +459,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                 throw new ArgumentNullException(nameof(showButton));
 
             showButton.onClick.AddListener(() => SetOpenState(!IsOpen));
-        }
-
-        private void InitializeViewportManagement()
-        {
-            // Initialize screen size tracking
-            lastScreenSize = new Vector2(Screen.width, Screen.height);
-            
-            // Determine initial viewport configuration
-            OnViewportConfigurationChanged(null);
-            
-            // Apply initial optimizations
-            ApplyViewportOptimizations();
-            
-            logger.LogInfo($"Viewport management initialized. Mode: {(isCurrentlyLite ? "Lite" : "Full")}, UseViewportManager: {useViewportManager}");
         }
 
         public void SetOpenState(bool isOpen)
@@ -532,134 +526,6 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             if (transform.Find("Scroll View").TryGetComponent(out ScrollRect scroll))
             {
                 scroll.transform.Find("OpenBut").TryGetComponent(out showButton);
-            }
-        }
-
-        /// <summary>
-        /// Applies the lite mode settings by adjusting the ViewManager's width based on Screen.Width / Canvas.Scale.X
-        /// </summary>
-        private void ApplyLiteMode()
-        {
-            if (viewManager != null)
-            {
-                // Calculate the desired width using the formula Screen.Width / Canvas.Scale.X
-                float desiredWidth = Screen.width / canvas.scaleFactor;
-
-                // Get the scroll rect component from the view manager
-                var scrollRect = viewManager.GetComponent<ScrollRect>();
-                if (scrollRect != null)
-                {
-                    // Adjust the width of the scroll rect using the calculated width
-                    RectTransform rectTransform = scrollRect.GetComponent<RectTransform>();
-                    if (rectTransform != null)
-                    {
-                        // Store for animation use
-                        containerRectTransform = rectTransform;
-
-                        // Set sizeDelta to the calculated width for the X component
-                        Vector2 sizeDelta = rectTransform.sizeDelta;
-                        sizeDelta.x = desiredWidth;
-                        rectTransform.sizeDelta = sizeDelta;
-
-                        // Position the panel based on current open state without animation
-                        Vector2 position = rectTransform.anchoredPosition;
-                        position.x = IsOpen ? 0 : desiredWidth;
-                        rectTransform.anchoredPosition = position;
-
-                        logger.LogDebug($"Lite mode applied: Set width to {desiredWidth}, position.x={position.x} (IsOpen={IsOpen})");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Handle viewport configuration changes from ViewportManager
-        /// </summary>
-        private void OnViewportConfigurationChanged(object config)
-        {
-            // For now, use simple detection since ViewportManager types aren't available yet
-            var newIsLite = ShouldUseLiteMode();
-            
-            if (newIsLite != isCurrentlyLite)
-            {
-                isCurrentlyLite = newIsLite;
-                isLite = newIsLite;
-                
-                logger.LogInfo($"Viewport mode changed to: {(newIsLite ? "Lite" : "Full")}");
-                ApplyLiteMode();
-            }
-        }
-
-        /// <summary>
-        /// Simple detection logic until ViewportManager is fully integrated
-        /// </summary>
-        private bool ShouldUseLiteMode()
-        {
-            if (forceMode)
-                return isLite; // Use designer setting if forced
-                
-            if (!useViewportManager)
-                return isLite; // Use designer setting if viewport manager disabled
-                
-            // Simple heuristic: portrait orientation + small screen = lite mode
-            bool isPortrait = Screen.width < Screen.height;
-            bool isSmallScreen = Screen.width < 768 || Screen.height < 768;
-            bool isMobilePlatform = Application.isMobilePlatform;
-            
-            return isPortrait && (isSmallScreen || isMobilePlatform);
-        }
-
-        /// <summary>
-        /// Apply viewport-specific optimizations
-        /// </summary>
-        private void ApplyViewportOptimizations()
-        {
-            if (isCurrentlyLite)
-            {
-                // Lite mode optimizations
-                animationDuration *= 0.7f; // Faster animations for mobile
-                
-                // Could add more optimizations here:
-                // - Reduce texture quality
-                // - Disable some effects
-                // - Lower frame rate target
-            }
-            else
-            {
-                // Full mode - restore default settings
-                animationDuration = 0.5f; // Default animation duration
-            }
-        }
-
-        // Add screen size change detection
-        private Vector2 lastScreenSize;
-
-        private void Update()
-        {
-            if (useViewportManager)
-            {
-                Vector2 currentScreenSize = new Vector2(Screen.width, Screen.height);
-
-                // Check if screen size has changed
-                if (currentScreenSize != lastScreenSize)
-                {
-                    lastScreenSize = currentScreenSize;
-                    
-                    // Trigger viewport configuration check
-                    OnViewportConfigurationChanged(null);
-                }
-            }
-            else if (isLite)
-            {
-                // Fallback to old behavior if viewport manager is disabled
-                Vector2 currentScreenSize = new Vector2(Screen.width, Screen.height);
-
-                // Check if screen size has changed
-                if (currentScreenSize != lastScreenSize)
-                {
-                    lastScreenSize = currentScreenSize;
-                    ApplyLiteMode(); // Recalculate and apply when screen size changes
-                }
             }
         }
 
