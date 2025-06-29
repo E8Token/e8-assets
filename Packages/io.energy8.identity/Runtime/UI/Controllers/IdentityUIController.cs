@@ -41,6 +41,10 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         [Header("Setup")]
         [SerializeField] protected ViewManager viewManager;
         [SerializeField] private bool isLite = false;
+        
+        [Header("Viewport Management")]
+        [SerializeField] private bool useViewportManager = true;
+        [SerializeField] private bool forceMode = false;
 
         [Header("UI")]
         [SerializeField] private Button showButton;
@@ -63,6 +67,10 @@ namespace Energy8.Identity.Runtime.UI.Controllers
         private Coroutine currentAnimationCoroutine;
 
         public event Action OnSignedOut;
+        
+        // Viewport management
+        private string currentQualityProfile = "Medium";
+        private bool isCurrentlyLite = false;
 
         protected virtual void Awake()
         {
@@ -108,11 +116,8 @@ namespace Energy8.Identity.Runtime.UI.Controllers
 
             InitializeUI();
 
-            // Apply Lite Mode settings if enabled
-            if (isLite)
-            {
-                ApplyLiteMode();
-            }
+            // Initialize viewport management
+            InitializeViewportManagement();
 
             viewManager.InitializeLoading();
         }
@@ -431,6 +436,9 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             if (showButton != null)
                 showButton.onClick.RemoveAllListeners();
 
+            // Cleanup viewport management
+            // TODO: Add ViewportManager.OnConfigurationChanged -= OnViewportConfigurationChanged when available
+
             lifetimeCts?.Cancel();
             lifetimeCts?.Dispose();
 
@@ -443,6 +451,20 @@ namespace Energy8.Identity.Runtime.UI.Controllers
                 throw new ArgumentNullException(nameof(showButton));
 
             showButton.onClick.AddListener(() => SetOpenState(!IsOpen));
+        }
+
+        private void InitializeViewportManagement()
+        {
+            // Initialize screen size tracking
+            lastScreenSize = new Vector2(Screen.width, Screen.height);
+            
+            // Determine initial viewport configuration
+            OnViewportConfigurationChanged(null);
+            
+            // Apply initial optimizations
+            ApplyViewportOptimizations();
+            
+            logger.LogInfo($"Viewport management initialized. Mode: {(isCurrentlyLite ? "Lite" : "Full")}, UseViewportManager: {useViewportManager}");
         }
 
         public void SetOpenState(bool isOpen)
@@ -550,13 +572,86 @@ namespace Energy8.Identity.Runtime.UI.Controllers
             }
         }
 
+        /// <summary>
+        /// Handle viewport configuration changes from ViewportManager
+        /// </summary>
+        private void OnViewportConfigurationChanged(object config)
+        {
+            // For now, use simple detection since ViewportManager types aren't available yet
+            var newIsLite = ShouldUseLiteMode();
+            
+            if (newIsLite != isCurrentlyLite)
+            {
+                isCurrentlyLite = newIsLite;
+                isLite = newIsLite;
+                
+                logger.LogInfo($"Viewport mode changed to: {(newIsLite ? "Lite" : "Full")}");
+                ApplyLiteMode();
+            }
+        }
+
+        /// <summary>
+        /// Simple detection logic until ViewportManager is fully integrated
+        /// </summary>
+        private bool ShouldUseLiteMode()
+        {
+            if (forceMode)
+                return isLite; // Use designer setting if forced
+                
+            if (!useViewportManager)
+                return isLite; // Use designer setting if viewport manager disabled
+                
+            // Simple heuristic: portrait orientation + small screen = lite mode
+            bool isPortrait = Screen.width < Screen.height;
+            bool isSmallScreen = Screen.width < 768 || Screen.height < 768;
+            bool isMobilePlatform = Application.isMobilePlatform;
+            
+            return isPortrait && (isSmallScreen || isMobilePlatform);
+        }
+
+        /// <summary>
+        /// Apply viewport-specific optimizations
+        /// </summary>
+        private void ApplyViewportOptimizations()
+        {
+            if (isCurrentlyLite)
+            {
+                // Lite mode optimizations
+                animationDuration *= 0.7f; // Faster animations for mobile
+                
+                // Could add more optimizations here:
+                // - Reduce texture quality
+                // - Disable some effects
+                // - Lower frame rate target
+            }
+            else
+            {
+                // Full mode - restore default settings
+                animationDuration = 0.5f; // Default animation duration
+            }
+        }
+
         // Add screen size change detection
         private Vector2 lastScreenSize;
 
         private void Update()
         {
-            if (isLite)
+            if (useViewportManager)
             {
+                Vector2 currentScreenSize = new Vector2(Screen.width, Screen.height);
+
+                // Check if screen size has changed
+                if (currentScreenSize != lastScreenSize)
+                {
+                    lastScreenSize = currentScreenSize;
+                    
+                    // Trigger viewport configuration check
+                    OnViewportConfigurationChanged(null);
+                }
+            }
+            else if (isLite)
+            {
+                // Fallback to old behavior if viewport manager is disabled
                 Vector2 currentScreenSize = new Vector2(Screen.width, Screen.height);
 
                 // Check if screen size has changed

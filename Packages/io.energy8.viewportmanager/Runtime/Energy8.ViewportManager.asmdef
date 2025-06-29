@@ -1,13 +1,8 @@
 {
-    "name": "Energy8.Identity.Runtime",
-    "rootNamespace": "Energy8.Identity.Runtime",
+    "name": "Energy8.ViewportManager",
+    "rootNamespace": "Energy8.ViewportManager",
     "references": [
-        "UniTask",
-        "Energy8.Identity.Core",
-        "Unity.TextMeshPro",
-        "Unity.Localization",
-        "Unity.InputSystem",
-        "Energy8.ViewportManager"
+        "Energy8.WebGL.PluginPlatform"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -19,4 +14,3 @@
     "versionDefines": [],
     "noEngineReferences": false
 }
-

@@ -1,0 +1,124 @@
+using System;
+
+namespace Energy8.ViewportManager.Core
+{
+    /// <summary>
+    /// Screen orientation detection
+    /// </summary>
+    public enum ScreenOrientation
+    {
+        Landscape,
+        LandscapeLeft,
+        LandscapeRight,
+        Portrait
+    }
+
+    /// <summary>
+    /// Device type classification
+    /// </summary>
+    public enum DeviceType
+    {
+        Desktop,
+        Mobile
+    }
+
+    /// <summary>
+    /// Platform detection
+    /// </summary>
+    public enum Platform
+    {
+        WebGL,
+        Mobile,
+        Desktop,
+        Console,
+        Android,
+        iOS,
+        Windows,
+        macOS,
+        Linux
+    }
+
+    /// <summary>
+    /// Complete viewport context
+    /// </summary>
+    [Serializable]
+    public struct ViewportContext
+    {
+        public ScreenOrientation orientation;
+        public DeviceType deviceType;
+        public Platform platform;
+
+        public ViewportContext(ScreenOrientation orientation, DeviceType deviceType, Platform platform)
+        {
+            this.orientation = orientation;
+            this.deviceType = deviceType;
+            this.platform = platform;
+        }
+
+        public override string ToString()
+        {
+            return $"{orientation}+{deviceType}+{platform}";
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is ViewportContext other)
+            {
+                return orientation == other.orientation && 
+                       deviceType == other.deviceType && 
+                       platform == other.platform;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(orientation, deviceType, platform);
+        }
+    }
+
+    /// <summary>
+    /// Complete viewport information
+    /// </summary>
+    [Serializable]
+    public struct ViewportInfo
+    {
+        public ScreenOrientation orientation;
+        public DeviceType deviceType;
+        public Platform platform;
+        public int screenWidth;
+        public int screenHeight;
+
+        public ViewportInfo(ScreenOrientation orientation, DeviceType deviceType, Platform platform, int screenWidth, int screenHeight)
+        {
+            this.orientation = orientation;
+            this.deviceType = deviceType;
+            this.platform = platform;
+            this.screenWidth = screenWidth;
+            this.screenHeight = screenHeight;
+        }
+
+        public override string ToString()
+        {
+            return $"{deviceType}/{platform}/{orientation} ({screenWidth}x{screenHeight})";
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is ViewportInfo other)
+            {
+                return orientation == other.orientation && 
+                       deviceType == other.deviceType && 
+                       platform == other.platform &&
+                       screenWidth == other.screenWidth &&
+                       screenHeight == other.screenHeight;
+            }
+            return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(orientation, deviceType, platform, screenWidth, screenHeight);
+        }
+    }
+}

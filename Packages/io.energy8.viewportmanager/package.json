@@ -1,0 +1,22 @@
+{
+  "name": "io.energy8.viewportmanager",
+  "version": "1.0.0",
+  "displayName": "Energy8 Viewport Manager",
+  "description": "Automatic viewport detection and graphics optimization system for Energy8 ecosystem",
+  "unity": "2022.3",
+  "keywords": [
+    "viewport",
+    "responsive",
+    "optimization",
+    "graphics",
+    "mobile",
+    "webgl"
+  ],
+  "author": {
+    "name": "Energy8",
+    "email": "dev@energy8.io"
+  },
+  "dependencies": {
+    "com.unity.ugui": "1.0.0"
+  }
+}
