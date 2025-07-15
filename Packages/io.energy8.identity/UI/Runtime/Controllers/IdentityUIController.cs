@@ -62,8 +62,45 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private RectTransform containerRectTransform;
         private Coroutine currentAnimationCoroutine;
+        
+        // Флаги для предотвращения дублирования
+        private bool isIdentityFlowStarted = false;
+        private bool isShowingAuthFlow = false;
+        private bool isShowingUserFlow = false;
 
         public event Action OnSignedOut;
+
+        #region Event Handlers
+        
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        private void OnUserSignedIn(string userId)
+        #else
+        private void OnUserSignedIn(FirebaseUser user)
+        #endif
+        {
+            // Проверяем, что CancellationTokenSource не был очищен и что не показываем уже UserFlow
+            if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested && !isShowingUserFlow)
+            {
+                // Сбрасываем флаг AuthFlow чтобы разрешить показ UserFlow
+                isShowingAuthFlow = false;
+                ShowUserFlow(lifetimeCts.Token).Forget();
+            }
+        }
+        
+        private void OnUserSignedOut()
+        {
+            OnSignedOut?.Invoke();
+            
+            // Проверяем, что CancellationTokenSource не был очищен и что не показываем уже AuthFlow
+            if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested && !isShowingAuthFlow)
+            {
+                // Сбрасываем флаг UserFlow чтобы разрешить показ AuthFlow
+                isShowingUserFlow = false;
+                ShowAuthFlow(lifetimeCts.Token).Forget();
+            }
+        }
+        
+        #endregion
 
         protected virtual void Awake()
         {
@@ -72,6 +109,10 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 Destroy(gameObject);
                 return;
             }
+
+            // Устанавливаем Instance СРАЗУ, чтобы предотвратить создание дубликатов
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
 
             lifetimeCts = new CancellationTokenSource();
             httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
@@ -82,15 +123,9 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             analyticsService = new AnalyticsService(analyticsProvider);
             identityService = new IdentityService(authProvider, userService, httpClient, analyticsService);
 
-            identityService.OnSignedIn += (_) => ShowUserFlow(lifetimeCts.Token).Forget();
-            identityService.OnSignedOut += () =>
-            {
-                OnSignedOut?.Invoke();
-                ShowAuthFlow(lifetimeCts.Token).Forget();
-            };
-
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
+            // Подписываемся на события ПОСЛЕ установки Instance
+            identityService.OnSignedIn += OnUserSignedIn;
+            identityService.OnSignedOut += OnUserSignedOut;
 
             containerRectTransform = viewManager?.GetComponent<RectTransform>();
 
@@ -114,6 +149,14 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private async UniTask StartIdentityFlow()
         {
+            if (isIdentityFlowStarted)
+            {
+                Debug.LogWarning("StartIdentityFlow already called, skipping duplicate call");
+                return;
+            }
+            
+            isIdentityFlowStarted = true;
+            
             Debug.Log("Initializing identity system");
             await identityService.Initialize(lifetimeCts.Token)
                 .WithLoading(lifetimeCts.Token);
@@ -133,7 +176,18 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private async UniTask ShowAuthFlow(CancellationToken ct)
         {
-            while (!ct.IsCancellationRequested)
+            if (isShowingAuthFlow)
+            {
+                Debug.LogWarning("ShowAuthFlow already running, skipping duplicate call");
+                return;
+            }
+            
+            isShowingAuthFlow = true;
+            isShowingUserFlow = false; // Сброс флага UserFlow
+            
+            try
+            {
+                while (!ct.IsCancellationRequested)
             {
                 try
                 {
@@ -217,15 +271,31 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     await identityService.SignOut(ct);
                     continue;
                 }
+                }
+            }
+            finally
+            {
+                isShowingAuthFlow = false;
             }
         }
 
         protected virtual async UniTask ShowUserFlow(CancellationToken ct)
         {
-            // Не закрываем окно автоматически - пользователь может хотеть видеть профиль
-            
-            while (!ct.IsCancellationRequested)
+            if (isShowingUserFlow)
             {
+                Debug.LogWarning("ShowUserFlow already running, skipping duplicate call");
+                return;
+            }
+            
+            isShowingUserFlow = true;
+            isShowingAuthFlow = false; // Сброс флага AuthFlow
+            
+            try
+            {
+                // Не закрываем окно автоматически - пользователь может хотеть видеть профиль
+                
+                while (!ct.IsCancellationRequested)
+                {
                 try
                 {
                     Func<CancellationToken, UniTask<UserDto>> getUser = (ct) => userService
@@ -258,6 +328,11 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     await identityService.SignOut(ct);
                     continue;
                 }
+                }
+            }
+            finally
+            {
+                isShowingUserFlow = false;
             }
         }
 
@@ -437,14 +512,23 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             if (showButton != null)
                 showButton.onClick.RemoveAllListeners();
 
+            // Отписываемся от событий ПЕРЕД очисткой ресурсов
+            if (identityService != null)
+            {
+                identityService.OnSignedIn -= OnUserSignedIn;
+                identityService.OnSignedOut -= OnUserSignedOut;
+            }
+
             // Очищаем Instance если это текущий экземпляр
             if (Instance == this)
             {
                 Instance = null;
             }
 
+            // Очищаем токен отмены
             lifetimeCts?.Cancel();
             lifetimeCts?.Dispose();
+            lifetimeCts = null;
 
             WithLoadingExtensions.CleanupLoading();
         }
