@@ -21,7 +21,7 @@ namespace Energy8.Identity.Configuration.Core.Editor
                     EnsureConfigExists();
                     DrawConfigurationGUI();
                 },
-                keywords = new HashSet<string>(new[] { "Identity", "IP", "Auth", "Configuration" })
+                keywords = new HashSet<string>(new[] { "Identity", "IP", "Auth", "Analytics", "Configuration" })
             };
 
             return provider;
@@ -61,6 +61,29 @@ namespace Energy8.Identity.Configuration.Core.Editor
 
             SerializedObject serializedConfig = new(config);
 
+            // Configuration Header
+            EditorGUILayout.Space();
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Identity Configuration", EditorStyles.largeLabel);
+            
+            // Validation Status
+            if (config.IsValid)
+            {
+                GUILayout.Label("✅ Valid", EditorStyles.miniLabel);
+            }
+            else
+            {
+                GUILayout.Label("⚠️ Invalid", EditorStyles.miniLabel);
+            }
+            EditorGUILayout.EndHorizontal();
+
+            // Show validation errors if any
+            if (!config.IsValid)
+            {
+                EditorGUILayout.Space();
+                EditorGUILayout.HelpBox($"Configuration Errors:\n• {string.Join("\n• ", config.ValidationErrors)}", MessageType.Error);
+            }
+
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("IP Configuration", EditorStyles.boldLabel);
             DrawIPConfigs(serializedConfig);
@@ -68,6 +91,10 @@ namespace Energy8.Identity.Configuration.Core.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("Auth Configuration", EditorStyles.boldLabel);
             DrawAuthConfigs(serializedConfig);
+
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Analytics Configuration", EditorStyles.boldLabel);
+            DrawAnalyticsConfigs(serializedConfig);
 
             if (serializedConfig.hasModifiedProperties)
             {
@@ -99,6 +126,86 @@ namespace Energy8.Identity.Configuration.Core.Editor
             EditorGUILayout.Space();
             var selectedAuthTypeProp = serializedObject.FindProperty("selectedAuthType");
             EditorGUILayout.PropertyField(selectedAuthTypeProp);
+        }
+
+        private static void DrawAnalyticsConfigs(SerializedObject serializedObject)
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            
+            // Main Analytics Toggle
+            var enableAnalyticsProp = serializedObject.FindProperty("enableAnalytics");
+            EditorGUILayout.PropertyField(enableAnalyticsProp, new GUIContent("Enable Analytics", "Enable or disable analytics system"));
+            
+            // Show current status
+            if (IdentityConfiguration.EnableAnalytics)
+            {
+                EditorGUILayout.HelpBox("✅ Analytics is ENABLED", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox("❌ Analytics is DISABLED", MessageType.Warning);
+            }
+
+            EditorGUILayout.Space();
+
+            // Debug and Logging Settings
+            EditorGUILayout.LabelField("Debug & Logging", EditorStyles.boldLabel);
+            
+            var enableDebugLoggingProp = serializedObject.FindProperty("enableDebugLogging");
+            EditorGUILayout.PropertyField(enableDebugLoggingProp, new GUIContent("Enable Debug Logging", "Show analytics debug messages in console"));
+
+            EditorGUILayout.Space();
+
+            // Tracking Settings
+            EditorGUILayout.LabelField("Tracking Options", EditorStyles.boldLabel);
+            
+            var trackUserActionsProp = serializedObject.FindProperty("trackUserActions");
+            EditorGUILayout.PropertyField(trackUserActionsProp, new GUIContent("Track User Actions", "Track user interactions and behavior"));
+            
+            var trackErrorsProp = serializedObject.FindProperty("trackErrors");
+            EditorGUILayout.PropertyField(trackErrorsProp, new GUIContent("Track Errors", "Track application errors and exceptions"));
+            
+            var trackPerformanceProp = serializedObject.FindProperty("trackPerformance");
+            EditorGUILayout.PropertyField(trackPerformanceProp, new GUIContent("Track Performance", "Track performance metrics and timings"));
+
+            EditorGUILayout.Space();
+
+            // Analytics Summary
+            EditorGUILayout.LabelField("Analytics Summary", EditorStyles.boldLabel);
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+            
+            EditorGUILayout.LabelField($"Debug Logging: {(IdentityConfiguration.EnableDebugLogging ? "ON" : "OFF")}");
+            EditorGUILayout.LabelField($"User Actions: {(IdentityConfiguration.TrackUserActions ? "ON" : "OFF")}");
+            EditorGUILayout.LabelField($"Error Tracking: {(IdentityConfiguration.TrackErrors ? "ON" : "OFF")}");
+            EditorGUILayout.LabelField($"Performance: {(IdentityConfiguration.TrackPerformance ? "ON" : "OFF")}");
+            
+            EditorGUILayout.EndVertical();
+
+            EditorGUILayout.Space();
+
+            // Quick Actions
+            EditorGUILayout.LabelField("Quick Actions", EditorStyles.boldLabel);
+            EditorGUILayout.BeginHorizontal();
+            
+            if (GUILayout.Button("Enable All Tracking"))
+            {
+                trackUserActionsProp.boolValue = true;
+                trackErrorsProp.boolValue = true;
+                trackPerformanceProp.boolValue = true;
+                enableDebugLoggingProp.boolValue = true;
+            }
+            
+            if (GUILayout.Button("Disable All Tracking"))
+            {
+                trackUserActionsProp.boolValue = false;
+                trackErrorsProp.boolValue = false;
+                trackPerformanceProp.boolValue = false;
+                enableDebugLoggingProp.boolValue = false;
+            }
+            
+            EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.EndVertical();
         }
     }
 }

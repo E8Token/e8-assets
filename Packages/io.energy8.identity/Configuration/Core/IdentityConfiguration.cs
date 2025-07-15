@@ -68,5 +68,34 @@ namespace Energy8.Identity.Configuration.Core
         public static bool TrackUserActions => Instance.trackUserActions;
         public static bool TrackErrors => Instance.trackErrors;
         public static bool TrackPerformance => Instance.trackPerformance;
+
+        // IConfigurationProvider implementation
+        public bool IsValid => ValidationErrors.Length == 0;
+        
+        public string[] ValidationErrors
+        {
+            get
+            {
+                var errors = new List<string>();
+                
+                if (ipConfigs == null || ipConfigs.Count == 0)
+                    errors.Add("No IP configurations defined");
+                    
+                if (firebaseAuthConfigs == null || firebaseAuthConfigs.Count == 0)
+                    errors.Add("No Firebase auth configurations defined");
+                    
+                if (firebaseWebAuthConfigs == null || firebaseWebAuthConfigs.Count == 0)
+                    errors.Add("No Firebase WebGL auth configurations defined");
+                    
+                if (!ipConfigs.Any(c => c.ipType == selectedIPType))
+                    errors.Add($"Selected IP type '{selectedIPType}' not found in configurations");
+                    
+                if (!firebaseAuthConfigs.Any(c => c.authType == selectedAuthType) && 
+                    !firebaseWebAuthConfigs.Any(c => c.authType == selectedAuthType))
+                    errors.Add($"Selected auth type '{selectedAuthType}' not found in configurations");
+                
+                return errors.ToArray();
+            }
+        }
     }
 }
