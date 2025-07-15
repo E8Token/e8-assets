@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buildProfileGUID: 92bc16ec2a93c7641a03e6e5751c9d55
   buildProfileName: Assets Debug
-  outputPath: Builds/Debug/{{{PLATFORM}}}/{{{VERSION}}}_{{{DATE}}}/Assets
+  outputPath: Builds/Debug/{{{PLATFORM}}}/{{{VERSION}}}/Assets
   cleanBeforeBuild: 0
   customBuildName: 
   deploySettings:
