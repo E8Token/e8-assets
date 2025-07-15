@@ -1,25 +1,26 @@
 {
   "name": "io.energy8.webgl-plugin-platform",
-  "displayName": "WebGL Plugin Platform",
   "version": "1.0.0",
-  "description": "Platform for developing WebGL plugins that improve communication between Unity and browser",
-  "unity": "2021.3",  "author": {
-    "name": "Energy8"
-  },
-  "category": "WebGL",
+  "displayName": "E8 WebGL Plugin Platform",
+  "description": "Platform for developing WebGL plugins that improve communication between Unity and browser with JavaScript integration.",
+  "unity": "6000.0",
   "keywords": [
-    "WebGL",
-    "Plugin",
-    "JavaScript",
-    "Communication",
-    "Platform"
+    "webgl",
+    "plugin",
+    "javascript",
+    "communication",
+    "platform"
   ],
-  "dependencies": {},
-  "samples": [
-    {
-      "displayName": "Sample Plugin",
-      "description": "Sample plugin demonstrating platform capabilities",
-      "path": "Samples~/SamplePlugin"
-    }
-  ]
+  "author": {
+    "name": "Energy8",
+    "email": "dlemonvcake.work@gmail.com",
+    "url": "https://energy8.io"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.energy8.io/Energy8/e8-assets.git",
+    "directory": "Packages/io.energy8.webgl-plugin-platform",
+    "revision": "main"
+  },
+  "dependencies": {}
 }

@@ -8,21 +8,21 @@
       "hash": "b0d01ca75fc890b76e81202d655d17c1f4214a18"
     },
     "com.google.external-dependency-manager": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets/../Library/GooglePackageCache/com.google.external-dependency-manager-1.2.186.tgz",
+      "version": "file:../Library/GooglePackageCache/com.google.external-dependency-manager-1.2.186.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {}
     },
     "com.google.firebase.analytics": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets/../Library/GooglePackageCache/com.google.firebase.analytics-12.10.0.tgz",
+      "version": "file:../Library/GooglePackageCache/com.google.firebase.analytics-12.10.1.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.10.0"
+        "com.google.firebase.app": "12.10.1"
       }
     },
     "com.google.firebase.app": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets/../Library/GooglePackageCache/com.google.firebase.app-12.10.0.tgz",
+      "version": "file:../Library/GooglePackageCache/com.google.firebase.app-12.10.1.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
@@ -30,27 +30,27 @@
       }
     },
     "com.google.firebase.auth": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets/../Library/GooglePackageCache/com.google.firebase.auth-12.10.0.tgz",
+      "version": "file:../Library/GooglePackageCache/com.google.firebase.auth-12.10.1.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.10.0"
+        "com.google.firebase.app": "12.10.1"
       }
     },
     "com.google.firebase.crashlytics": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets/../Library/GooglePackageCache/com.google.firebase.crashlytics-12.10.0.tgz",
+      "version": "file:../Library/GooglePackageCache/com.google.firebase.crashlytics-12.10.1.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.10.0"
+        "com.google.firebase.app": "12.10.1"
       }
     },
     "com.google.firebase.messaging": {
-      "version": "file:E:/Projects/Energy8/e8-assets/Assets/../Library/GooglePackageCache/com.google.firebase.messaging-12.10.0.tgz",
+      "version": "file:../Library/GooglePackageCache/com.google.firebase.messaging-12.10.1.tgz",
       "depth": 0,
       "source": "local-tarball",
       "dependencies": {
-        "com.google.firebase.app": "12.10.0"
+        "com.google.firebase.app": "12.10.1"
       }
     },
     "com.unity.2d.animation": {
@@ -227,11 +227,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.localization": {
-      "version": "1.5.4",
+      "version": "1.5.5",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.addressables": "1.22.2",
+        "com.unity.addressables": "1.25.0",
         "com.unity.nuget.newtonsoft-json": "3.0.2"
       },
       "url": "https://packages.unity.com"

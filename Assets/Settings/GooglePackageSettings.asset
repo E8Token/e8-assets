@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9058fa8b9c357034496542db08d6c01b, type: 3}
   m_Name: GooglePackageSettings
   m_EditorClassIdentifier: 
-  enableAutoUpdateCheck: 1
-  enableStartupUpdateCheck: 1
-  enableUpdateNotifications: 1
+  enableAutoUpdateCheck: 0
+  enableStartupUpdateCheck: 0
+  enableUpdateNotifications: 0
   updateCheckIntervalHours: 24
   downloadCachePath: Library/GooglePackageCache
-  validatePackagesOnStartup: 1
-  showUpdateNotifications: 1
-  showInstallNotifications: 1
-  showSuccessNotifications: 1
+  validatePackagesOnStartup: 0
+  showUpdateNotifications: 0
+  showInstallNotifications: 0
+  showSuccessNotifications: 0
   enableDebugLogging: 0
   downloadTimeoutSeconds: 300
   maxRetryAttempts: 3

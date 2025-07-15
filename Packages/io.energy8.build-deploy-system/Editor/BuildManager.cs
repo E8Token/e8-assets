@@ -219,6 +219,13 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             try
             {
+                // Устанавливаем активный Build Profile перед сборкой
+                if (!SetActiveBuildProfile(profile))
+                {
+                    Debug.LogError($"[BuildSystem] Failed to set active build profile: {profile.name}");
+                    return false;
+                }
+
                 // Используем Build Profile API для сборки
                 // Пока что используем старый API, позже можно будет перейти на новый
                 var buildTarget = GetBuildTargetFromProfile(profile);
@@ -310,6 +317,84 @@ namespace Energy8.BuildDeploySystem.Editor
 
             // По умолчанию
             return BuildTarget.StandaloneWindows64;
+        }
+
+        /// <summary>
+        /// Устанавливает активный Build Profile в редакторе Unity
+        /// </summary>
+        /// <param name="profile">Build Profile для установки как активный</param>
+        /// <returns>true если профиль был успешно установлен, false в противном случае</returns>
+        private static bool SetActiveBuildProfile(BuildProfile profile)
+        {
+            try
+            {
+                if (profile == null)
+                {
+                    Debug.LogError("[BuildSystem] Cannot set null BuildProfile as active");
+                    return false;
+                }
+
+                Debug.Log($"[BuildSystem] Setting active Build Profile: {profile.name}");
+
+                // Метод 1: Используем BuildProfileContext (наиболее надежный)
+                try
+                {
+                    var buildProfileContextType = typeof(BuildProfile).Assembly.GetType("UnityEditor.Build.Profile.BuildProfileContext");
+                    if (buildProfileContextType != null)
+                    {
+                        var instanceProperty = buildProfileContextType.GetProperty("instance", 
+                            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+                        
+                        if (instanceProperty != null)
+                        {
+                            var instance = instanceProperty.GetValue(null);
+                            var setActiveProfileMethod = buildProfileContextType.GetMethod("SetActiveProfile");
+                            
+                            if (setActiveProfileMethod != null && instance != null)
+                            {
+                                setActiveProfileMethod.Invoke(instance, new object[] { profile });
+                                Debug.Log($"[BuildSystem] ✅ Successfully set active Build Profile via BuildProfileContext: {profile.name}");
+                                return true;
+                            }
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[BuildSystem] BuildProfileContext method failed: {ex.Message}");
+                }
+
+                // Метод 2: Используем BuildProfileProvider
+                try
+                {
+                    var buildProfileProviderType = typeof(BuildProfile).Assembly.GetType("UnityEditor.Build.Profile.BuildProfileProvider");
+                    if (buildProfileProviderType != null)
+                    {
+                        var setActiveMethod = buildProfileProviderType.GetMethod("SetActiveProfile", 
+                            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                        
+                        if (setActiveMethod != null)
+                        {
+                            setActiveMethod.Invoke(null, new object[] { profile });
+                            Debug.Log($"[BuildSystem] ✅ Successfully set active Build Profile via BuildProfileProvider: {profile.name}");
+                            return true;
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[BuildSystem] BuildProfileProvider method failed: {ex.Message}");
+                }
+
+                // Если не удалось установить профиль напрямую - это критическая ошибка
+                Debug.LogError($"[BuildSystem] ❌ Failed to set active Build Profile '{profile.name}'. All methods failed. Build cannot continue.");
+                return false;
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[BuildSystem] ❌ Failed to set active Build Profile '{profile.name}': {ex.Message}");
+                return false;
+            }
         }
 
         private static string GetExecutablePath(BuildConfiguration config, string outputDirectory)

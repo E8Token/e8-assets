@@ -1,20 +1,26 @@
 {
   "name": "io.energy8.viewportmanager",
   "version": "1.0.0",
-  "displayName": "Energy8 Viewport Manager",
-  "description": "Automatic viewport detection and graphics optimization system for Energy8 ecosystem",
-  "unity": "2022.3",
+  "displayName": "E8 Viewport Manager",
+  "description": "Automatic viewport detection and graphics optimization system for Energy8 ecosystem with responsive design capabilities.",
+  "unity": "6000.0",
   "keywords": [
     "viewport",
     "responsive",
     "optimization",
     "graphics",
-    "mobile",
-    "webgl"
+    "mobile"
   ],
   "author": {
     "name": "Energy8",
-    "email": "dev@energy8.io"
+    "email": "dlemonvcake.work@gmail.com",
+    "url": "https://energy8.io"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.energy8.io/Energy8/e8-assets.git",
+    "directory": "Packages/io.energy8.viewportmanager",
+    "revision": "main"
   },
   "dependencies": {
     "com.unity.ugui": "1.0.0"

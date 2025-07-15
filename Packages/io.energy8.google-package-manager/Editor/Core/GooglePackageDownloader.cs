@@ -165,9 +165,10 @@ namespace Energy8.GooglePackageManager.Core
             {
                 string packageUrl;
 
-                // Для локальных файлов используем file: URL
-                string relativePath = GetRelativePathFromProject(filePath);
-                packageUrl = $"file:{relativePath}";
+                // Для локальных файлов используем относительный путь из настроек
+                var settings = GooglePackageSettings.Instance;
+                string fileName = Path.GetFileName(filePath);
+                packageUrl = $"file:../{settings.downloadCachePath}/{fileName}";
                 Debug.Log($"Installing package {packageInfo.packageName} from local file: {packageUrl}");
 
                 // Обновляем или удаляем старую версию
@@ -222,16 +223,6 @@ namespace Energy8.GooglePackageManager.Core
                 Debug.LogError($"Error installing registry package: {ex.Message}");
                 return false;
             }
-        }
-        
-        private static string GetRelativePathFromProject(string absolutePath)
-        {
-            string projectPath = Path.GetDirectoryName(Application.dataPath);
-            if (absolutePath.StartsWith(projectPath))
-            {
-                return absolutePath.Substring(projectPath.Length + 1).Replace('\\', '/');
-            }
-            return absolutePath.Replace('\\', '/');
         }
 
         public static async Task<bool> UninstallPackageAsync(GooglePackageInfo packageInfo)

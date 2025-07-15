@@ -1,0 +1,27 @@
+{
+    "name": "Energy8.Identity.UI",
+    "rootNamespace": "Energy8.Identity.UI",
+    "references": [
+        "Energy8.Identity.Shared",
+        "Energy8.Identity.Auth",
+        "Energy8.Identity.User",
+        "Energy8.Identity.Game",
+        "Energy8.Identity.Analytics",
+        "Energy8.Identity.Configuration",
+        "Energy8.Identity.Http",
+        "Energy8.ViewportManager",
+        "UniTask",
+        "Unity.InputSystem",
+        "Unity.Localization",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

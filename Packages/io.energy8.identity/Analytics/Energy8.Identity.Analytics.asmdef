@@ -1,0 +1,18 @@
+{
+    "name": "Energy8.Identity.Analytics",
+    "rootNamespace": "Energy8.Identity.Analytics",
+    "references": [
+        "Energy8.Identity.Shared",
+        "Energy8.Identity.Configuration",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

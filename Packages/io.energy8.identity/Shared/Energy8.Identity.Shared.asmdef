@@ -1,0 +1,18 @@
+{
+    "name": "Energy8.Identity.Shared",
+    "rootNamespace": "Energy8.Identity.Shared",
+    "references": [
+        "UniTask",
+        "Unity.Newtonsoft.Json",
+        "Unity.Localization"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

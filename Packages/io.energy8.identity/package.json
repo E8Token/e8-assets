@@ -2,11 +2,24 @@
   "name": "io.energy8.identity",
   "version": "1.0.0",
   "displayName": "E8 Identity",
-  "description": "Package for Energy8 identity functionality",
+  "description": "Package for Energy8 identity functionality with authentication, user management, and analytics integration.",
+  "unity": "6000.0",
+  "keywords": [
+    "identity",
+    "authentication", 
+    "analytics",
+    "user-management"
+  ],
   "author": {
-    "name": "Energy8Games",
-    "email": "dlemoncake.work@gmail.com",
-    "url": "https://games.energy8.io/identity-sdk"
+    "name": "Energy8",
+    "email": "dlemonvcake.work@gmail.com",
+    "url": "https://energy8.io"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.energy8.io/Energy8/e8-assets.git",
+    "directory": "Packages/io.energy8.identity",
+    "revision": "main"
   },
   "dependencies": {
     "com.unity.nuget.newtonsoft-json": "3.2.1",

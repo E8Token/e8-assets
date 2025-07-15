@@ -1,0 +1,16 @@
+{
+    "name": "Energy8.Identity.Configuration",
+    "rootNamespace": "Energy8.Identity.Configuration",
+    "references": [
+        "Energy8.Identity.Shared"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
