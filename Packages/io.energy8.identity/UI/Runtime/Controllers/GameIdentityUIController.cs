@@ -9,6 +9,7 @@ using Energy8.Identity.Shared.Core.Contracts.Dto.User;
 using Energy8.Identity.Shared.Core.Error;
 using Energy8.Identity.UI.Runtime.Views.Implementations;
 using Energy8.Identity.UI.Runtime.Views.Models;
+using Energy8.Identity.Game.Runtime.Services;
 
 namespace Energy8.Identity.UI.Runtime.Controllers
 {

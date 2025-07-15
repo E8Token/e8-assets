@@ -111,6 +111,14 @@ MonoBehaviour:
     m_Key: ChangeNameButtton
     m_Metadata:
       m_Items: []
+  - m_Id: 100931635522867200
+    m_Key: ChangeEmailButtton
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100931635569004544
+    m_Key: SettingsButton
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

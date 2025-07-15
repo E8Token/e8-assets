@@ -3,6 +3,7 @@
     "rootNamespace": "Energy8.Identity.Http",
     "references": [
         "Energy8.Identity.Shared",
+        "Energy8.Identity.Configuration",
         "UniTask",
         "Unity.Newtonsoft.Json"
     ],

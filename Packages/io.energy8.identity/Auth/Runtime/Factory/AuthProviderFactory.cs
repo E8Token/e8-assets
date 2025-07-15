@@ -2,6 +2,7 @@ using Energy8.Identity.Auth.Core.Providers;
 using Energy8.Identity.Auth.Runtime.Providers;
 using Energy8.Identity.Configuration.Core;
 using Energy8.Identity.Http.Core;
+using Energy8.Identity.Http.Runtime.Clients;
 using UnityEngine;
 
 namespace Energy8.Identity.Auth.Runtime.Factory

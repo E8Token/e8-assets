@@ -4,6 +4,7 @@
     "references": [
         "Energy8.Identity.Shared",
         "Energy8.Identity.Http",
+        "Energy8.Identity.Configuration",
         "UniTask"
     ],
     "includePlatforms": [],

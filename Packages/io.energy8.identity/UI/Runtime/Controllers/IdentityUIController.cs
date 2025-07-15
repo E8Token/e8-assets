@@ -14,6 +14,7 @@ using Energy8.Identity.UI.Runtime.Views.Models;
 using UnityEngine;
 using UnityEngine.UI;
 using Energy8.Identity.Http.Core;
+using Energy8.Identity.Http.Runtime.Clients;
 using System.Net.Http;
 using Energy8.Identity.UI.Runtime.Views.Implementations.User;
 using Energy8.Identity.Shared.Core.Error;
@@ -76,7 +77,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
             authProvider = AuthProviderFactory.CreateProvider(httpClient);
 
-            userService = new UserService(httpClient, authProvider);
+            userService = new Energy8.Identity.User.Runtime.Services.UserService(httpClient, authProvider);
             var analyticsProvider = AnalyticsProviderFactory.CreateProvider();
             analyticsService = new AnalyticsService(analyticsProvider);
             identityService = new IdentityService(authProvider, userService, httpClient, analyticsService);

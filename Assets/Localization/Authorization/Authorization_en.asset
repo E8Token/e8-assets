@@ -133,6 +133,14 @@ MonoBehaviour:
     m_Localized: Change name
     m_Metadata:
       m_Items: []
+  - m_Id: 100931635522867200
+    m_Localized: Change email
+    m_Metadata:
+      m_Items: []
+  - m_Id: 100931635569004544
+    m_Localized: Settings
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
