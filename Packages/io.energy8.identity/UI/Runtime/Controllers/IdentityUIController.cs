@@ -94,6 +94,13 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             {
                 currentCanvasController.OnOpenStateChanged += OnCanvasOpenStateChanged;
                 
+                // Инициализируем WithLoading для нового ViewManager
+                var viewManager = currentCanvasController.GetViewManager();
+                if (viewManager != null)
+                {
+                    viewManager.InitializeLoading();
+                }
+                
                 if (debugLogging)
                     Debug.Log($"Canvas controller set: {currentCanvasController.name}");
             }
@@ -261,8 +268,8 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             if (debugLogging)
                 Debug.Log("Initializing identity system");
                 
-            await identityService.Initialize(lifetimeCts.Token)
-                .WithLoading(lifetimeCts.Token);
+            // Инициализируем без WithLoading, так как ViewManager может быть еще не готов
+            await identityService.Initialize(lifetimeCts.Token);
                 
             // Проверяем, авторизован ли пользователь
             if (identityService.IsSignedIn)
