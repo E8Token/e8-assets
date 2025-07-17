@@ -16,7 +16,7 @@ MonoBehaviour:
   - ipType: 0
     ipAddress: http://localhost:5001
   - ipType: 3
-    ipAddress: https://debug.energy8.io
+    ipAddress: https://games.debug.energy8.io
   firebaseAuthConfigs:
   - authType: 0
     config: {fileID: 4900000, guid: 611664c296eed6d448ded7c73ee7982f, type: 3}

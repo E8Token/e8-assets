@@ -36,7 +36,6 @@ namespace Energy8.Identity.Game.Runtime.Services
         {
             try
             {
-                Debug.Log($"Fetching game user data from {Game}");
                 var endpoint = $"{Game}/user";
                 var userDto = await httpClient.GetAsync<TGameUserDto>(endpoint, ct);
                 return userDto;

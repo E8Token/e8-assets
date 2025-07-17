@@ -29,7 +29,6 @@ namespace Energy8.Identity.User.Runtime.Services
         {
             try
             {
-                Debug.Log("Fetching user profile");
                 return await httpClient.GetAsync<UserDto>("user", ct);
             }
             catch (Exception ex)
@@ -78,7 +77,6 @@ namespace Energy8.Identity.User.Runtime.Services
         {
             try
             {
-                Debug.Log("Confirming email change");
                 await httpClient.PutAsync(
                     "user/email/confirm",
                     new EmailConfirmDto()
@@ -116,7 +114,6 @@ namespace Energy8.Identity.User.Runtime.Services
         {
             try
             {
-                Debug.Log("Confirming account deletion");
                 await httpClient.DeleteAsync(
                     "user/confirm",
                     new { Token = token, Code = code },

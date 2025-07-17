@@ -61,7 +61,6 @@ public class ImageSpriteAnimation : MonoBehaviour
 
     void OnDestroy()
     {
-        Log("Stopping all animations on destroy");
         StopAllAnimations();
     }
 

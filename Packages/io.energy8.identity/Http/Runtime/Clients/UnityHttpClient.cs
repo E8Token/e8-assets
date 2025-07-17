@@ -74,8 +74,6 @@ namespace Energy8.Identity.Http.Runtime.Clients
                         if (pair.Value != null)
                             formData.AddField(pair.Key, pair.Value.ToString());
                     }
-                    // Only log at debug level and avoid full serialization
-                    Debug.Log($"Request data (DtoBase): " + $"{model.GetType().Name}");
                 }
                 else
                 {
@@ -86,8 +84,6 @@ namespace Energy8.Identity.Http.Runtime.Clients
                         if (pair.Value != null)
                             formData.AddField(pair.Key, pair.Value.ToString());
                     }
-                    // Only log field names at debug level, not values
-                    Debug.Log("Request data fields: " + string.Join(", ", dictionary.Keys));
                 }
 
                 request.uploadHandler = new UploadHandlerRaw(formData.data);
@@ -101,7 +97,6 @@ namespace Energy8.Identity.Http.Runtime.Clients
 
             try
             {
-                Debug.Log($"{method} request: " + endpoint);
                 await request.SendWebRequest();
 
                 var responseText = request.downloadHandler.text;
@@ -114,7 +109,6 @@ namespace Energy8.Identity.Http.Runtime.Clients
                     throw CreateException((HttpStatusCode)request.responseCode, error);
                 }
 
-                Debug.Log($"Request successful [{request.responseCode}]: " + endpoint);
                 return response.Data;
             }
             catch (Exception ex) when (ex is not ApiException)
@@ -145,8 +139,6 @@ namespace Energy8.Identity.Http.Runtime.Clients
                         if (pair.Value != null)
                             formData.AddField(pair.Key, pair.Value.ToString());
                     }
-                    // Only log at debug level and avoid full serialization
-                    Debug.Log($"Request data (DtoBase): " + $"{model.GetType().Name}");
                 }
                 else
                 {
@@ -157,8 +149,6 @@ namespace Energy8.Identity.Http.Runtime.Clients
                         if (pair.Value != null)
                             formData.AddField(pair.Key, pair.Value.ToString());
                     }
-                    // Only log field names at debug level, not values
-                    Debug.Log("Request data fields: " + string.Join(", ", dictionary.Keys));
                 }
 
                 request.uploadHandler = new UploadHandlerRaw(formData.data);
@@ -172,7 +162,6 @@ namespace Energy8.Identity.Http.Runtime.Clients
 
             try
             {
-                Debug.Log($"{method} request: " + endpoint);
                 await request.SendWebRequest();
 
                 if (request.result != UnityWebRequest.Result.Success)
@@ -182,7 +171,6 @@ namespace Energy8.Identity.Http.Runtime.Clients
                     throw CreateException((HttpStatusCode)request.responseCode, error);
                 }
 
-                Debug.Log($"Request successful [{request.responseCode}]: " + endpoint);
             }
             catch (Exception ex) when (ex is not ApiException)
             {

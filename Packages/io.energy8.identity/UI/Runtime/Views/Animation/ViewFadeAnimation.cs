@@ -26,7 +26,6 @@ namespace Energy8.Identity.UI.Runtime.Views.Animation
         public override async UniTask Play(CancellationToken ct)
         {
             IsPlaying = true;
-            Debug.Log($"Starting fade animation from {from} to {to}");
             float elapsed = 0;
 
             while (elapsed < duration && !ct.IsCancellationRequested && IsPlaying)
@@ -40,7 +39,6 @@ namespace Energy8.Identity.UI.Runtime.Views.Animation
             if (IsPlaying && !ct.IsCancellationRequested)
             {
                 target.alpha = to;
-                Debug.Log("Fade animation completed");
             }
 
             IsPlaying = false;

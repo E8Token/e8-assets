@@ -58,7 +58,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                 if (!IsSignedIn)
                     throw new InvalidOperationException("User is not signed in");
 
-                Debug.Log($"Getting auth token. Force refresh: {forceRefresh}");
                 return await auth.CurrentUser.TokenAsync(forceRefresh);
             }
             catch (Exception ex)
@@ -72,7 +71,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
         {
             try
             {
-                Debug.Log("Signing in with token");
                 var result = await auth.SignInWithCustomTokenAsync(token);
                 return result;
             }
@@ -104,19 +102,16 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                 return;
 
             auth.SignOut();
-            Debug.Log("User signed out");
         }
 
         private void AuthStateChanged(object sender, EventArgs args)
         {
             if (auth.CurrentUser != null && auth.CurrentUser.IsValid())
             {
-                Debug.Log($"User signed in: {auth.CurrentUser.UserId}");
                 OnSignedIn?.Invoke(auth.CurrentUser);
             }
             else
             {
-                Debug.Log("User signed out");
                 OnSignedOut?.Invoke();
             }
         }

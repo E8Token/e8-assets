@@ -95,7 +95,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             }
 
             OnOpenStateChanged?.Invoke(IsOpen);
-            Debug.Log($"Identity Canvas state changed to: {(isOpen ? "open" : "closed")}");
         }
 
         /// <summary>
@@ -152,8 +151,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             float targetWidth = containerRectTransform.sizeDelta.x;
 
             float endX = opening ? 0 : targetWidth;
-
-            Debug.Log($"Animating panel: opening={opening}, targetWidth={targetWidth}, canvas scale={canvas.scaleFactor}");
 
             while (Time.time < startTime + animationDuration)
             {

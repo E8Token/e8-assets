@@ -37,7 +37,6 @@ namespace Energy8.Identity.UI.Runtime.Views.Management
             //     currentView = null;
             // }
 
-            Debug.Log($"Showing {typeof(TView).Name}");
             var view = await factory.Create<TView, TParams, TResult>(parent);
             currentView = view;
 
@@ -55,9 +54,8 @@ namespace Energy8.Identity.UI.Runtime.Views.Management
 
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogWarning($"Error in {typeof(TView).Name}: {ex.Message}");
                 await view.Hide(ct);
 
                 UnityEngine.Object.Destroy(view.gameObject);

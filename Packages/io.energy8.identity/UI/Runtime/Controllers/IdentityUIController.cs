@@ -214,6 +214,11 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             identityService.OnSignedIn += OnUserSignedIn;
             identityService.OnSignedOut += OnUserSignedOut;
 
+#if UNITY_EDITOR
+            // Подписываемся на событие остановки воспроизведения в редакторе
+            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+#endif
+
             if (debugLogging)
                 Debug.Log("IdentityUIController initialized as singleton");
         }
@@ -238,6 +243,19 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             isIdentityFlowStarted = false;
             isShowingAuthFlow = false;
             isShowingUserFlow = false;
+
+#if UNITY_EDITOR
+            // Отписываемся от событий редактора
+            try
+            {
+                UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            }
+            catch (System.Exception ex)
+            {
+                if (debugLogging)
+                    Debug.LogWarning($"Error unsubscribing from editor events: {ex.Message}");
+            }
+#endif
 
             // Отписываемся от событий ПЕРЕД очисткой ресурсов
             if (identityService != null)
@@ -303,40 +321,76 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             
             if (debugLogging)
                 Debug.Log("IdentityUIController OnDestroy completed");
-            if (debugLogging)
-                Debug.Log("IdentityUIController destroyed");
-
-            // Отписываемся от событий identityService
-            if (identityService != null)
-            {
-                identityService.OnSignedIn -= OnUserSignedIn;
-                identityService.OnSignedOut -= OnUserSignedOut;
-            }
-
-            // Отписываемся от Canvas контроллера
-            if (currentCanvasController != null)
-            {
-                currentCanvasController.OnOpenStateChanged -= OnCanvasOpenStateChanged;
-            }
-
-            // Очищаем токен отмены
-            if (lifetimeCts != null)
-            {
-                if (!lifetimeCts.IsCancellationRequested)
-                    lifetimeCts.Cancel();
-                lifetimeCts.Dispose();
-                lifetimeCts = null;
-            }
-
-            // Очищаем статический Instance
-            if (Instance == this)
-            {
-                Instance = null;
-            }
-
-            // Очищаем статические/глобальные состояния загрузки
-            WithLoadingExtensions.CleanupLoading();
         }
+
+#if UNITY_EDITOR
+        private void OnPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
+        {
+            if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            {
+                if (debugLogging)
+                    Debug.Log("Editor exiting play mode, forcing cleanup");
+                
+                // Принудительная очистка при выходе из режима воспроизведения
+                ForceCleanup();
+            }
+        }
+
+        private void ForceCleanup()
+        {
+            try
+            {
+                // Отменяем все асинхронные операции
+                if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested)
+                {
+                    lifetimeCts.Cancel();
+                }
+
+                // Сбрасываем флаги
+                isIdentityFlowStarted = false;
+                isShowingAuthFlow = false;
+                isShowingUserFlow = false;
+
+                // Отписываемся от событий редактора
+                UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+                
+                // Отписываемся от событий сервиса
+                if (identityService != null)
+                {
+                    identityService.OnSignedIn -= OnUserSignedIn;
+                    identityService.OnSignedOut -= OnUserSignedOut;
+                }
+
+                // Отписываемся от Canvas контроллера
+                if (currentCanvasController != null)
+                {
+                    currentCanvasController.OnOpenStateChanged -= OnCanvasOpenStateChanged;
+                    currentCanvasController = null;
+                }
+
+                // Очищаем Instance
+                if (Instance == this)
+                {
+                    Instance = null;
+                }
+
+                // Очищаем токен отмены
+                if (lifetimeCts != null)
+                {
+                    lifetimeCts.Dispose();
+                    lifetimeCts = null;
+                }
+
+                // Очищаем WithLoading
+                WithLoadingExtensions.CleanupLoading();
+            }
+            catch (System.Exception ex)
+            {
+                if (debugLogging)
+                    Debug.LogWarning($"Error during force cleanup: {ex.Message}");
+            }
+        }
+#endif
 
         #endregion
 
@@ -352,24 +406,53 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             
             isIdentityFlowStarted = true;
             
-            if (debugLogging)
-                Debug.Log("Initializing identity system");
-                
-            // Инициализируем без WithLoading, так как ViewManager может быть еще не готов
-            await identityService.Initialize(lifetimeCts.Token);
-                
-            // Проверяем, авторизован ли пользователь
-            if (identityService.IsSignedIn)
+            try
             {
+                // Проверяем, что компонент все еще активен
+                if (this == null || !gameObject.activeInHierarchy)
+                {
+                    if (debugLogging)
+                        Debug.Log("IdentityUIController is no longer active, stopping identity flow");
+                    return;
+                }
+                
                 if (debugLogging)
-                    Debug.Log("User is already signed in, showing user flow");
-                ShowUserFlow(lifetimeCts.Token).Forget();
+                    Debug.Log("Initializing identity system");
+                    
+                // Инициализируем без WithLoading, так как ViewManager может быть еще не готов
+                await identityService.Initialize(lifetimeCts.Token);
+                
+                // Повторная проверка после асинхронной операции
+                if (this == null || !gameObject.activeInHierarchy || lifetimeCts.IsCancellationRequested)
+                {
+                    if (debugLogging)
+                        Debug.Log("IdentityUIController was destroyed during initialization");
+                    return;
+                }
+                    
+                // Проверяем, авторизован ли пользователь
+                if (identityService.IsSignedIn)
+                {
+                    if (debugLogging)
+                        Debug.Log("User is already signed in, showing user flow");
+                    ShowUserFlow(lifetimeCts.Token).Forget();
+                }
+                else
+                {
+                    if (debugLogging)
+                        Debug.Log("User is not signed in, showing auth flow");
+                    ShowAuthFlow(lifetimeCts.Token).Forget();
+                }
             }
-            else
+            catch (OperationCanceledException)
             {
                 if (debugLogging)
-                    Debug.Log("User is not signed in, showing auth flow");
-                ShowAuthFlow(lifetimeCts.Token).Forget();
+                    Debug.Log("StartIdentityFlow cancelled");
+            }
+            catch (Exception ex)
+            {
+                if (debugLogging)
+                    Debug.LogError($"Error in StartIdentityFlow: {ex.Message}");
             }
         }
 
@@ -390,6 +473,14 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 {
                     try
                     {
+                        // Проверяем, что компонент все еще активен
+                        if (this == null || !gameObject.activeInHierarchy)
+                        {
+                            if (debugLogging)
+                                Debug.Log("IdentityUIController is no longer active, stopping auth flow");
+                            return;
+                        }
+                        
                         var viewManager = GetViewManager();
                         if (viewManager == null)
                         {
@@ -472,7 +563,9 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     }
                     catch (OperationCanceledException)
                     {
-                        continue;
+                        if (debugLogging)
+                            Debug.Log("ShowAuthFlow cancelled");
+                        return;
                     }
                     catch (SignOutRequiredException)
                     {
@@ -506,6 +599,14 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 {
                     try
                     {
+                        // Проверяем, что компонент все еще активен
+                        if (this == null || !gameObject.activeInHierarchy)
+                        {
+                            if (debugLogging)
+                                Debug.Log("IdentityUIController is no longer active, stopping user flow");
+                            return;
+                        }
+                        
                         var viewManager = GetViewManager();
                         if (viewManager == null)
                         {
@@ -538,7 +639,9 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     }
                     catch (OperationCanceledException)
                     {
-                        continue;
+                        if (debugLogging)
+                            Debug.Log("ShowUserFlow cancelled");
+                        return;
                     }
                     catch (SignOutRequiredException)
                     {
@@ -624,7 +727,9 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 }
                 catch (OperationCanceledException)
                 {
-                    continue;
+                    if (debugLogging)
+                        Debug.Log("ShowSettings cancelled");
+                    return;
                 }
                 catch (SignOutRequiredException)
                 {

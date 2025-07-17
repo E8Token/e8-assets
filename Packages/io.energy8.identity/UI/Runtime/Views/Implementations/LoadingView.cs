@@ -24,13 +24,11 @@ namespace Energy8.Identity.UI.Runtime.Views.Implementations
                 {
                     if (@params.GetType() == typeof(ResultLoadingViewParams))
                     {
-                        Debug.Log("LoadingView: content");
                         completionSource.TrySetResult(new LoadingViewResult(
                                             await ((ResultLoadingViewParams)@params).Task));
                     }
                     else
                     {
-                        Debug.Log("LoadingView: empty");
                         await @params.Task;
                         completionSource.TrySetResult(new LoadingViewResult());
                     }

@@ -48,7 +48,6 @@ namespace Energy8.Identity.UI.Runtime.Views.Management
             catch (OperationCanceledException)
             {
                 // Kept warning log for cancellation as it's important
-                Debug.LogWarning($"View {typeof(TView).Name} was cancelled");
                 throw;
             }
             catch (Exception ex)

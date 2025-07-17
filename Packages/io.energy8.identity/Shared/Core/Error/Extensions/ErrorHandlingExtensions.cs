@@ -71,7 +71,6 @@ namespace Energy8.Identity.Shared.Core.Error
             {
                 try
                 {
-                    Debug.Log("WithErrorHandler");
                     return await taskFactory(ct);
                 }
                 catch (Exception ex)
@@ -105,7 +104,6 @@ namespace Energy8.Identity.Shared.Core.Error
             {
                 try
                 {
-                    Debug.Log("WithErrorHandler");
                     await taskFactory(ct);
                     return;
                 }

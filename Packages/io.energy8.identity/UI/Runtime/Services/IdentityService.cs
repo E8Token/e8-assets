@@ -170,8 +170,6 @@ namespace Energy8.Identity.UI.Runtime.Services
 
         public async UniTask StartEmailFlow(string email, CancellationToken ct)
         {
-            Debug.Log($"Starting email flow for: {email}");
-
             var response = await httpClient.PostAsync<EmailVerificationTokenDto>(
                 "auth/email/sign-in",
                 new EmailSignInDto()
@@ -186,8 +184,6 @@ namespace Energy8.Identity.UI.Runtime.Services
         {
             if (string.IsNullOrEmpty(pendingEmailToken))
                 throw new InvalidOperationException("No pending email confirmation");
-
-            Debug.Log("Confirming email code");
 
             var response = await httpClient.PostAsync<AccessTokenDto>(
                 "auth/email/confirm",
