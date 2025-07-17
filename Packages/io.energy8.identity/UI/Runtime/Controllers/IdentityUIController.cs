@@ -65,6 +65,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         private bool isShowingUserFlow = false;
 
         public event Action OnSignedOut;
+        public event Action OnSignedIn;
 
         /// <summary>
         /// Получает текущий Canvas контроллер
@@ -159,6 +160,9 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         private void OnUserSignedIn(FirebaseUser user)
         #endif
         {
+            // Вызываем публичное событие
+            OnSignedIn?.Invoke();
+            
             // Проверяем, что CancellationTokenSource не был очищен и что не показываем уже UserFlow
             if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested && !isShowingUserFlow)
             {
@@ -221,7 +225,88 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private void OnDestroy()
         {
+            if (debugLogging)
+                Debug.Log("IdentityUIController OnDestroy started");
+
+            // СНАЧАЛА отменяем все асинхронные операции
+            if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested)
+            {
+                lifetimeCts.Cancel();
+            }
+
+            // Сбрасываем флаги операций
+            isIdentityFlowStarted = false;
+            isShowingAuthFlow = false;
+            isShowingUserFlow = false;
+
             // Отписываемся от событий ПЕРЕД очисткой ресурсов
+            if (identityService != null)
+            {
+                try
+                {
+                    identityService.OnSignedIn -= OnUserSignedIn;
+                    identityService.OnSignedOut -= OnUserSignedOut;
+                }
+                catch (System.Exception ex)
+                {
+                    if (debugLogging)
+                        Debug.LogWarning($"Error unsubscribing from identity service events: {ex.Message}");
+                }
+            }
+
+            // Отписываемся от Canvas контроллера с проверкой валидности
+            if (currentCanvasController != null)
+            {
+                try
+                {
+                    currentCanvasController.OnOpenStateChanged -= OnCanvasOpenStateChanged;
+                }
+                catch (System.Exception ex)
+                {
+                    if (debugLogging)
+                        Debug.LogWarning($"Error unsubscribing from canvas controller: {ex.Message}");
+                }
+                currentCanvasController = null;
+            }
+
+            // Очищаем Instance если это текущий экземпляр
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+
+            // Очищаем токен отмены
+            try
+            {
+                lifetimeCts?.Dispose();
+            }
+            catch (System.Exception ex)
+            {
+                if (debugLogging)
+                    Debug.LogWarning($"Error disposing cancellation token: {ex.Message}");
+            }
+            finally
+            {
+                lifetimeCts = null;
+            }
+
+            // Очищаем WithLoading
+            try
+            {
+                WithLoadingExtensions.CleanupLoading();
+            }
+            catch (System.Exception ex)
+            {
+                if (debugLogging)
+                    Debug.LogWarning($"Error cleaning up WithLoading: {ex.Message}");
+            }
+            
+            if (debugLogging)
+                Debug.Log("IdentityUIController OnDestroy completed");
+            if (debugLogging)
+                Debug.Log("IdentityUIController destroyed");
+
+            // Отписываемся от событий identityService
             if (identityService != null)
             {
                 identityService.OnSignedIn -= OnUserSignedIn;
@@ -234,21 +319,23 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 currentCanvasController.OnOpenStateChanged -= OnCanvasOpenStateChanged;
             }
 
-            // Очищаем Instance если это текущий экземпляр
+            // Очищаем токен отмены
+            if (lifetimeCts != null)
+            {
+                if (!lifetimeCts.IsCancellationRequested)
+                    lifetimeCts.Cancel();
+                lifetimeCts.Dispose();
+                lifetimeCts = null;
+            }
+
+            // Очищаем статический Instance
             if (Instance == this)
             {
                 Instance = null;
             }
 
-            // Очищаем токен отмены
-            lifetimeCts?.Cancel();
-            lifetimeCts?.Dispose();
-            lifetimeCts = null;
-
+            // Очищаем статические/глобальные состояния загрузки
             WithLoadingExtensions.CleanupLoading();
-            
-            if (debugLogging)
-                Debug.Log("IdentityUIController destroyed");
         }
 
         #endregion

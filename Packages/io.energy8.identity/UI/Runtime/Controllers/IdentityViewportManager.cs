@@ -255,31 +255,55 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             if (currentCanvasController != null)
             {
                 // Закрываем UI перед уничтожением
-                if (currentCanvasController.IsOpen)
+                try
                 {
-                    currentCanvasController.SetOpenState(false);
+                    if (currentCanvasController.IsOpen)
+                    {
+                        currentCanvasController.SetOpenState(false);
+                    }
                 }
-                
+                catch (System.Exception ex)
+                {
+                    if (debugLogging)
+                        Debug.LogWarning($"Error closing canvas controller: {ex.Message}");
+                }
+
                 string controllerName = currentCanvasController.name;
-                
-                // Отключаем от IdentityUIController
-                if (IdentityUIController.Instance != null)
+
+                // Отключаем от IdentityUIController ТОЛЬКО если он ещё существует
+                try
                 {
-                    IdentityUIController.Instance.SetCanvasController(null);
+                    if (IdentityUIController.Instance != null)
+                    {
+                        IdentityUIController.Instance.SetCanvasController(null);
+                    }
                 }
-                
+                catch (System.Exception ex)
+                {
+                    if (debugLogging)
+                        Debug.LogWarning($"Error disconnecting from IdentityUIController: {ex.Message}");
+                }
+
                 // Уничтожаем GameObject
-                if (Application.isPlaying)
+                try
                 {
-                    Destroy(currentCanvasController.gameObject);
+                    if (Application.isPlaying)
+                    {
+                        Destroy(currentCanvasController.gameObject);
+                    }
+                    else
+                    {
+                        DestroyImmediate(currentCanvasController.gameObject);
+                    }
                 }
-                else
+                catch (System.Exception ex)
                 {
-                    DestroyImmediate(currentCanvasController.gameObject);
+                    if (debugLogging)
+                        Debug.LogWarning($"Error destroying canvas controller GameObject: {ex.Message}");
                 }
-                
+
                 currentCanvasController = null;
-                
+
                 if (debugLogging)
                     Debug.Log($"Destroyed canvas controller: {controllerName}");
             }
@@ -446,6 +470,48 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                    $"PreserveState: {preserveState}, " +
                    $"SavedState: IsOpen={savedState?.isOpen}, " +
                    $"IdentityUIController: {(IdentityUIController.Instance != null ? "Present" : "Null")}";
+        }
+
+        #endregion
+
+        #region Unity Lifecycle
+
+        protected override void OnDestroy()
+        {
+            // СНАЧАЛА отключаемся от событий ViewportManager
+            base.OnDestroy();
+
+            // Очищаем Canvas контроллер без попыток взаимодействия с IdentityUIController
+            if (currentCanvasController != null)
+            {
+                try
+                {
+                    if (Application.isPlaying)
+                    {
+                        Destroy(currentCanvasController.gameObject);
+                    }
+                    else
+                    {
+                        DestroyImmediate(currentCanvasController.gameObject);
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    if (debugLogging)
+                        Debug.LogWarning($"Error destroying canvas controller in OnDestroy: {ex.Message}");
+                }
+                finally
+                {
+                    currentCanvasController = null;
+                }
+            }
+
+            // Сбрасываем флаги
+            isTransitioning = false;
+            savedState = null;
+
+            if (debugLogging)
+                Debug.Log("IdentityViewportManager destroyed");
         }
 
         #endregion
