@@ -9,17 +9,18 @@ using VMScreenOrientation = Energy8.ViewportManager.Core.ScreenOrientation;
 namespace Energy8.Identity.UI.Runtime.Controllers
 {
     /// <summary>
-    /// Менеджер Identity UI, который автоматически создает и управляет единственным контроллером
-    /// в зависимости от ориентации экрана, пересоздавая его из соответствующих префабов.
+    /// Менеджер Identity UI, который автоматически создает и управляет Canvas контроллерами
+    /// в зависимости от ориентации экрана, пересоздавая их из соответствующих префабов.
+    /// Работает с единственным IdentityUIController Instance.
     /// </summary>
     public class IdentityViewportManager : ViewportEventListener
     {
         [Header("Identity Prefabs")]
-        [SerializeField] private GameObject portraitControllerPrefab;
-        [SerializeField] private GameObject landscapeControllerPrefab;
+        [SerializeField] private GameObject portraitCanvasPrefab;
+        [SerializeField] private GameObject landscapeCanvasPrefab;
         
         [Header("Controller Settings")]
-        [SerializeField] private string controllerName = "IdentityController";
+        [SerializeField] private string canvasControllerName = "IdentityCanvas";
         [SerializeField] private bool autoCreateOnStart = true;
         
         [Header("State Management")]
@@ -28,28 +29,24 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         [Header("Debug")]
         [SerializeField] private bool debugLogging = false;
 
-        private IdentityUIController currentController;
-        private IdentityControllerState savedState;
+        private IdentityCanvasController currentCanvasController;
+        private IdentityCanvasState savedState;
         private bool isTransitioning = false;
         private VMScreenOrientation lastOrientation;
 
         /// <summary>
-        /// Структура для сохранения состояния Identity контроллера
+        /// Структура для сохранения состояния Identity Canvas контроллера
         /// </summary>
         [Serializable]
-        private class IdentityControllerState
+        private class IdentityCanvasState
         {
             public bool isOpen;
-            public bool isCurrentlyLite;
             public Vector2 lastScreenSize;
-            public float animationDuration;
 
-            public IdentityControllerState()
+            public IdentityCanvasState()
             {
                 isOpen = false;
-                isCurrentlyLite = false;
                 lastScreenSize = Vector2.zero;
-                animationDuration = 0.5f;
             }
         }
 
@@ -60,7 +57,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             base.Awake();
             
             // Инициализируем состояние
-            savedState = new IdentityControllerState();
+            savedState = new IdentityCanvasState();
             
             // Проверяем префабы
             ValidatePrefabs();
@@ -86,17 +83,17 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 Debug.Log($"Initial setup with context: {initialContext}");
                 
             lastOrientation = initialContext.orientation;
-            EnsureCorrectController(initialContext.orientation);
+            EnsureCorrectCanvasController(initialContext.orientation);
         }
 
         protected override void OnManagerInitialized()
         {
             if (debugLogging)
-                Debug.Log("ViewportManager initialized, creating initial controller");
+                Debug.Log("ViewportManager initialized, creating initial canvas controller");
             
             if (autoCreateOnStart)
             {
-                CreateInitialController();
+                CreateInitialCanvasController();
             }
         }
 
@@ -108,7 +105,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             if (isTransitioning) return;
             
             lastOrientation = toOrientation;
-            EnsureCorrectController(toOrientation);
+            EnsureCorrectCanvasController(toOrientation);
         }
 
         protected override void OnContextChanged(ViewportContext previousContext, ViewportContext newContext)
@@ -119,7 +116,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             if (isTransitioning) return;
             
             lastOrientation = newContext.orientation;
-            EnsureCorrectController(newContext.orientation);
+            EnsureCorrectCanvasController(newContext.orientation);
         }
 
         protected override void OnConfigurationChanged(ViewportConfiguration previousConfiguration, ViewportConfiguration newConfiguration)
@@ -133,12 +130,12 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         #endregion
 
-        #region Controller Management
+        #region Canvas Controller Management
 
         /// <summary>
-        /// Создает начальный контроллер на основе текущей ориентации
+        /// Создает начальный Canvas контроллер на основе текущей ориентации
         /// </summary>
-        private void CreateInitialController()
+        private void CreateInitialCanvasController()
         {
             VMScreenOrientation orientation;
             
@@ -153,28 +150,28 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             }
             
             lastOrientation = orientation;
-            CreateController(orientation);
+            CreateCanvasController(orientation);
         }
 
         /// <summary>
-        /// Убеждается, что текущий контроллер соответствует ориентации
+        /// Убеждается, что текущий Canvas контроллер соответствует ориентации
         /// </summary>
-        private void EnsureCorrectController(VMScreenOrientation orientation)
+        private void EnsureCorrectCanvasController(VMScreenOrientation orientation)
         {
             bool needsPortrait = IsPortraitOrientation(orientation);
-            bool hasPortrait = IsCurrentControllerPortrait();
+            bool hasPortrait = IsCurrentCanvasControllerPortrait();
             
             // Если контроллера нет или он не соответствует ориентации
-            if (currentController == null || needsPortrait != hasPortrait)
+            if (currentCanvasController == null || needsPortrait != hasPortrait)
             {
-                RecreateController(orientation);
+                RecreateCanvasController(orientation);
             }
         }
 
         /// <summary>
-        /// Пересоздает контроллер для указанной ориентации
+        /// Пересоздает Canvas контроллер для указанной ориентации
         /// </summary>
-        private void RecreateController(VMScreenOrientation orientation)
+        private void RecreateCanvasController(VMScreenOrientation orientation)
         {
             if (isTransitioning) return;
             
@@ -183,25 +180,25 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             try
             {
                 // Сохраняем состояние текущего контроллера
-                if (currentController != null && preserveState)
+                if (currentCanvasController != null && preserveState)
                 {
-                    SaveControllerState();
+                    SaveCanvasControllerState();
                 }
                 
                 // Уничтожаем текущий контроллер
-                DestroyCurrentController();
+                DestroyCurrentCanvasController();
                 
                 // Создаем новый контроллер
-                CreateController(orientation);
+                CreateCanvasController(orientation);
                 
                 // Восстанавливаем состояние
-                if (preserveState && currentController != null)
+                if (preserveState && currentCanvasController != null)
                 {
-                    RestoreControllerState();
+                    RestoreCanvasControllerState();
                 }
                 
                 if (debugLogging)
-                    Debug.Log($"Recreated controller for orientation: {orientation}");
+                    Debug.Log($"Recreated canvas controller for orientation: {orientation}");
             }
             finally
             {
@@ -210,11 +207,11 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         }
 
         /// <summary>
-        /// Создает контроллер для указанной ориентации
+        /// Создает Canvas контроллер для указанной ориентации
         /// </summary>
-        private void CreateController(VMScreenOrientation orientation)
+        private void CreateCanvasController(VMScreenOrientation orientation)
         {
-            GameObject prefab = IsPortraitOrientation(orientation) ? portraitControllerPrefab : landscapeControllerPrefab;
+            GameObject prefab = IsPortraitOrientation(orientation) ? portraitCanvasPrefab : landscapeCanvasPrefab;
             
             if (prefab == null)
             {
@@ -222,53 +219,69 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 return;
             }
             
-            // Проверяем, что префаб содержит IdentityUIController
-            if (prefab.GetComponent<IdentityUIController>() == null)
+            // Проверяем, что префаб содержит IdentityCanvasController
+            if (prefab.GetComponent<IdentityCanvasController>() == null)
             {
-                Debug.LogError($"Prefab {prefab.name} does not contain IdentityUIController component!");
+                Debug.LogError($"Prefab {prefab.name} does not contain IdentityCanvasController component!");
                 return;
             }
             
             // Создаем контроллер
-            GameObject controllerGO = Instantiate(prefab);
-            controllerGO.name = controllerName;
+            GameObject canvasControllerGO = Instantiate(prefab);
+            canvasControllerGO.name = canvasControllerName;
             
             // Получаем компонент контроллера
-            currentController = controllerGO.GetComponent<IdentityUIController>();
+            currentCanvasController = canvasControllerGO.GetComponent<IdentityCanvasController>();
+            
+            // Устанавливаем Canvas контроллер в IdentityUIController
+            if (IdentityUIController.Instance != null)
+            {
+                IdentityUIController.Instance.SetCanvasController(currentCanvasController);
+            }
+            else
+            {
+                Debug.LogWarning("IdentityUIController.Instance is null, canvas controller will be set later");
+            }
                         
             if (debugLogging)
-                Debug.Log($"Created controller: {controllerGO.name} from prefab: {prefab.name}");
+                Debug.Log($"Created canvas controller: {canvasControllerGO.name} from prefab: {prefab.name}");
         }
 
         /// <summary>
-        /// Уничтожает текущий контроллер
+        /// Уничтожает текущий Canvas контроллер
         /// </summary>
-        private void DestroyCurrentController()
+        private void DestroyCurrentCanvasController()
         {
-            if (currentController != null)
+            if (currentCanvasController != null)
             {
                 // Закрываем UI перед уничтожением
-                if (currentController.IsOpen)
+                if (currentCanvasController.IsOpen)
                 {
-                    currentController.SetOpenState(false);
+                    currentCanvasController.SetOpenState(false);
                 }
                 
-                string controllerName = currentController.name;
+                string controllerName = currentCanvasController.name;
+                
+                // Отключаем от IdentityUIController
+                if (IdentityUIController.Instance != null)
+                {
+                    IdentityUIController.Instance.SetCanvasController(null);
+                }
                 
                 // Уничтожаем GameObject
                 if (Application.isPlaying)
                 {
-                    Destroy(currentController.gameObject);
+                    Destroy(currentCanvasController.gameObject);
                 }
                 else
                 {
-                    DestroyImmediate(currentController.gameObject);
+                    DestroyImmediate(currentCanvasController.gameObject);
                 }
                 
-                currentController = null;
+                currentCanvasController = null;
                 
                 if (debugLogging)
-                    Debug.Log($"Destroyed controller: {controllerName}");
+                    Debug.Log($"Destroyed canvas controller: {controllerName}");
             }
         }
 
@@ -277,91 +290,34 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         #region State Management
 
         /// <summary>
-        /// Сохраняет состояние текущего контроллера
+        /// Сохраняет состояние текущего Canvas контроллера
         /// </summary>
-        private void SaveControllerState()
+        private void SaveCanvasControllerState()
         {
-            if (currentController == null) return;
+            if (currentCanvasController == null) return;
             
-            savedState.isOpen = currentController.IsOpen;
+            savedState.isOpen = currentCanvasController.IsOpen;
             savedState.lastScreenSize = new Vector2(Screen.width, Screen.height);
             
-            // Используем рефлексию для доступа к приватным полям
-            var controllerType = currentController.GetType();
-            
-            try
-            {
-                var animationDurationField = controllerType.GetField("animationDuration", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (animationDurationField != null)
-                {
-                    savedState.animationDuration = (float)animationDurationField.GetValue(currentController);
-                }
-                
-                var isCurrentlyLiteField = controllerType.GetField("isCurrentlyLite", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (isCurrentlyLiteField != null)
-                {
-                    savedState.isCurrentlyLite = (bool)isCurrentlyLiteField.GetValue(currentController);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (debugLogging)
-                    Debug.LogWarning($"Failed to save some controller state via reflection: {ex.Message}");
-            }
-            
             if (debugLogging)
-                Debug.Log($"Saved controller state: IsOpen={savedState.isOpen}, IsLite={savedState.isCurrentlyLite}");
+                Debug.Log($"Saved canvas controller state: IsOpen={savedState.isOpen}");
         }
 
         /// <summary>
-        /// Восстанавливает состояние контроллера
+        /// Восстанавливает состояние Canvas контроллера
         /// </summary>
-        private void RestoreControllerState()
+        private void RestoreCanvasControllerState()
         {
-            if (currentController == null || savedState == null) return;
+            if (currentCanvasController == null || savedState == null) return;
             
             // Восстанавливаем состояние открытия/закрытия
-            if (currentController.IsOpen != savedState.isOpen)
+            if (currentCanvasController.IsOpen != savedState.isOpen)
             {
-                currentController.SetOpenState(savedState.isOpen);
-            }
-            
-            // Используем рефлексию для восстановления приватных полей
-            var controllerType = currentController.GetType();
-            
-            try
-            {
-                var animationDurationField = controllerType.GetField("animationDuration", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (animationDurationField != null)
-                {
-                    animationDurationField.SetValue(currentController, savedState.animationDuration);
-                }
-                
-                var isCurrentlyLiteField = controllerType.GetField("isCurrentlyLite", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (isCurrentlyLiteField != null)
-                {
-                    isCurrentlyLiteField.SetValue(currentController, savedState.isCurrentlyLite);
-                }
-                
-                var lastScreenSizeField = controllerType.GetField("lastScreenSize", 
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                if (lastScreenSizeField != null)
-                {
-                    lastScreenSizeField.SetValue(currentController, savedState.lastScreenSize);
-                }
-            }
-            catch (Exception ex)
-            {
-                if (debugLogging)
-                    Debug.LogWarning($"Failed to restore some controller state via reflection: {ex.Message}");
+                currentCanvasController.SetOpenState(savedState.isOpen);
             }
             
             if (debugLogging)
-                Debug.Log($"Restored controller state: IsOpen={savedState.isOpen}, IsLite={savedState.isCurrentlyLite}");
+                Debug.Log($"Restored canvas controller state: IsOpen={savedState.isOpen}");
         }
 
         #endregion
@@ -377,33 +333,33 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         }
 
         /// <summary>
-        /// Проверяет, является ли текущий контроллер портретным
+        /// Проверяет, является ли текущий Canvas контроллер портретным
         /// </summary>
-        private bool IsCurrentControllerPortrait()
+        private bool IsCurrentCanvasControllerPortrait()
         {
-            if (currentController == null) return false;
+            if (currentCanvasController == null) return false;
             
-            if (portraitControllerPrefab != null && currentController.name.Contains(portraitControllerPrefab.name))
+            if (portraitCanvasPrefab != null && currentCanvasController.name.Contains(portraitCanvasPrefab.name))
                 return true;
-            if (landscapeControllerPrefab != null && currentController.name.Contains(landscapeControllerPrefab.name))
+            if (landscapeCanvasPrefab != null && currentCanvasController.name.Contains(landscapeCanvasPrefab.name))
                 return false;
                 
             // Fallback: проверяем по имени
-            return currentController.name.ToLower().Contains("portrait");
+            return currentCanvasController.name.ToLower().Contains("portrait");
         }
 
         /// <summary>
-        /// Применяет конфигурацию к текущему контроллеру
+        /// Применяет конфигурацию к текущему Canvas контроллеру
         /// </summary>
         private void ApplyConfigurationToController(ViewportConfiguration configuration)
         {
-            if (currentController == null || configuration == null) return;
+            if (currentCanvasController == null || configuration == null) return;
             
             // Здесь можно применить специфичные для конфигурации настройки
             // Например, изменить качество, анимации и т.д.
             
             if (debugLogging)
-                Debug.Log($"Applied configuration {configuration.ToString()} to controller");
+                Debug.Log($"Applied configuration {configuration.ToString()} to canvas controller");
         }
 
         /// <summary>
@@ -411,27 +367,27 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         /// </summary>
         private void ValidatePrefabs()
         {
-            if (portraitControllerPrefab == null)
+            if (portraitCanvasPrefab == null)
             {
-                Debug.LogError("Portrait controller prefab is not assigned!");
+                Debug.LogError("Portrait canvas prefab is not assigned!");
             }
-            else if (portraitControllerPrefab.GetComponent<IdentityUIController>() == null)
+            else if (portraitCanvasPrefab.GetComponent<IdentityCanvasController>() == null)
             {
-                Debug.LogError("Portrait controller prefab does not contain IdentityUIController component!");
-            }
-            
-            if (landscapeControllerPrefab == null)
-            {
-                Debug.LogError("Landscape controller prefab is not assigned!");
-            }
-            else if (landscapeControllerPrefab.GetComponent<IdentityUIController>() == null)
-            {
-                Debug.LogError("Landscape controller prefab does not contain IdentityUIController component!");
+                Debug.LogError("Portrait canvas prefab does not contain IdentityCanvasController component!");
             }
             
-            if (portraitControllerPrefab == landscapeControllerPrefab)
+            if (landscapeCanvasPrefab == null)
             {
-                Debug.LogWarning("Portrait and landscape controller prefabs are the same!");
+                Debug.LogError("Landscape canvas prefab is not assigned!");
+            }
+            else if (landscapeCanvasPrefab.GetComponent<IdentityCanvasController>() == null)
+            {
+                Debug.LogError("Landscape canvas prefab does not contain IdentityCanvasController component!");
+            }
+            
+            if (portraitCanvasPrefab == landscapeCanvasPrefab)
+            {
+                Debug.LogWarning("Portrait and landscape canvas prefabs are the same!");
             }
         }
 
@@ -440,35 +396,35 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         #region Public API
 
         /// <summary>
-        /// Получает текущий контроллер
+        /// Получает текущий Canvas контроллер
         /// </summary>
-        public IdentityUIController GetCurrentController()
+        public IdentityCanvasController GetCurrentCanvasController()
         {
-            return currentController;
+            return currentCanvasController;
         }
 
         /// <summary>
-        /// Принудительно пересоздает контроллер для портретной ориентации
+        /// Принудительно пересоздает Canvas контроллер для портретной ориентации
         /// </summary>
         public void ForcePortraitMode()
         {
-            RecreateController(VMScreenOrientation.Portrait);
+            RecreateCanvasController(VMScreenOrientation.Portrait);
         }
 
         /// <summary>
-        /// Принудительно пересоздает контроллер для горизонтальной ориентации
+        /// Принудительно пересоздает Canvas контроллер для горизонтальной ориентации
         /// </summary>
         public void ForceLandscapeMode()
         {
-            RecreateController(VMScreenOrientation.Landscape);
+            RecreateCanvasController(VMScreenOrientation.Landscape);
         }
 
         /// <summary>
-        /// Принудительно пересоздает контроллер для текущей ориентации
+        /// Принудительно пересоздает Canvas контроллер для текущей ориентации
         /// </summary>
-        public void RecreateCurrentController()
+        public void RecreateCurrentCanvasController()
         {
-            RecreateController(lastOrientation);
+            RecreateCanvasController(lastOrientation);
         }
 
         /// <summary>
@@ -484,11 +440,12 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         /// </summary>
         public string GetStateInfo()
         {
-            return $"Controller: {currentController?.name ?? "None"}, " +
+            return $"Canvas Controller: {currentCanvasController?.name ?? "None"}, " +
                    $"Orientation: {lastOrientation}, " +
                    $"Transitioning: {isTransitioning}, " +
                    $"PreserveState: {preserveState}, " +
-                   $"SavedState: IsOpen={savedState?.isOpen}, IsLite={savedState?.isCurrentlyLite}";
+                   $"SavedState: IsOpen={savedState?.isOpen}, " +
+                   $"IdentityUIController: {(IdentityUIController.Instance != null ? "Present" : "Null")}";
         }
 
         #endregion
@@ -514,10 +471,10 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             ForceLandscapeMode();
         }
         
-        [ContextMenu("Recreate Controller")]
-        private void EditorRecreateController()
+        [ContextMenu("Recreate Canvas Controller")]
+        private void EditorRecreateCanvasController()
         {
-            RecreateCurrentController();
+            RecreateCurrentCanvasController();
         }
         
         [ContextMenu("Validate Setup")]
@@ -525,14 +482,14 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         {
             ValidatePrefabs();
             
-            if (currentController != null)
+            if (currentCanvasController != null)
             {
-                Debug.Log($"Current controller: {currentController.name}, Active: {currentController.gameObject.activeInHierarchy}");
+                Debug.Log($"Current canvas controller: {currentCanvasController.name}, Active: {currentCanvasController.gameObject.activeInHierarchy}");
                 Debug.Log($"IdentityUIController.Instance: {IdentityUIController.Instance?.name ?? "null"}");
             }
             else
             {
-                Debug.Log("No current controller");
+                Debug.Log("No current canvas controller");
             }
         }
 #endif

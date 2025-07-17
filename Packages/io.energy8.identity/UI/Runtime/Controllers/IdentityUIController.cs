@@ -35,22 +35,18 @@ using Firebase.Auth;
 
 namespace Energy8.Identity.UI.Runtime.Controllers
 {
-    [RequireComponent(typeof(Canvas))]
+    /// <summary>
+    /// Основной контроллер Identity UI системы. Живет на протяжении всего lifecycle приложения.
+    /// Управляет логикой аутентификации и пользовательскими потоками, но не привязан к Canvas.
+    /// Canvas управляется через IdentityCanvasController.
+    /// </summary>
     public class IdentityUIController : MonoBehaviour
     {
         public static IdentityUIController Instance { get; private set; }
 
         [Header("Setup")]
-        [SerializeField] protected ViewManager viewManager;
         [SerializeField] private bool isLite = false;
-
-        [Header("UI")]
-        [SerializeField] private Button showButton;
-        [SerializeField] private Canvas canvas;
-
-        [Header("Animation")]
-        [SerializeField] private float animationDuration = 0.5f;
-        [SerializeField] private AnimationCurve animationCurve;
+        [SerializeField] protected bool debugLogging = false;
 
         public bool IsOpen { get; private set; }
         protected IHttpClient httpClient;
@@ -60,8 +56,8 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         private IAnalyticsService analyticsService;
         private CancellationTokenSource lifetimeCts;
 
-        private RectTransform containerRectTransform;
-        private Coroutine currentAnimationCoroutine;
+        // Canvas управление
+        private IdentityCanvasController currentCanvasController;
         
         // Флаги для предотвращения дублирования
         private bool isIdentityFlowStarted = false;
@@ -69,6 +65,84 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         private bool isShowingUserFlow = false;
 
         public event Action OnSignedOut;
+
+        /// <summary>
+        /// Получает текущий Canvas контроллер
+        /// </summary>
+        public IdentityCanvasController CurrentCanvasController => currentCanvasController;
+
+        /// <summary>
+        /// Получает информацию о том, является ли режим Lite
+        /// </summary>
+        public bool IsLite => isLite;
+
+        #region Canvas Management
+
+        /// <summary>
+        /// Устанавливает Canvas контроллер для управления UI
+        /// </summary>
+        public void SetCanvasController(IdentityCanvasController canvasController)
+        {
+            if (currentCanvasController != null)
+            {
+                currentCanvasController.OnOpenStateChanged -= OnCanvasOpenStateChanged;
+            }
+
+            currentCanvasController = canvasController;
+            
+            if (currentCanvasController != null)
+            {
+                currentCanvasController.OnOpenStateChanged += OnCanvasOpenStateChanged;
+                
+                if (debugLogging)
+                    Debug.Log($"Canvas controller set: {currentCanvasController.name}");
+            }
+        }
+
+        /// <summary>
+        /// Переключает состояние открытия/закрытия UI
+        /// </summary>
+        public void ToggleOpenState()
+        {
+            SetOpenState(!IsOpen);
+        }
+
+        /// <summary>
+        /// Устанавливает состояние открытия/закрытия UI
+        /// </summary>
+        public void SetOpenState(bool isOpen)
+        {
+            if (isOpen == IsOpen)
+                return;
+
+            IsOpen = isOpen;
+            
+            if (currentCanvasController != null)
+            {
+                currentCanvasController.SetOpenState(isOpen);
+            }
+            
+            if (debugLogging)
+                Debug.Log($"Identity UI state set to: {(isOpen ? "open" : "closed")}");
+        }
+
+        /// <summary>
+        /// Получает ViewManager из текущего Canvas контроллера
+        /// </summary>
+        protected ViewManager GetViewManager()
+        {
+            return currentCanvasController?.GetViewManager();
+        }
+
+        private void OnCanvasOpenStateChanged(bool isOpen)
+        {
+            IsOpen = isOpen;
+            
+            if (debugLogging)
+                Debug.Log($"Canvas state changed, UI state updated to: {(isOpen ? "open" : "closed")}");
+        }
+
+        #endregion
 
         #region Event Handlers
         
@@ -102,6 +176,8 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         
         #endregion
 
+        #region Unity Lifecycle
+
         protected virtual void Awake()
         {
             if (Instance != null)
@@ -127,25 +203,50 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             identityService.OnSignedIn += OnUserSignedIn;
             identityService.OnSignedOut += OnUserSignedOut;
 
-            containerRectTransform = viewManager?.GetComponent<RectTransform>();
-
-            // Apply default animation curve if not set
-            if (animationCurve == null || animationCurve.keys.Length == 0)
-            {
-                animationCurve = new AnimationCurve(
-                    new Keyframe(0, 0, 0, 1),
-                    new Keyframe(1, 1, 1, 0)
-                );
-            }
-
-            InitializeUI();
-            viewManager.InitializeLoading();
+            if (debugLogging)
+                Debug.Log("IdentityUIController initialized as singleton");
         }
 
         void Start()
         {
             StartIdentityFlow().Forget();
         }
+
+        private void OnDestroy()
+        {
+            // Отписываемся от событий ПЕРЕД очисткой ресурсов
+            if (identityService != null)
+            {
+                identityService.OnSignedIn -= OnUserSignedIn;
+                identityService.OnSignedOut -= OnUserSignedOut;
+            }
+
+            // Отписываемся от Canvas контроллера
+            if (currentCanvasController != null)
+            {
+                currentCanvasController.OnOpenStateChanged -= OnCanvasOpenStateChanged;
+            }
+
+            // Очищаем Instance если это текущий экземпляр
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+
+            // Очищаем токен отмены
+            lifetimeCts?.Cancel();
+            lifetimeCts?.Dispose();
+            lifetimeCts = null;
+
+            WithLoadingExtensions.CleanupLoading();
+            
+            if (debugLogging)
+                Debug.Log("IdentityUIController destroyed");
+        }
+
+        #endregion
+
+        #region Identity Flow
 
         private async UniTask StartIdentityFlow()
         {
@@ -157,19 +258,23 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             
             isIdentityFlowStarted = true;
             
-            Debug.Log("Initializing identity system");
+            if (debugLogging)
+                Debug.Log("Initializing identity system");
+                
             await identityService.Initialize(lifetimeCts.Token)
                 .WithLoading(lifetimeCts.Token);
                 
             // Проверяем, авторизован ли пользователь
             if (identityService.IsSignedIn)
             {
-                Debug.Log("User is already signed in, showing user flow");
+                if (debugLogging)
+                    Debug.Log("User is already signed in, showing user flow");
                 ShowUserFlow(lifetimeCts.Token).Forget();
             }
             else
             {
-                Debug.Log("User is not signed in, showing auth flow");
+                if (debugLogging)
+                    Debug.Log("User is not signed in, showing auth flow");
                 ShowAuthFlow(lifetimeCts.Token).Forget();
             }
         }
@@ -188,89 +293,98 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             try
             {
                 while (!ct.IsCancellationRequested)
-            {
-                try
                 {
-                    // Открываем окно только когда нужно показать форму авторизации
-                    SetOpenState(true);
-                    
-                    var result = await viewManager
-                        .Show<SignInView, SignInViewParams, SignInViewResult>(
-                            new SignInViewParams(), ct);
-
-                    AuthResult authResult = null;
-
-                    switch (result.Method)
+                    try
                     {
-                        case SignInMethod.Email:
-                            Func<CancellationToken, UniTask> startEmailFlow = (ct) => identityService
-                                    .StartEmailFlow(result.Email, ct)
-                                    .WithLoading(ct);
-                            await startEmailFlow.WithErrorHandler(ShowErrorAsync, ct);
+                        var viewManager = GetViewManager();
+                        if (viewManager == null)
+                        {
+                            if (debugLogging)
+                                Debug.LogWarning("No ViewManager available, waiting...");
+                            await UniTask.Delay(1000, cancellationToken: ct);
+                            continue;
+                        }
 
-                            Func<CancellationToken, UniTask<AuthResult>> confirmEmailCode = async (ct) =>
-                            {
-                                string code = null;
-                                string email = result.Email; // Store the email from sign-in result
+                        // Открываем окно только когда нужно показать форму авторизации
+                        SetOpenState(true);
+                        
+                        var result = await viewManager
+                            .Show<SignInView, SignInViewParams, SignInViewResult>(
+                                new SignInViewParams(), ct);
 
-                                while (code == null)
+                        AuthResult authResult = null;
+
+                        switch (result.Method)
+                        {
+                            case SignInMethod.Email:
+                                Func<CancellationToken, UniTask> startEmailFlow = (ct) => identityService
+                                        .StartEmailFlow(result.Email, ct)
+                                        .WithLoading(ct);
+                                await startEmailFlow.WithErrorHandler(ShowErrorAsync, ct);
+
+                                Func<CancellationToken, UniTask<AuthResult>> confirmEmailCode = async (ct) =>
                                 {
-                                    var codeResult = await viewManager.Show<CodeView, CodeViewParams, CodeViewResult>(
-                                        new CodeViewParams(), ct);
+                                    string code = null;
+                                    string email = result.Email; // Store the email from sign-in result
 
-                                    if (codeResult.Code == "RESEND")
+                                    while (code == null)
                                     {
-                                        // Resend the authentication code
-                                        await identityService.StartEmailFlow(email, ct).WithLoading(ct);
-                                        continue;
+                                        var codeResult = await viewManager.Show<CodeView, CodeViewParams, CodeViewResult>(
+                                            new CodeViewParams(), ct);
+
+                                        if (codeResult.Code == "RESEND")
+                                        {
+                                            // Resend the authentication code
+                                            await identityService.StartEmailFlow(email, ct).WithLoading(ct);
+                                            continue;
+                                        }
+
+                                        code = codeResult.Code;
                                     }
 
-                                    code = codeResult.Code;
-                                }
+                                    return await identityService
+                                        .ConfirmEmailCode(code, ct)
+                                        .WithLoading(ct);
+                                };
+                                authResult = await confirmEmailCode.WithErrorHandler(ShowErrorAsync, ct);
 
-                                return await identityService
-                                    .ConfirmEmailCode(code, ct)
+                                break;
+
+                            case SignInMethod.Google:
+                                Func<CancellationToken, UniTask<AuthResult>> signInWithGoogle = (ct) => identityService
+                                    .SignInWithGoogle(false, ct)
                                     .WithLoading(ct);
-                            };
-                            authResult = await confirmEmailCode.WithErrorHandler(ShowErrorAsync, ct);
+                                authResult = await signInWithGoogle.WithErrorHandler(ShowErrorAsync, ct);
+                                break;
 
-                            break;
+                            case SignInMethod.Apple:
+                                Func<CancellationToken, UniTask<AuthResult>> signInWithApple = (ct) => identityService
+                                    .SignInWithApple(false, ct)
+                                    .WithLoading(ct);
+                                authResult = await signInWithApple.WithErrorHandler(ShowErrorAsync, ct);
+                                break;
 
-                        case SignInMethod.Google:
-                            Func<CancellationToken, UniTask<AuthResult>> signInWithGoogle = (ct) => identityService
-                                .SignInWithGoogle(false, ct)
-                                .WithLoading(ct);
-                            authResult = await signInWithGoogle.WithErrorHandler(ShowErrorAsync, ct);
-                            break;
+                            case SignInMethod.Telegram:
+                                Func<CancellationToken, UniTask<AuthResult>> signInWithTelegram = (ct) => identityService
+                                    .SignInWithTelegramAsync(false, ct)
+                                    .WithLoading(ct);
+                                authResult = await signInWithTelegram.WithErrorHandler(ShowErrorAsync, ct);
+                                break;
+                        }
 
-                        case SignInMethod.Apple:
-                            Func<CancellationToken, UniTask<AuthResult>> signInWithApple = (ct) => identityService
-                                .SignInWithApple(false, ct)
-                                .WithLoading(ct);
-                            authResult = await signInWithApple.WithErrorHandler(ShowErrorAsync, ct);
-                            break;
-
-                        case SignInMethod.Telegram:
-                            Func<CancellationToken, UniTask<AuthResult>> signInWithTelegram = (ct) => identityService
-                                .SignInWithTelegramAsync(false, ct)
-                                .WithLoading(ct);
-                            authResult = await signInWithTelegram.WithErrorHandler(ShowErrorAsync, ct);
-                            break;
+                        // Закрываем окно после успешной авторизации
+                        SetOpenState(false);
+                        return;
                     }
-
-                    // Закрываем окно после успешной авторизации
-                    SetOpenState(false);
-                    return;
-                }
-                catch (OperationCanceledException)
-                {
-                    continue;
-                }
-                catch (SignOutRequiredException)
-                {
-                    await identityService.SignOut(ct);
-                    continue;
-                }
+                    catch (OperationCanceledException)
+                    {
+                        continue;
+                    }
+                    catch (SignOutRequiredException)
+                    {
+                        await identityService.SignOut(ct);
+                        continue;
+                    }
                 }
             }
             finally
@@ -296,38 +410,47 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 
                 while (!ct.IsCancellationRequested)
                 {
-                try
-                {
-                    Func<CancellationToken, UniTask<UserDto>> getUser = (ct) => userService
-                        .GetUserAsync(ct)
-                        .WithLoading(ct);
-
-                    var user = await getUser.WithErrorHandler(ShowErrorAsync, ct);
-
-                    var result = await viewManager
-                        .Show<UserView, UserViewParams, UserViewResult>(
-                            new UserViewParams(user.Name), ct);
-
-                    switch (result.Action)
+                    try
                     {
-                        case UserAction.OpenSettings:
-                            await ShowSettings(ct);
-                            break;
+                        var viewManager = GetViewManager();
+                        if (viewManager == null)
+                        {
+                            if (debugLogging)
+                                Debug.LogWarning("No ViewManager available, waiting...");
+                            await UniTask.Delay(1000, cancellationToken: ct);
+                            continue;
+                        }
 
-                        case UserAction.SignOut:
-                            await identityService.SignOut(ct);
-                            return;
+                        Func<CancellationToken, UniTask<UserDto>> getUser = (ct) => userService
+                            .GetUserAsync(ct)
+                            .WithLoading(ct);
+
+                        var user = await getUser.WithErrorHandler(ShowErrorAsync, ct);
+
+                        var result = await viewManager
+                            .Show<UserView, UserViewParams, UserViewResult>(
+                                new UserViewParams(user.Name), ct);
+
+                        switch (result.Action)
+                        {
+                            case UserAction.OpenSettings:
+                                await ShowSettings(ct);
+                                break;
+
+                            case UserAction.SignOut:
+                                await identityService.SignOut(ct);
+                                return;
+                        }
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    continue;
-                }
-                catch (SignOutRequiredException)
-                {
-                    await identityService.SignOut(ct);
-                    continue;
-                }
+                    catch (OperationCanceledException)
+                    {
+                        continue;
+                    }
+                    catch (SignOutRequiredException)
+                    {
+                        await identityService.SignOut(ct);
+                        continue;
+                    }
                 }
             }
             finally
@@ -342,6 +465,14 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             {
                 try
                 {
+                    var viewManager = GetViewManager();
+                    if (viewManager == null)
+                    {
+                        if (debugLogging)
+                            Debug.LogWarning("No ViewManager available for settings");
+                        return;
+                    }
+
                     Func<CancellationToken, UniTask<UserDto>> getUser = (ct) => userService
                         .GetUserAsync(ct)
                         .WithLoading(ct);
@@ -411,6 +542,10 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private async UniTask<string> ShowEmailVerification(CancellationToken ct)
         {
+            var viewManager = GetViewManager();
+            if (viewManager == null)
+                throw new InvalidOperationException("No ViewManager available");
+
             var result = await viewManager.Show<CodeView, CodeViewParams, CodeViewResult>(
                 new CodeViewParams(), ct);
 
@@ -419,6 +554,10 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private async UniTask ShowChangeName(CancellationToken ct)
         {
+            var viewManager = GetViewManager();
+            if (viewManager == null)
+                throw new InvalidOperationException("No ViewManager available");
+
             var result = await viewManager.Show<ChangeNameView, ChangeNameViewParams, ChangeNameViewResult>(
                 new ChangeNameViewParams(), ct);
 
@@ -427,6 +566,10 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private async UniTask ShowChangeEmail(CancellationToken ct)
         {
+            var viewManager = GetViewManager();
+            if (viewManager == null)
+                throw new InvalidOperationException("No ViewManager available");
+
             var emailResult = await viewManager.Show<ChangeEmailView, ChangeEmailViewParams, ChangeEmailViewResult>(
                 new ChangeEmailViewParams(), ct);
 
@@ -468,6 +611,10 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private async UniTask ShowDeleteAccount(CancellationToken ct)
         {
+            var viewManager = GetViewManager();
+            if (viewManager == null)
+                throw new InvalidOperationException("No ViewManager available");
+
             await viewManager.Show<DeleteAccountView, DeleteAccountViewParams, DeleteAccountViewResult>(
                 new DeleteAccountViewParams(), ct);
 
@@ -496,6 +643,13 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         protected async UniTask<ErrorHandlingMethod> ShowErrorAsync(Energy8Exception e8Exception, CancellationToken ct)
         {
+            var viewManager = GetViewManager();
+            if (viewManager == null)
+            {
+                Debug.LogError($"No ViewManager available to show error: {e8Exception.Message}");
+                return ErrorHandlingMethod.Close;
+            }
+
             var result = await viewManager.Show<ErrorView, ErrorViewParams, ErrorViewResult>(
                 new ErrorViewParams(
                     e8Exception.Header,
@@ -507,114 +661,31 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             return result.Method;
         }
 
-        private void OnDestroy()
-        {
-            if (showButton != null)
-                showButton.onClick.RemoveAllListeners();
+        #endregion
 
-            // Отписываемся от событий ПЕРЕД очисткой ресурсов
-            if (identityService != null)
-            {
-                identityService.OnSignedIn -= OnUserSignedIn;
-                identityService.OnSignedOut -= OnUserSignedOut;
-            }
-
-            // Очищаем Instance если это текущий экземпляр
-            if (Instance == this)
-            {
-                Instance = null;
-            }
-
-            // Очищаем токен отмены
-            lifetimeCts?.Cancel();
-            lifetimeCts?.Dispose();
-            lifetimeCts = null;
-
-            WithLoadingExtensions.CleanupLoading();
-        }
-
-        private void InitializeUI()
-        {
-            if (showButton == null)
-                throw new ArgumentNullException(nameof(showButton));
-
-            showButton.onClick.AddListener(() => SetOpenState(!IsOpen));
-        }
-
-        public void SetOpenState(bool isOpen)
-        {
-            if (isOpen == IsOpen)
-                return;
-
-            IsOpen = isOpen;
-
-            if (containerRectTransform != null)
-            {
-                // Stop any running animation
-                if (currentAnimationCoroutine != null)
-                {
-                    StopCoroutine(currentAnimationCoroutine);
-                }
-
-                // Start new animation
-                currentAnimationCoroutine = StartCoroutine(AnimateRectTransform(isOpen));
-            }
-
-            Debug.Log($"Identity UI state changed to: {(isOpen ? "open" : "closed")}");
-        }
-
-        private IEnumerator AnimateRectTransform(bool opening)
-        {
-            float startTime = Time.time;
-            float startX = containerRectTransform.anchoredPosition.x;
-
-            // Calculate the target position based on the new formula: Screen.Width / Canvas.Scale.X
-            float targetWidth = containerRectTransform.sizeDelta.x;
-
-            float endX = opening ? 0 : targetWidth;
-
-            Debug.Log($"Animating panel: opening={opening}, targetWidth={targetWidth}, canvas scale={canvas.scaleFactor}");
-
-            while (Time.time < startTime + animationDuration)
-            {
-                float elapsed = (Time.time - startTime) / animationDuration;
-                float curveValue = animationCurve.Evaluate(elapsed);
-
-                // Calculate the current position
-                float currentX = Mathf.Lerp(startX, endX, curveValue);
-                Vector2 newPosition = containerRectTransform.anchoredPosition;
-                newPosition.x = currentX;
-
-                // Apply the position
-                containerRectTransform.anchoredPosition = newPosition;
-
-                yield return null;
-            }
-
-            // Ensure final position is exact
-            Vector2 finalPosition = containerRectTransform.anchoredPosition;
-            finalPosition.x = endX;
-            containerRectTransform.anchoredPosition = finalPosition;
-
-            currentAnimationCoroutine = null;
-        }
-
-        private void Reset()
-        {
-            TryGetComponent(out canvas);
-
-            if (transform.Find("Scroll View").TryGetComponent(out ScrollRect scroll))
-            {
-                scroll.transform.Find("OpenBut").TryGetComponent(out showButton);
-            }
-        }
+        #region Editor Support
 
 #if UNITY_EDITOR
         [ContextMenu("SignOut")]
         private void SignOut()
         {
-            authProvider.SignOut();
+            authProvider?.SignOut();
+        }
+
+        [ContextMenu("Debug State")]
+        private void DebugState()
+        {
+            Debug.Log($"IdentityUIController State:\n" +
+                      $"IsOpen: {IsOpen}\n" +
+                      $"IsLite: {isLite}\n" +
+                      $"Canvas Controller: {(currentCanvasController != null ? currentCanvasController.name : "null")}\n" +
+                      $"Identity Flow Started: {isIdentityFlowStarted}\n" +
+                      $"Showing Auth Flow: {isShowingAuthFlow}\n" +
+                      $"Showing User Flow: {isShowingUserFlow}\n" +
+                      $"Is Signed In: {identityService?.IsSignedIn ?? false}");
         }
 #endif
+
+        #endregion
     }
 }

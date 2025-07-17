@@ -95,12 +95,21 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             {
                 try
                 {
+                    var viewManager = GetViewManager();
+                    if (viewManager == null)
+                    {
+                        if (debugLogging)
+                            Debug.LogWarning("No ViewManager available for GameIdentityUIController, waiting...");
+                        await UniTask.Delay(1000, cancellationToken: ct);
+                        continue;
+                    }
+
                     // Получаем информацию о пользователе (identity)
                     UserDto identityUser = await userService.GetUserAsync(ct);
                     // Дополнительно получаем данные игрового персонажа
                     TGameUserDto gameUser = await GetGameUserAsync(ct);
 
-                    var result = await viewManager
+                    var result = await GetViewManager()
                         .Show<UserView, UserViewParams, UserViewResult>(
                             new UserViewParams(identityUser.Name), ct);
 
