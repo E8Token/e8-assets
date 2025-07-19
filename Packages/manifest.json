@@ -43,11 +43,20 @@
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "com.unity.modules.xr": "1.0.0",
-    "com.google.firebase.app": "file:../Library/GooglePackageCache/com.google.firebase.app-12.10.1.tgz",
-    "com.google.firebase.auth": "file:../Library/GooglePackageCache/com.google.firebase.auth-12.10.1.tgz",
-    "com.google.firebase.messaging": "file:../Library/GooglePackageCache/com.google.firebase.messaging-12.10.1.tgz",
-    "com.google.firebase.crashlytics": "file:../Library/GooglePackageCache/com.google.firebase.crashlytics-12.10.1.tgz",
-    "com.google.firebase.analytics": "file:../Library/GooglePackageCache/com.google.firebase.analytics-12.10.1.tgz",
-    "com.google.external-dependency-manager": "file:../Library/GooglePackageCache/com.google.external-dependency-manager-1.2.186.tgz"
-  }
+    "com.google.firebase.app": "https://git.energy8.tech/Energy8/e8-firebase-unity.git?path=firebase-packages/com.google.firebase.app",
+    "com.google.firebase.auth": "https://git.energy8.tech/Energy8/e8-firebase-unity.git?path=firebase-packages/com.google.firebase.auth",
+    "com.google.firebase.messaging": "https://git.energy8.tech/Energy8/e8-firebase-unity.git?path=firebase-packages/com.google.firebase.messaging",
+    "com.google.firebase.crashlytics": "https://git.energy8.tech/Energy8/e8-firebase-unity.git?path=firebase-packages/com.google.firebase.crashlytics",
+    "com.google.firebase.analytics": "https://git.energy8.tech/Energy8/e8-firebase-unity.git?path=firebase-packages/com.google.firebase.analytics",
+    "com.google.external-dependency-manager": "1.2.186"
+  },
+  "scopedRegistries": [
+    {
+      "name": "package.openupm.com",
+      "url": "https://package.openupm.com",
+      "scopes": [
+        "com.google.external-dependency-manager"
+      ]
+    }
+  ]
 }

@@ -5,7 +5,6 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Energy8.Identity.Analytics.Core.Providers;
 
-
 #if !UNITY_WEBGL || UNITY_EDITOR
 using Firebase.Analytics;
 using Firebase;
