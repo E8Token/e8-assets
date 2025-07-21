@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using Energy8.Identity.UI.Runtime.Views.Management;
 using Energy8.Identity.UI.Runtime.Extensions;
 using UnityCanvas = UnityEngine.Canvas;
+using Energy8.Identity.UI.Core.Management;
 
 namespace Energy8.Identity.UI.Runtime.Controllers
 {
@@ -18,14 +19,14 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         [Header("UI")]
         [SerializeField] private Button showButton;
         [SerializeField] private UnityCanvas canvas;
-        [SerializeField] protected ViewManager viewManager;
+        [SerializeField] protected IViewManager viewManager;
 
         [Header("Animation")]
         [SerializeField] private float animationDuration = 0.5f;
         [SerializeField] private AnimationCurve animationCurve;
 
         public bool IsOpen { get; private set; } = false;
-        public ViewManager ViewManager => viewManager;
+        public IViewManager ViewManager => viewManager;
         public UnityCanvas Canvas => canvas;
 
         private RectTransform containerRectTransform;
@@ -40,7 +41,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private void Awake()
         {
-            containerRectTransform = viewManager?.GetComponent<RectTransform>();
+            containerRectTransform = (viewManager as ViewManager)?.GetComponent<RectTransform>();
 
             // Apply default animation curve if not set
             if (animationCurve == null || animationCurve.keys.Length == 0)
@@ -55,11 +56,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             
             // Автоматически подключиться к IdentityOrchestrator если он существует
             RegisterWithOrchestrator();
-        }
-
-        private void Start()
-        {
-            // ViewManager инициализируется автоматически в Awake()
         }
 
         private void OnDestroy()
@@ -123,7 +119,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         /// <summary>
         /// Получает текущий ViewManager
         /// </summary>
-        public ViewManager GetViewManager()
+        public IViewManager GetViewManager()
         {
             return viewManager;
         }

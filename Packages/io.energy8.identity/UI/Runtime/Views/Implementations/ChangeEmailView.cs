@@ -1,10 +1,10 @@
-using Energy8.Identity.UI.Runtime.Views.Base;
+using Energy8.Identity.UI.Core.Views;
 using Energy8.Identity.UI.Runtime.Views.Animation;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Text.RegularExpressions;
-using Energy8.Identity.UI.Runtime.Views.Models;
+using Energy8.Identity.UI.Core.Views.Models;
 
 namespace Energy8.Identity.UI.Runtime.Views.Implementations.User
 {

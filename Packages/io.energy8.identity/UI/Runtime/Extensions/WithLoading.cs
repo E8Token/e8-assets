@@ -2,18 +2,19 @@ using Cysharp.Threading.Tasks;
 using Energy8.Identity.Shared.Core.Extensions;
 using Energy8.Identity.UI.Runtime.Views.Implementations;
 using Energy8.Identity.UI.Runtime.Views.Management;
-using Energy8.Identity.UI.Runtime.Views.Models;
+using Energy8.Identity.UI.Core.Views.Models;
 using System;
 using System.Threading;
 using UnityEngine;
+using Energy8.Identity.UI.Core.Management;
 
 namespace Energy8.Identity.UI.Runtime.Extensions
 {
     public static class WithLoadingExtensions
     {
-        private static ViewManager _viewManager;
+        private static IViewManager _viewManager;
 
-        public static void InitializeLoading(this ViewManager viewManager)
+        public static void InitializeLoading(this IViewManager viewManager)
         {
             _viewManager = viewManager;
         }

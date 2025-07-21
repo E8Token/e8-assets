@@ -1,5 +1,5 @@
-using Energy8.Identity.UI.Runtime.Views.Base;
-using Energy8.Identity.UI.Runtime.Views.Models;
+using Energy8.Identity.UI.Core.Views;
+using Energy8.Identity.UI.Core.Views.Models;
 using Energy8.Identity.UI.Runtime.Views.Animation;
 using Cysharp.Threading.Tasks;
 using System;

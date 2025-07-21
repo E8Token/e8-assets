@@ -2,10 +2,8 @@ using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEngine;
 using Energy8.Identity.Shared.Core.Constants;
-using Energy8.Identity.UI.Runtime.Canvas;
-using Energy8.Identity.UI.Runtime.Views.Implementations;
-using Energy8.Identity.UI.Runtime.Views.Models;
-using Energy8.Identity.UI.Runtime.Flows;
+using Energy8.Identity.UI.Runtime.Management.Flows;
+using Energy8.Identity.UI.Core.Management;
 
 namespace Energy8.Identity.UI.Runtime.Services
 {

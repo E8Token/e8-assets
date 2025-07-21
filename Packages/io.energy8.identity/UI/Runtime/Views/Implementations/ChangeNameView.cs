@@ -2,8 +2,8 @@ using Cysharp.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using Energy8.Identity.UI.Runtime.Views.Base;
-using Energy8.Identity.UI.Runtime.Views.Models;
+using Energy8.Identity.UI.Core.Views;
+using Energy8.Identity.UI.Core.Views.Models;
 using Energy8.Identity.UI.Runtime.Views.Animation;
 
 namespace Energy8.Identity.UI.Runtime.Views.Implementations

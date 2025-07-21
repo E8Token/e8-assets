@@ -1,0 +1,68 @@
+using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+
+using Energy8.Identity.UI.Core.Views;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Energy8.Identity.UI.Runtime.Views.Management
+{
+    public class ViewPresenter : IViewPresenter
+    {
+        private readonly IViewFactory factory;
+        private readonly Transform parent;
+        private readonly ScrollRect scrollView;
+        private UnityEngine.Object currentView;
+
+        public ViewPresenter(IViewFactory factory, Transform parent, ScrollRect scrollView)
+        {
+            this.factory = factory ?? throw new ArgumentNullException(nameof(factory));
+            this.parent = parent ?? throw new ArgumentNullException(nameof(parent));
+            this.scrollView = scrollView ?? throw new ArgumentNullException(nameof(scrollView));
+            // Removed debug log for creation
+        }
+
+        public async UniTask<TResult> ShowView<TView, TParams, TResult>(
+            TParams @params,
+            CancellationToken ct
+        ) where TView : ViewBase<TParams, TResult>
+          where TParams : ViewParams
+          where TResult : ViewResult
+        {
+
+            // if (currentView != null)
+            // {
+            //     UnityEngine.Object.Destroy(currentView);
+            //     currentView = null;
+            // }
+
+            var view = await factory.Create<TView, TParams, TResult>(parent);
+            currentView = view;
+
+            scrollView.content = view.RectTransform;
+            view.Initialize(@params);
+
+            try
+            {
+                await view.Show(ct);
+                var result = await view.ProcessAsync(ct);
+                await view.Hide(ct);
+
+                UnityEngine.Object.Destroy(view.gameObject);
+                currentView = null;
+
+                return result;
+            }
+            catch (Exception)
+            {
+                await view.Hide(ct);
+
+                UnityEngine.Object.Destroy(view.gameObject);
+                currentView = null;
+
+                throw;
+            }
+        }
+    }
+}
