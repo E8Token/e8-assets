@@ -219,12 +219,16 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             try
             {
-                // Устанавливаем активный Build Profile перед сборкой
-                if (!SetActiveBuildProfile(profile))
-                {
-                    Debug.LogError($"[BuildSystem] Failed to set active build profile: {profile.name}");
-                    return false;
-                }
+            // Устанавливаем активный Build Profile перед сборкой
+            try
+            {
+                SetActiveBuildProfile(profile);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[BuildSystem] Failed to set active build profile: {profile?.name}. {ex.Message}");
+                return false;
+            }
 
                 // Используем Build Profile API для сборки
                 // Пока что используем старый API, позже можно будет перейти на новый
@@ -324,76 +328,26 @@ namespace Energy8.BuildDeploySystem.Editor
         /// </summary>
         /// <param name="profile">Build Profile для установки как активный</param>
         /// <returns>true если профиль был успешно установлен, false в противном случае</returns>
-        private static bool SetActiveBuildProfile(BuildProfile profile)
+        /// <summary>
+        /// Устанавливает активный Build Profile через официальный API Unity.
+        /// Если профиль не переключился — кидает ошибку и останавливает сборку.
+        /// </summary>
+        private static void SetActiveBuildProfile(BuildProfile profile)
         {
-            try
+            if (profile == null)
             {
-                if (profile == null)
-                {
-                    Debug.LogError("[BuildSystem] Cannot set null BuildProfile as active");
-                    return false;
-                }
-
-                Debug.Log($"[BuildSystem] Setting active Build Profile: {profile.name}");
-
-                // Метод 1: Используем BuildProfileContext (наиболее надежный)
-                try
-                {
-                    var buildProfileContextType = typeof(BuildProfile).Assembly.GetType("UnityEditor.Build.Profile.BuildProfileContext");
-                    if (buildProfileContextType != null)
-                    {
-                        var instanceProperty = buildProfileContextType.GetProperty("instance", 
-                            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-                        
-                        if (instanceProperty != null)
-                        {
-                            var instance = instanceProperty.GetValue(null);
-                            var setActiveProfileMethod = buildProfileContextType.GetMethod("SetActiveProfile");
-                            
-                            if (setActiveProfileMethod != null && instance != null)
-                            {
-                                setActiveProfileMethod.Invoke(instance, new object[] { profile });
-                                Debug.Log($"[BuildSystem] ✅ Successfully set active Build Profile via BuildProfileContext: {profile.name}");
-                                return true;
-                            }
-                        }
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[BuildSystem] BuildProfileContext method failed: {ex.Message}");
-                }
-
-                // Метод 2: Используем BuildProfileProvider
-                try
-                {
-                    var buildProfileProviderType = typeof(BuildProfile).Assembly.GetType("UnityEditor.Build.Profile.BuildProfileProvider");
-                    if (buildProfileProviderType != null)
-                    {
-                        var setActiveMethod = buildProfileProviderType.GetMethod("SetActiveProfile", 
-                            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
-                        
-                        if (setActiveMethod != null)
-                        {
-                            setActiveMethod.Invoke(null, new object[] { profile });
-                            Debug.Log($"[BuildSystem] ✅ Successfully set active Build Profile via BuildProfileProvider: {profile.name}");
-                            return true;
-                        }
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[BuildSystem] BuildProfileProvider method failed: {ex.Message}");
-                }
-
-                // Если не удалось установить профиль напрямую - это критическая ошибка
-                Debug.LogError($"[BuildSystem] ❌ Failed to set active Build Profile '{profile.name}'. All methods failed. Build cannot continue.");
-                return false;
+                Debug.LogError("[BuildSystem] BuildProfile is null. Сборка остановлена.");
+                throw new System.Exception("BuildProfile is null");
             }
-            catch (System.Exception ex)
+
+            Debug.Log($"[BuildSystem] Устанавливаем Build Profile: {profile.name}");
+            UnityEditor.Build.Profile.BuildProfile.SetActiveBuildProfile(profile);
+
+            // Проверяем, действительно ли профиль стал активным
+            if (UnityEditor.Build.Profile.BuildProfile.GetActiveBuildProfile() != profile)
             {
-                Debug.LogError($"[BuildSystem] ❌ Failed to set active Build Profile '{profile.name}': {ex.Message}");
-                return false;
+                Debug.LogError($"[BuildSystem] Не удалось переключить Build Profile на '{profile.name}'. Сборка остановлена.");
+                throw new System.Exception($"Не удалось переключить Build Profile на '{profile.name}'");
             }
         }
 
@@ -460,67 +414,81 @@ namespace Energy8.BuildDeploySystem.Editor
                     string buildPath = (i == 0) ? outputPath : outputPath + "_" + format;
 
                     try
-                    {                        // Устанавливаем настройки для текущего формата
-                        SetWebGLTextureFormat(format);                        // Строим с текущими настройками
+                    {
+                        // Устанавливаем настройки для текущего формата
+                        SetWebGLTextureFormat(format);
                         bool buildSuccess = BuildWithProfileSwitch(profile, buildPath);
-                        Debug.Log($"[BuildSystem] Build result for {format}: {buildSuccess}"); if (buildSuccess)
+                        Debug.Log($"[BuildSystem] Build result for {format}: {buildSuccess}");
+                        if (!buildSuccess)
                         {
-                            // Проверим, что файлы действительно создались                            Debug.Log($"[BuildSystem] Files in build directory {buildPath}:");
-                            if (Directory.Exists(buildPath))
+                            Debug.LogError($"[BuildSystem] Build with {format} format failed! Останавливаем процесс.");
+                            // Очищаем временную папку при ошибке
+                            if (i > 0 && Directory.Exists(buildPath))
                             {
-                                var files = Directory.GetFiles(buildPath);
-                                foreach (var file in files)
+                                try
                                 {
-                                    Debug.Log($"[BuildSystem]   - {Path.GetFileName(file)} ({new FileInfo(file).Length} bytes)");
-                                }
-
-                                // Также проверим подпапку Build
-                                string buildSubPath = Path.Combine(buildPath, "Build");
-                                if (Directory.Exists(buildSubPath))
-                                {
-                                    Debug.Log($"[BuildSystem] Files in Build subdirectory:");
-                                    var buildFiles = Directory.GetFiles(buildSubPath);
-                                    foreach (var file in buildFiles)
-                                    {
-                                        Debug.Log($"[BuildSystem]     - {Path.GetFileName(file)} ({new FileInfo(file).Length} bytes)");
-                                    }
-                                }
-                                else
-                                {
-                                    Debug.LogWarning($"[BuildSystem] Build subdirectory does not exist: {buildSubPath}");
-                                }
-                            }
-                            else
-                            {
-                                Debug.LogError($"[BuildSystem] Build directory {buildPath} does not exist!");
-                            }
-                            if (i == 0)
-                            {
-                                // Первый билд - переименовываем основной .data файл
-                                Debug.Log($"[BuildSystem] Processing main build (format {format})");
-                                RenameMainWebGLDataFile(buildPath, format, config);
-                                anyBuildSuccess = true;
-                            }
-                            else
-                            {
-                                // Дополнительные билды - копируем .data файл в основную папку
-                                Debug.Log($"[BuildSystem] Processing additional build (format {format})");
-                                CopyWebGLDataFile(buildPath, outputPath, format, config);
-
-                                // Удаляем временную папку
-                                if (Directory.Exists(buildPath))
-                                {
-                                    Debug.Log($"[BuildSystem] Cleaning up temporary directory: {buildPath}");
                                     Directory.Delete(buildPath, true);
                                 }
+                                catch (Exception cleanupEx)
+                                {
+                                    Debug.LogWarning($"[BuildSystem] Failed to cleanup temp directory: {cleanupEx.Message}");
+                                }
+                            }
+                            return false;
+                        }
+
+                        // Проверим, что файлы действительно создались
+                        Debug.Log($"[BuildSystem] Files in build directory {buildPath}:");
+                        if (Directory.Exists(buildPath))
+                        {
+                            var files = Directory.GetFiles(buildPath);
+                            foreach (var file in files)
+                            {
+                                Debug.Log($"[BuildSystem]   - {Path.GetFileName(file)} ({new FileInfo(file).Length} bytes)");
                             }
 
-                            Debug.Log($"[BuildSystem] Successfully built {format} format");
+                            // Также проверим подпапку Build
+                            string buildSubPath = Path.Combine(buildPath, "Build");
+                            if (Directory.Exists(buildSubPath))
+                            {
+                                Debug.Log($"[BuildSystem] Files in Build subdirectory:");
+                                var buildFiles = Directory.GetFiles(buildSubPath);
+                                foreach (var file in buildFiles)
+                                {
+                                    Debug.Log($"[BuildSystem]     - {Path.GetFileName(file)} ({new FileInfo(file).Length} bytes)");
+                                }
+                            }
+                            else
+                            {
+                                Debug.LogWarning($"[BuildSystem] Build subdirectory does not exist: {buildSubPath}");
+                            }
                         }
                         else
                         {
-                            Debug.LogWarning($"[BuildSystem] Build with {format} format failed, skipping...");
+                            Debug.LogError($"[BuildSystem] Build directory {buildPath} does not exist!");
                         }
+                        if (i == 0)
+                        {
+                            // Первый билд - переименовываем основной .data файл
+                            Debug.Log($"[BuildSystem] Processing main build (format {format})");
+                            RenameMainWebGLDataFile(buildPath, format, config);
+                            anyBuildSuccess = true;
+                        }
+                        else
+                        {
+                            // Дополнительные билды - копируем .data файл в основную папку
+                            Debug.Log($"[BuildSystem] Processing additional build (format {format})");
+                            CopyWebGLDataFile(buildPath, outputPath, format, config);
+
+                            // Удаляем временную папку
+                            if (Directory.Exists(buildPath))
+                            {
+                                Debug.Log($"[BuildSystem] Cleaning up temporary directory: {buildPath}");
+                                Directory.Delete(buildPath, true);
+                            }
+                        }
+
+                        Debug.Log($"[BuildSystem] Successfully built {format} format");
                     }
                     catch (Exception ex)
                     {
@@ -538,6 +506,7 @@ namespace Energy8.BuildDeploySystem.Editor
                                 Debug.LogWarning($"[BuildSystem] Failed to cleanup temp directory: {cleanupEx.Message}");
                             }
                         }
+                        return false;
                     }
                 }
                 if (anyBuildSuccess)

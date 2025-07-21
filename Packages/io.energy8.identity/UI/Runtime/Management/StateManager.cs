@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using Firebase.Auth;
 using Energy8.Identity.UI.Runtime.Services;
 using Energy8.Identity.UI.Core.Management;
 using Energy8.Identity.UI.Core;
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+using Energy8.Identity.Auth.Core.Models;
+#else
+using Firebase.Auth;
+#endif
 
 namespace Energy8.Identity.UI.Runtime.State
 {
@@ -45,15 +49,8 @@ namespace Energy8.Identity.UI.Runtime.State
             this.analyticsPermissionService = analyticsPermissionService;
             this.debugLogging = debugLogging;
 
-            if (debugLogging)
-                Debug.Log("[StateManager] Subscribing to IdentityService events");
-
-            // Subscribe to identity service events (перенос из строк 148-177)
             identityService.OnSignedIn += OnUserSignedIn;
             identityService.OnSignedOut += OnUserSignedOut;
-
-            if (debugLogging)
-                Debug.Log("[StateManager] Successfully subscribed to IdentityService events");
         }
 
         /// <summary>

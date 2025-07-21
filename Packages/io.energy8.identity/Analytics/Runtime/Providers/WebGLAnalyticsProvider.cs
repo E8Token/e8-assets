@@ -6,7 +6,7 @@ using Energy8.Identity.Analytics.Core.Providers;
 using UnityEngine;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-using Energy8.Identity.Analytics.WebGL.Plugins;
+using Energy8.Identity.Analytics.WebGL;
 #endif
 
 namespace Energy8.Identity.Analytics.Runtime.Providers

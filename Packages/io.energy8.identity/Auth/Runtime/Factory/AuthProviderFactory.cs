@@ -40,16 +40,5 @@ namespace Energy8.Identity.Auth.Runtime.Factory
             return new NativeAuthProvider(httpClient);
 #endif
         }
-
-        /// <summary>
-        /// Creates a provider for testing purposes
-        /// </summary>
-        /// <param name="httpClient">HTTP client for testing</param>
-        /// <returns>Test auth provider</returns>
-        public static IAuthProvider CreateTestProvider(IHttpClient httpClient = null)
-        {
-            httpClient ??= new UnityHttpClient("localhost");
-            return new NativeAuthProvider(httpClient);
-        }
     }
 }

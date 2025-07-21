@@ -3,24 +3,17 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Energy8.Identity.Auth.Core.Providers;
-using Energy8.Identity.Auth.WebGL.Plugins;ITY_WEBGL && !UNITY_EDITOR
-using System;
-using System.Threading;
-using Cysharp.Threading.Tasks;
-
-using Energy8.Identity.Auth.WebGL.Plugins;
-using Energy8.Identity.Auth.Core.Models;
-using Energy8.Identity.Shared.Core.Configuration;
 using Newtonsoft.Json;
 using Energy8.Identity.Shared.Core.Contracts.Dto.Common;
-using Energy8.Identity.Shared.Core.Contracts.Dto.Auth;
 using UnityEngine;
+using Energy8.Identity.Auth.Core.Models;
+using Energy8.Identity.Auth.WebGL.Plugins;
+using Energy8.Identity.Configuration.Core;
 
 namespace Energy8.Identity.Auth.Runtime.Providers
 {
     public class WebGLAuthProvider : IAuthProvider
     {
-        private readonly ILogger<WebGLAuthProvider> logger = new Logger<WebGLAuthProvider>();
         private readonly FirebaseWebGLAuthPlugin plugin;
         private UniTaskCompletionSource<TelegramUserDto> telegramAutoAuthTcs;
         

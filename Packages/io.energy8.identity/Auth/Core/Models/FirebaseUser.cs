@@ -17,8 +17,6 @@ namespace Energy8.Identity.Auth.Core.Models
         public bool IsAnonymous { get; set; }
         [JsonProperty("emailVerified")]
         public bool IsEmailVerified { get; set; }
-        // public DateTimeOffset CreationTime { get; set; }
-        // public DateTimeOffset LastSignInTime { get; set; }
     }
 }
 

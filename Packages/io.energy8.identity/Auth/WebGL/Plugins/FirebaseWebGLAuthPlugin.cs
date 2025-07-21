@@ -65,7 +65,6 @@ namespace Energy8.Identity.Auth.WebGL.Plugins
         public event Action<string> OnError;
         public event Action<string> OnTelegramAuth;
 
-        // Добавляем событие для успешного завершения автоаутентификации Telegram
         public event Action OnTelegramAutoAuthComplete;
 
         private void Awake()
@@ -91,24 +90,11 @@ namespace Energy8.Identity.Auth.WebGL.Plugins
                 nameof(HandleTelegramAuth),
                 nameof(HandleError)
             );
-
-            // Важно: уменьшаем задержку, чтобы быстрее проверить автоаутентификацию
-            await UniTask.Delay(500);
             
-            // Явно вызываем проверку аутентификации Telegram перед инициализацией виджета
-            // Это поможет обработать данные, которые уже могли быть в URL
             CheckForTelegramAuth();
-            
-            // Затем ждем еще немного перед инициализацией виджета
-            await UniTask.Delay(500);
 
             InitializeTelegramAuth(botId);
 
-            // Даем немного времени для обработки результатов проверки автоаутентификации
-            await UniTask.Delay(1000);
-            
-            // Пытаемся еще раз проверить аутентификацию Telegram на случай,
-            // если данные поступили с задержкой
             CheckForTelegramAuth();
         }
 

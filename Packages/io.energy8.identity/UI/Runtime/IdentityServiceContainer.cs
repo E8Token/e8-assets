@@ -55,7 +55,7 @@ namespace Energy8.Identity.UI.Runtime.DI
                 Resolve<IAnalyticsService>()));
 
             // 2. UI Managers
-            RegisterSingleton<ICanvasManager>(() => new CanvasManager(debugLogging));
+            RegisterSingleton<ICanvasManager>(() => new CanvasManager());
             RegisterSingleton<IStateManager>(() => new StateManager(Resolve<IIdentityService>(), null, debugLogging));
             RegisterSingleton<IErrorHandler>(() => new ErrorHandler(Resolve<ICanvasManager>(), debugLogging));
 

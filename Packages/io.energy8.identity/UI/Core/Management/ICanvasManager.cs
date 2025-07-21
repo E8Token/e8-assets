@@ -1,5 +1,6 @@
 using System;
-using Energy8.Identity.UI.Runtime.Controllers;
+using Energy8.Identity.UI.Core.Controllers;
+
 
 namespace Energy8.Identity.UI.Core.Management
 {
@@ -21,7 +22,7 @@ namespace Energy8.Identity.UI.Core.Management
         /// <summary>
         /// Устанавливает Canvas контроллер
         /// </summary>
-        void SetCanvasController(IdentityCanvasController canvasController);
+        void SetCanvasController(IIdentityCanvasController canvasController);
         
         /// <summary>
         /// Переключает состояние открытия/закрытия UI

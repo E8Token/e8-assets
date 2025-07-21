@@ -4,6 +4,7 @@ using Energy8.Identity.UI.Runtime.Views.Management;
 using Energy8.Identity.UI.Runtime.Controllers;
 using Energy8.Identity.UI.Runtime.Extensions;
 using Energy8.Identity.UI.Core.Management;
+using Energy8.Identity.UI.Core.Controllers;
 
 namespace Energy8.Identity.UI.Runtime.Canvas
 {
@@ -14,15 +15,13 @@ namespace Energy8.Identity.UI.Runtime.Canvas
     /// </summary>
     public class CanvasManager : ICanvasManager
     {
-        private IdentityCanvasController currentCanvasController;
-        private readonly bool debugLogging;
+        private IIdentityCanvasController currentCanvasController;
         
         public bool IsOpen { get; private set; }
         public event Action<bool> OnOpenStateChanged;
         
-        public CanvasManager(bool debugLogging)
+        public CanvasManager()
         {
-            this.debugLogging = debugLogging;
         }
         
         #region Canvas Management (точный перенос из строк 82-140)
@@ -31,7 +30,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         /// Устанавливает Canvas контроллер для управления UI
         /// Точный перенос из SetCanvasController (строки 82-105)
         /// </summary>
-        public void SetCanvasController(IdentityCanvasController canvasController)
+        public void SetCanvasController(IIdentityCanvasController canvasController)
         {
             if (currentCanvasController != null)
             {
@@ -49,12 +48,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
                 if (viewManager != null)
                 {
                     viewManager.InitializeLoading();
-                    if (debugLogging)
-                        Debug.Log("WithLoading extension initialized for ViewManager");
                 }
-                
-                if (debugLogging)
-                    Debug.Log($"Canvas controller set: {currentCanvasController.name}");
             }
         }
         
@@ -82,10 +76,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             {
                 currentCanvasController.SetOpenState(isOpen);
             }
-            
-            if (debugLogging)
-                Debug.Log($"Identity UI state set to: {(isOpen ? "open" : "closed")}");
-                
+                        
             OnOpenStateChanged?.Invoke(isOpen);
         }
         
@@ -105,10 +96,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         private void OnCanvasOpenStateChanged(bool isOpen)
         {
             IsOpen = isOpen;
-            
-            if (debugLogging)
-                Debug.Log($"Canvas state changed, UI state updated to: {(isOpen ? "open" : "closed")}");
-                
+                        
             OnOpenStateChanged?.Invoke(isOpen);
         }
         

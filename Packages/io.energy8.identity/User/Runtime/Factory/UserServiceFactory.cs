@@ -63,24 +63,5 @@ namespace Energy8.Identity.User.Runtime.Factory
             
             return CreateService(httpClient, authProvider);
         }
-        
-        /// <summary>
-        /// Creates a user service for testing with mock dependencies
-        /// </summary>
-        /// <returns>Test user service instance</returns>
-        public static IUserService CreateTestService()
-        {
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log("Creating test UserService instance");
-            }
-            
-            // Create mock dependencies for testing
-            // TODO: Use HttpClientFactory.CreateTestClient() when Runtime namespace is available
-            var mockHttpClient = new UnityHttpClient("http://localhost:3000");
-            var mockAuthProvider = Auth.Runtime.Factory.AuthProviderFactory.CreateTestProvider();
-            
-            return new Runtime.Services.UserService(mockHttpClient, mockAuthProvider);
-        }
     }
 }
