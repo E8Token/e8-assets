@@ -32,5 +32,8 @@ namespace Energy8.Identity.Http.Core
         // Configuration
         void SetAuthToken(string token);
         void ClearAuthToken();
+        
+        // Debugging
+        void EnableTokenLogging(bool enabled);
     }
 }

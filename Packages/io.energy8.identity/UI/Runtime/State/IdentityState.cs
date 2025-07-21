@@ -39,7 +39,17 @@ namespace Energy8.Identity.UI.Runtime.State
         /// Открыты настройки пользователя
         /// </summary>
         SettingsOpen,
-        
+
+        /// <summary>
+        /// Открыт экран аналитики
+        /// </summary>
+        AnalyticsViewOpen,
+
+        /// <summary>
+        /// Открыт экран обновления приложения
+        /// </summary>
+        UpdateViewOpen,
+
         /// <summary>
         /// Произошла ошибка в системе
         /// </summary>

@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using Energy8.Identity.UI.Runtime.Views.Management;
 using Energy8.Identity.UI.Runtime.Controllers;
+using Energy8.Identity.UI.Runtime.Extensions;
 
 namespace Energy8.Identity.UI.Runtime.Canvas
 {
@@ -42,12 +43,14 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             {
                 currentCanvasController.OnOpenStateChanged += OnCanvasOpenStateChanged;
                 
-                // TODO: Инициализируем WithLoading для нового ViewManager когда extension будет готов
+                // Инициализируем WithLoading для нового ViewManager
                 var viewManager = currentCanvasController.GetViewManager();
-                // if (viewManager != null)
-                // {
-                //     viewManager.InitializeLoading();
-                // }
+                if (viewManager != null)
+                {
+                    viewManager.InitializeLoading();
+                    if (debugLogging)
+                        Debug.Log("WithLoading extension initialized for ViewManager");
+                }
                 
                 if (debugLogging)
                     Debug.Log($"Canvas controller set: {currentCanvasController.name}");

@@ -714,7 +714,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isLite: 0
-  debugLogging: 0
+  debugLogging: 1
 --- !u!223 &1372538242 stripped
 Canvas:
   m_CorrespondingSourceObject: {fileID: 2985932456819492822, guid: a06aa8532386d6545aa9594dae1f955e, type: 3}

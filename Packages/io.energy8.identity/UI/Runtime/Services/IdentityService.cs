@@ -53,6 +53,15 @@ namespace Energy8.Identity.UI.Runtime.Services
             authProvider.OnSignedIn += HandleSignedIn;
             authProvider.OnSignedOut += HandleSignedOut;
         }
+        
+        /// <summary>
+        /// Включает/отключает логирование токенов доступа для отладки
+        /// </summary>
+        public void EnableTokenLogging(bool enabled)
+        {
+            httpClient.EnableTokenLogging(enabled);
+        }
+        
         public async UniTask Initialize(CancellationToken ct)
         {
             try
@@ -133,8 +142,11 @@ namespace Energy8.Identity.UI.Runtime.Services
         {
             try
             {
+                Debug.Log($"[IdentityService] HandleSignedIn called for user: {user?.UserId}");
+                
                 var token = await authProvider.GetToken(false, CancellationToken.None);
                 httpClient.SetAuthToken(token);
+                Debug.Log("[IdentityService] Auth token set in HTTP client");
 
                 // Log sign-in event to analytics
                 if (analyticsService != null && analyticsService.IsInitialized)
@@ -151,7 +163,9 @@ namespace Energy8.Identity.UI.Runtime.Services
                     analyticsService.SetUserProperties(userProps);
                 }
 
+                Debug.Log("[IdentityService] Invoking OnSignedIn event");
                 OnSignedIn?.Invoke(authProvider.CurrentUser);
+                Debug.Log("[IdentityService] OnSignedIn event invoked successfully");
             }
             catch (Exception ex)
             {
@@ -182,6 +196,7 @@ namespace Energy8.Identity.UI.Runtime.Services
             if (string.IsNullOrEmpty(pendingEmailToken))
                 throw new InvalidOperationException("No pending email confirmation");
 
+            Debug.Log("[IdentityService] Confirming email code with server");
             var response = await httpClient.PostAsync<AccessTokenDto>(
                 "auth/email/confirm",
                 new EmailConfirmDto()
@@ -191,7 +206,10 @@ namespace Energy8.Identity.UI.Runtime.Services
                 }, ct);
 
             pendingEmailToken = null;
-            return await authProvider.SignInWithToken(response.Token, ct);
+            Debug.Log("[IdentityService] Email confirmed, signing in with token");
+            var result = await authProvider.SignInWithToken(response.Token, ct);
+            Debug.Log($"[IdentityService] SignInWithToken completed with result: {result.User?.UserId}");
+            return result;
         }
 
         public UniTask<AuthResult> SignInWithApple(bool linkProvider, CancellationToken ct)

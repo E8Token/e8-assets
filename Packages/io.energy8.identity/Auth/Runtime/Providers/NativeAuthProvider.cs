@@ -71,12 +71,14 @@ namespace Energy8.Identity.Auth.Runtime.Providers
         {
             try
             {
+                Debug.Log("[NativeAuthProvider] Starting SignInWithCustomTokenAsync");
                 var result = await auth.SignInWithCustomTokenAsync(token);
+                Debug.Log($"[NativeAuthProvider] SignInWithCustomTokenAsync completed. User: {result.User?.UserId}");
                 return result;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Sign in with token failed: {ex.Message}");
+                Debug.LogError($"[NativeAuthProvider] Sign in with token failed: {ex.Message}");
                 throw new Energy8Exception("Sign in failed", ex.Message);
             }
         }
@@ -106,12 +108,16 @@ namespace Energy8.Identity.Auth.Runtime.Providers
 
         private void AuthStateChanged(object sender, EventArgs args)
         {
+            Debug.Log($"[NativeAuthProvider] AuthStateChanged called. CurrentUser: {auth.CurrentUser?.UserId}, IsValid: {auth.CurrentUser?.IsValid()}");
+            
             if (auth.CurrentUser != null && auth.CurrentUser.IsValid())
             {
+                Debug.Log($"[NativeAuthProvider] User signed in, invoking OnSignedIn event for user: {auth.CurrentUser.UserId}");
                 OnSignedIn?.Invoke(auth.CurrentUser);
             }
             else
             {
+                Debug.Log("[NativeAuthProvider] User signed out, invoking OnSignedOut event");
                 OnSignedOut?.Invoke();
             }
         }

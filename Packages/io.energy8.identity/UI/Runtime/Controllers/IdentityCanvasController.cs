@@ -24,7 +24,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         [SerializeField] private float animationDuration = 0.5f;
         [SerializeField] private AnimationCurve animationCurve;
 
-        public bool IsOpen { get; private set; }
+        public bool IsOpen { get; private set; } = false;
         public ViewManager ViewManager => viewManager;
         public UnityCanvas Canvas => canvas;
 
@@ -73,27 +73,50 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         #region Public API
 
         /// <summary>
-        /// Устанавливает состояние открытия/закрытия Canvas
+        /// Устанавливает состояние открытия/закрытия Canvas.
+        /// Открытие Identity UI вызывается при переходе в состояние AuthenticationInProgress.
         /// </summary>
         public void SetOpenState(bool isOpen)
         {
+            Debug.Log($"[IdentityCanvasController] SetOpenState({isOpen}) called. Current IsOpen: {IsOpen}, gameObject.activeSelf: {gameObject.activeSelf}, Canvas.enabled: {canvas?.enabled}");
             if (isOpen == IsOpen)
+            {
+                Debug.Log("[IdentityCanvasController] SetOpenState: UI already in requested state, skipping.");
                 return;
+            }
 
             IsOpen = isOpen;
+
+            if (isOpen && !gameObject.activeSelf)
+            {
+                Debug.Log("[IdentityCanvasController] Activating gameObject");
+                gameObject.SetActive(true);
+            }
+            if (canvas != null && !canvas.enabled && isOpen)
+            {
+                Debug.Log("[IdentityCanvasController] Enabling Canvas");
+                canvas.enabled = true;
+            }
 
             if (containerRectTransform != null)
             {
                 // Stop any running animation
                 if (currentAnimationCoroutine != null)
                 {
+                    Debug.Log("[IdentityCanvasController] Stopping previous animation coroutine");
                     StopCoroutine(currentAnimationCoroutine);
                 }
 
                 // Start new animation
+                Debug.Log("[IdentityCanvasController] Starting open/close animation");
                 currentAnimationCoroutine = StartCoroutine(AnimateRectTransform(isOpen));
             }
+            else
+            {
+                Debug.LogWarning("[IdentityCanvasController] containerRectTransform is null!");
+            }
 
+            Debug.Log($"[IdentityCanvasController] UI state after SetOpenState: IsOpen={IsOpen}, gameObject.activeSelf={gameObject.activeSelf}, Canvas.enabled={canvas?.enabled}");
             OnOpenStateChanged?.Invoke(IsOpen);
         }
 
@@ -153,7 +176,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 IdentityOrchestrator.Instance.SetCanvasController(this);
             }
         }
-
         private IEnumerator AnimateRectTransform(bool opening)
         {
             float startTime = Time.time;
@@ -161,22 +183,22 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
             // Calculate the target position based on the new formula: Screen.Width / Canvas.Scale.X
             float targetWidth = containerRectTransform.sizeDelta.x;
-            float endX = opening ? 0 : targetWidth;
+            float endX = opening ? targetWidth : 0;
 
             while (Time.time < startTime + animationDuration)
             {
-                float elapsed = (Time.time - startTime) / animationDuration;
-                float curveValue = animationCurve.Evaluate(elapsed);
+            float elapsed = (Time.time - startTime) / animationDuration;
+            float curveValue = animationCurve.Evaluate(elapsed);
 
-                // Calculate the current position
-                float currentX = Mathf.Lerp(startX, endX, curveValue);
-                Vector2 newPosition = containerRectTransform.anchoredPosition;
-                newPosition.x = currentX;
+            // Calculate the current position
+            float currentX = Mathf.Lerp(startX, endX, curveValue);
+            Vector2 newPosition = containerRectTransform.anchoredPosition;
+            newPosition.x = currentX;
 
-                // Apply the position
-                containerRectTransform.anchoredPosition = newPosition;
+            // Apply the position
+            containerRectTransform.anchoredPosition = newPosition;
 
-                yield return null;
+            yield return null;
             }
 
             // Ensure final position is exact

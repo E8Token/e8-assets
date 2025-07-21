@@ -75,6 +75,15 @@ namespace Energy8.Identity.Shared.Core.Constants
     }
     
     /// <summary>
+    /// PlayerPrefs keys for storing user preferences
+    /// </summary>
+    public static class PlayerPrefsKeys
+    {
+        public const string ANALYTICS_PERMISSION = "Analytics_Permission";
+        public const string ANALYTICS_PERMISSION_REQUESTED = "Analytics_Permission_Requested";
+    }
+
+    /// <summary>
     /// Analytics event names
     /// </summary>
     public static class AnalyticsEvents

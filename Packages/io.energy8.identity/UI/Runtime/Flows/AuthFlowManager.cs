@@ -57,15 +57,20 @@ namespace Energy8.Identity.UI.Runtime.Flows
         /// </summary>
         public async UniTask StartAuthFlowAsync(CancellationToken ct)
         {
+            if (debugLogging)
+                Debug.Log("[AuthFlowManager] Starting auth flow");
+                
             if (isShowingAuthFlow)
             {
-                Debug.LogWarning("ShowAuthFlow already running, skipping duplicate call");
+                Debug.LogWarning("[AuthFlowManager] ShowAuthFlow already running, skipping duplicate call");
                 return;
             }
             
             isShowingAuthFlow = true;
             
             // Переход в состояние авторизации
+            if (debugLogging)
+                Debug.Log("[AuthFlowManager] Transitioning to AuthenticationInProgress state");
             stateManager.TransitionTo(IdentityState.AuthenticationInProgress);
             
             try
@@ -81,23 +86,20 @@ namespace Energy8.Identity.UI.Runtime.Flows
                         var viewManager = GetViewManager();
                         if (viewManager == null)
                         {
+                            Debug.LogError("[AuthFlowManager] ViewManager is null!");
                             await WaitAndContinue(ct);
                             continue;
                         }
 
-                        // Открываем окно только когда нужно показать форму авторизации (строка 499)
                         canvasManager.SetOpenState(true);
-                        
-                        // Показ SignInView (строки 501-503)
+
                         var result = await viewManager
                             .Show<SignInView, SignInViewParams, SignInViewResult>(
                                 new SignInViewParams(), ct);
 
                         // Обработка методов авторизации (строки 504-561)
                         await ProcessSignInMethod(result, ct);
-                        
-                        // Закрываем окно после успешной авторизации (строки 562-563)
-                        canvasManager.SetOpenState(false);
+
                         return;
                     }
                     catch (OperationCanceledException)

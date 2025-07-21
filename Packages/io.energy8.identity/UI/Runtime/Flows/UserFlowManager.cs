@@ -57,9 +57,12 @@ namespace Energy8.Identity.UI.Runtime.Flows
         /// </summary>
         public async UniTask StartUserFlowAsync(CancellationToken ct)
         {
+            if (debugLogging)
+                Debug.Log("[UserFlowManager] Starting user flow");
+                
             if (isShowingUserFlow)
             {
-                Debug.LogWarning("ShowUserFlow already running, skipping duplicate call");
+                Debug.LogWarning("[UserFlowManager] ShowUserFlow already running, skipping duplicate call");
                 return;
             }
             
@@ -67,6 +70,7 @@ namespace Energy8.Identity.UI.Runtime.Flows
             
             // Переход в состояние пользовательского потока
             stateManager.TransitionTo(IdentityState.UserFlowActive);
+            Debug.Log("[UserFlowManager] Transitioned to UserFlowActive state");
             
             try
             {
@@ -78,30 +82,47 @@ namespace Energy8.Identity.UI.Runtime.Flows
                     {
                         // Проверки состояния (из строк 587-595)
                         if (!ValidateUserFlowState(ct))
+                        {
+                            Debug.Log("[UserFlowManager] ValidateUserFlowState failed, exiting");
                             return;
+                        }
                         
                         var viewManager = GetViewManager();
                         if (viewManager == null)
                         {
+                            Debug.LogWarning("[UserFlowManager] ViewManager is null, waiting and continuing");
                             await WaitAndContinue(ct);
                             continue;
                         }
+                        
+                        Debug.Log("[UserFlowManager] ViewManager found, getting user data");
 
                         // Получение пользователя (строки 597-601)
                         Func<CancellationToken, UniTask<UserDto>> getUser = (ct) => userService
                             .GetUserAsync(ct);
 
-                        var user = await getUser.WithErrorHandler(errorHandler.ShowErrorAsync, ct);
+                        try
+                        {
+                            var user = await getUser.WithErrorHandler(errorHandler.ShowErrorAsync, ct);
+                            Debug.Log($"[UserFlowManager] User data retrieved: {user.Name}");
 
-                        // Показ UserView (строки 603-606)
-                        var result = await viewManager
-                            .Show<UserView, UserViewParams, UserViewResult>(
-                                new UserViewParams(user.Name), ct);
-
-                        // Обработка действий пользователя (строки 608-618)
-                        bool shouldContinue = await ProcessUserAction(result.Action, ct);
-                        if (!shouldContinue)
+                            // Показ UserView (строки 603-606)
+                            Debug.Log("[UserFlowManager] Showing UserView");
+                            var result = await viewManager
+                                .Show<UserView, UserViewParams, UserViewResult>(
+                                    new UserViewParams(user.Name), ct);
+                                    
+                            // Обработка действий пользователя (строки 608-618)
+                            bool shouldContinue = await ProcessUserAction(result.Action, ct);
+                            if (!shouldContinue)
+                                return;
+                        }
+                        catch (AuthenticationException authEx)
+                        {
+                            Debug.LogWarning($"[UserFlowManager] Authentication failed: {authEx.Message}. Signing out user.");
+                            await identityService.SignOut(ct);
                             return;
+                        }
                     }
                     catch (OperationCanceledException)
                     {

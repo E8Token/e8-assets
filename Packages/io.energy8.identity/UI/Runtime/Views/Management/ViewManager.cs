@@ -10,7 +10,7 @@ using UnityEngine.UI;
 
 namespace Energy8.Identity.UI.Runtime.Views.Management
 {
-    public class ViewManager : MonoBehaviour
+    public class ViewManager : MonoBehaviour, IViewManager
     {
         [Header("Setup")]
         [SerializeField] private Transform viewRoot;
@@ -35,25 +35,22 @@ namespace Energy8.Identity.UI.Runtime.Views.Management
           where TParams : ViewParams
           where TResult : ViewResult
         {
+            Debug.Log($"[ViewManager] Show<{typeof(TView).Name}> called with params: {@params?.GetType().Name}");
             try
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct, lifetimeCts.Token);
-                // Removed debug log for showing view
-
                 var result = await presenter.ShowView<TView, TParams, TResult>(@params, cts.Token);
-
-                // Removed debug log for view completion
+                Debug.Log($"[ViewManager] Show<{typeof(TView).Name}> completed with result: {result}");
                 return result;
             }
             catch (OperationCanceledException)
             {
-                // Kept warning log for cancellation as it's important
+                Debug.LogWarning($"[ViewManager] Show<{typeof(TView).Name}> cancelled");
                 throw;
             }
             catch (Exception ex)
             {
-                // Kept error log as it's critical information
-                Debug.LogError($"View {typeof(TView).Name} failed: {ex.Message}");
+                Debug.LogError($"[ViewManager] Show<{typeof(TView).Name}> failed: {ex.Message}");
                 throw;
             }
         }

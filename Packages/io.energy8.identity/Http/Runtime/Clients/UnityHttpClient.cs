@@ -19,6 +19,7 @@ namespace Energy8.Identity.Http.Runtime.Clients
     {
         private readonly string baseUrl;
         private string authToken;
+        private bool tokenLoggingEnabled = false;
 
         public string BaseUrl => baseUrl;
 
@@ -30,11 +31,25 @@ namespace Energy8.Identity.Http.Runtime.Clients
         public void SetAuthToken(string token)
         {
             authToken = token;
+            if (tokenLoggingEnabled)
+            {
+                Debug.Log($"[HttpClient] Auth token set: {(string.IsNullOrEmpty(token) ? "null" : $"{token.Substring(0, Math.Min(20, token.Length))}...")}");
+            }
         }
 
         public void ClearAuthToken()
         {
             authToken = null;
+            if (tokenLoggingEnabled)
+            {
+                Debug.Log("[HttpClient] Auth token cleared");
+            }
+        }
+        
+        public void EnableTokenLogging(bool enabled)
+        {
+            tokenLoggingEnabled = enabled;
+            Debug.Log($"[HttpClient] Token logging {(enabled ? "enabled" : "disabled")}");
         }
 
         private Energy8Exception CreateException(HttpStatusCode statusCode, ErrorDto error)
@@ -62,6 +77,14 @@ namespace Energy8.Identity.Http.Runtime.Clients
             if (!string.IsNullOrEmpty(authToken))
             {
                 request.SetRequestHeader("Authorization", $"Bearer {authToken}");
+                if (tokenLoggingEnabled)
+                {
+                    Debug.Log($"[HttpClient] Request to {method} {url} with token: {authToken.Substring(0, Math.Min(20, authToken.Length))}...");
+                }
+            }
+            else if (tokenLoggingEnabled)
+            {
+                Debug.Log($"[HttpClient] Request to {method} {url} without auth token");
             }
 
             if (data != null)
@@ -127,6 +150,14 @@ namespace Energy8.Identity.Http.Runtime.Clients
             if (!string.IsNullOrEmpty(authToken))
             {
                 request.SetRequestHeader("Authorization", $"Bearer {authToken}");
+                if (tokenLoggingEnabled)
+                {
+                    Debug.Log($"[HttpClient] Request to {method} {url} with token: {authToken.Substring(0, Math.Min(20, authToken.Length))}...");
+                }
+            }
+            else if (tokenLoggingEnabled)
+            {
+                Debug.Log($"[HttpClient] Request to {method} {url} without auth token");
             }
 
             if (data != null)

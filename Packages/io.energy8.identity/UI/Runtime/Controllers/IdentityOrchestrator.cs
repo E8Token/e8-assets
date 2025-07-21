@@ -241,6 +241,9 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             // Простая координация между менеджерами - никакой сложной логики!
             switch (newState)
             {
+                case IdentityState.AuthenticationInProgress:
+                    SetOpenState(true);
+                    break;
                 case IdentityState.SignedOut:
                     OnSignedOut?.Invoke();
                     if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested)
@@ -248,7 +251,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                         authFlowManager.StartAuthFlowAsync(lifetimeCts.Token).Forget();
                     }
                     break;
-                    
                 case IdentityState.SignedIn:
                     OnSignedIn?.Invoke();
                     if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested)
@@ -312,6 +314,14 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         public void SetOpenState(bool isOpen)
         {
             canvasManager?.SetOpenState(isOpen);
+        }
+        
+        /// <summary>
+        /// Включает/отключает логирование токенов доступа для отладки
+        /// </summary>
+        public void EnableTokenLogging(bool enabled)
+        {
+            identityService?.EnableTokenLogging(enabled);
         }
         
         #endregion

@@ -21,6 +21,7 @@ namespace Energy8.Identity.UI.Runtime.Services
         event Action OnSignedOut;
 
         UniTask Initialize(CancellationToken ct);
+        void EnableTokenLogging(bool enabled);
         UniTask<AuthResult> SignInWithGoogle(bool linkProvider, CancellationToken ct);
         UniTask SignOut(CancellationToken ct);
         UniTask StartEmailFlow(string email, CancellationToken ct);
