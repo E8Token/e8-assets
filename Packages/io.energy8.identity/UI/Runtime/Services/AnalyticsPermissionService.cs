@@ -5,6 +5,7 @@ using Energy8.Identity.Shared.Core.Constants;
 using Energy8.Identity.UI.Runtime.Canvas;
 using Energy8.Identity.UI.Runtime.Views.Implementations;
 using Energy8.Identity.UI.Runtime.Views.Models;
+using Energy8.Identity.UI.Runtime.Flows;
 
 namespace Energy8.Identity.UI.Runtime.Services
 {
@@ -31,6 +32,15 @@ namespace Energy8.Identity.UI.Runtime.Services
         public bool ShouldShowAnalyticsPermissionRequest => 
             !IsAnalyticsPermissionRequested;
 
+        private readonly IAnalyticsFlowManager analyticsFlowManager;
+
+        public AnalyticsPermissionService(ICanvasManager canvasManager, bool debugLogging = false, IAnalyticsFlowManager analyticsFlowManager = null)
+        {
+            this.canvasManager = canvasManager;
+            this.debugLogging = debugLogging;
+            this.analyticsFlowManager = analyticsFlowManager;
+        }
+
         public async UniTask<bool> RequestAnalyticsPermissionAsync(CancellationToken ct = default)
         {
             if (debugLogging)
@@ -39,38 +49,35 @@ namespace Energy8.Identity.UI.Runtime.Services
             try
             {
                 if (debugLogging)
-                    Debug.Log("Opening AnalyticsView for permission request");
+                    Debug.Log("Opening AnalyticsView for permission request via AnalyticsFlowManager");
 
-                // Показываем AnalyticsView для запроса разрешения
-                var viewManager = canvasManager.GetViewManager();
-                var result = await viewManager.Show<AnalyticsView, AnalyticsViewParams, AnalyticsViewResult>(
-                    new AnalyticsViewParams(), ct);
+                if (analyticsFlowManager == null)
+                    throw new System.InvalidOperationException("AnalyticsFlowManager is not set in AnalyticsPermissionService");
+
+                var isAllowed = await analyticsFlowManager.ShowAnalyticsFlowAsync(ct);
 
                 if (debugLogging)
-                    Debug.Log("AnalyticsView closed");
+                    Debug.Log("AnalyticsView closed via AnalyticsFlowManager");
 
                 // Сохраняем результат
-                SaveAnalyticsPermission(result.IsDetailedAnalyticsAllowed);
-                
+                SaveAnalyticsPermission(isAllowed);
                 // Отмечаем, что запрос был сделан
                 PlayerPrefs.SetInt(PlayerPrefsKeys.ANALYTICS_PERMISSION_REQUESTED, 1);
                 PlayerPrefs.Save();
 
                 if (debugLogging)
-                    Debug.Log($"Analytics permission result: {result.IsDetailedAnalyticsAllowed}");
+                    Debug.Log($"Analytics permission result: {isAllowed}");
 
-                return result.IsDetailedAnalyticsAllowed;
+                return isAllowed;
             }
             catch (System.Exception ex)
             {
                 if (debugLogging)
                     Debug.LogError($"Error requesting analytics permission: {ex.Message}");
-                
                 // В случае ошибки считаем, что разрешение не дано
                 SaveAnalyticsPermission(false);
                 PlayerPrefs.SetInt(PlayerPrefsKeys.ANALYTICS_PERMISSION_REQUESTED, 1);
                 PlayerPrefs.Save();
-                
                 return false;
             }
         }

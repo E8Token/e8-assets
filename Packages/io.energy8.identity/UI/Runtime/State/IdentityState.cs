@@ -9,46 +9,46 @@ namespace Energy8.Identity.UI.Runtime.State
         /// Система не инициализирована
         /// </summary>
         Uninitialized,
-        
+
         /// <summary>
         /// Происходит инициализация системы
         /// </summary>
         Initializing,
-        
+
+        /// <summary>
+        /// Предавторизационный этап (update, analytics, webgl и т.д.)
+        /// </summary>
+        PreAuthentication,
+
+        /// <summary>
+        /// Проверка авторизации (есть ли токен/сессия)
+        /// </summary>
+        AuthCheck,
+
         /// <summary>
         /// Пользователь не авторизован
         /// </summary>
         SignedOut,
-        
-        /// <summary>
-        /// Идет процесс авторизации
-        /// </summary>
-        AuthenticationInProgress,
-        
+
         /// <summary>
         /// Пользователь авторизован
         /// </summary>
         SignedIn,
-        
+
         /// <summary>
         /// Активен пользовательский поток
         /// </summary>
         UserFlowActive,
-        
+
+        /// <summary>
+        /// Активен поток авторизации
+        /// </summary>
+        AuthFlowActive,
+
         /// <summary>
         /// Открыты настройки пользователя
         /// </summary>
         SettingsOpen,
-
-        /// <summary>
-        /// Открыт экран аналитики
-        /// </summary>
-        AnalyticsViewOpen,
-
-        /// <summary>
-        /// Открыт экран обновления приложения
-        /// </summary>
-        UpdateViewOpen,
 
         /// <summary>
         /// Произошла ошибка в системе

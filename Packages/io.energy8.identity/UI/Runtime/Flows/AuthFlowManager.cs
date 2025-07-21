@@ -69,9 +69,7 @@ namespace Energy8.Identity.UI.Runtime.Flows
             isShowingAuthFlow = true;
             
             // Переход в состояние авторизации
-            if (debugLogging)
-                Debug.Log("[AuthFlowManager] Transitioning to AuthenticationInProgress state");
-            stateManager.TransitionTo(IdentityState.AuthenticationInProgress);
+            stateManager.TransitionTo(IdentityState.AuthFlowActive);
             
             try
             {
@@ -260,7 +258,7 @@ namespace Energy8.Identity.UI.Runtime.Flows
                 return false;
                 
             // Дополнительные проверки состояния можно добавить здесь
-            return stateManager.CurrentState == IdentityState.AuthenticationInProgress;
+            return stateManager.CurrentState == IdentityState.AuthFlowActive;
         }
         
         /// <summary>

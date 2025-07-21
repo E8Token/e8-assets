@@ -365,7 +365,6 @@ GameObject:
   - component: {fileID: 2985932456819492822}
   - component: {fileID: 5273682777599348602}
   - component: {fileID: 2338056538412414567}
-  - component: {fileID: 780355070083248818}
   m_Layer: 5
   m_Name: IdentityUI_Landscape
   m_TagString: Untagged
@@ -456,31 +455,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &780355070083248818
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7427932818446741480}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3c8b6832456f8747922812d8a43f90b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  viewManager: {fileID: 8888780062626714534}
-  isLite: 0
-  useViewportManager: 1
-  forceMode: 0
-  showButton: {fileID: 6515293093453306040}
-  canvas: {fileID: 2985932456819492822}
-  animationDuration: 0.5
-  animationCurve:
-    serializedVersion: 2
-    m_Curve: []
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
 --- !u!1 &9105480056355810421
 GameObject:
   m_ObjectHideFlags: 0
@@ -574,7 +548,6 @@ MonoBehaviour:
   - name: IDLE
     type: 0
     sprites:
-    - {fileID: 21300000, guid: 507d0592fd8e8954dab54b531e28ee2a, type: 3}
     - {fileID: 21300000, guid: 663ee5e044cfafd468c9106706f3e7d8, type: 3}
     - {fileID: 21300000, guid: 81e875b553ba2fd4797879a51710a5eb, type: 3}
     - {fileID: 21300000, guid: fd11cb75d27d57943b7f07344f032126, type: 3}
@@ -605,6 +578,7 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 5a718c8b254d32f48b2e848cf5d1e958, type: 3}
     - {fileID: 21300000, guid: 7d6d9c990a0ec7445b1a00bcff96dfa7, type: 3}
     - {fileID: 21300000, guid: d84fdc6e3d19abb40830968dd7cdd1c7, type: 3}
+    - {fileID: 21300000, guid: 507d0592fd8e8954dab54b531e28ee2a, type: 3}
     randomProbability: 0
     canPlayInReverse: 0
     frameRate: 30

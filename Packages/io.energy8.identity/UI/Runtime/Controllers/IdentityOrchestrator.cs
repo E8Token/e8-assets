@@ -26,11 +26,11 @@ namespace Energy8.Identity.UI.Runtime.Controllers
     public class IdentityOrchestrator : MonoBehaviour
     {
         public static IdentityOrchestrator Instance { get; private set; }
-        
+
         [Header("Configuration")]
         [SerializeField] private bool isLite = false;
         [SerializeField] private bool debugLogging = false;
-        
+
         // Менеджеры (инжектируются через DI)
         private ICanvasManager canvasManager;
         private IAuthFlowManager authFlowManager;
@@ -38,21 +38,21 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         private IStateManager stateManager;
         private IIdentityService identityService;
         private IServiceContainer serviceContainer;
-        
+
         // Lifecycle management
         private CancellationTokenSource lifetimeCts;
-        
+
         // События (публичный API - точный перенос из строк 59-60)
         public event Action OnSignedOut;
         public event Action OnSignedIn;
-        
+
         // Публичные свойства (точный перенос API)
         public bool IsOpen => canvasManager?.IsOpen ?? false;
         public bool IsLite => isLite;
         public IdentityCanvasController CurrentCanvasController { get; private set; }
-        
+
         #region Unity Lifecycle (точный перенос из строк 179-362)
-        
+
         protected virtual void Awake()
         {
             // Точный перенос Singleton setup (строки 179-202)
@@ -67,11 +67,17 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             DontDestroyOnLoad(gameObject);
 
             lifetimeCts = new CancellationTokenSource();
-            
+
             // Dependency injection setup
             InitializeServiceContainer();
             InjectDependencies();
             SubscribeToEvents();
+
+            // После DI: если StateManager в Uninitialized, переводим в Initializing
+            if (stateManager != null && stateManager.CurrentState == IdentityState.Uninitialized)
+            {
+                stateManager.TransitionTo(IdentityState.Initializing);
+            }
 
 #if UNITY_EDITOR
             // Подписываемся на событие остановки воспроизведения в редакторе
@@ -81,16 +87,15 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             if (debugLogging)
                 Debug.Log("IdentityOrchestrator initialized as singleton");
         }
-        
+
         void Start()
         {
             // Автоматически найти и подключить CanvasController если есть
             FindAndRegisterCanvasController();
-            
-            // Точный перенос из Start (строки 223-225)
-            StartIdentityFlow().Forget();
+
+            stateManager.TransitionTo(IdentityState.PreAuthentication);
         }
-        
+
         private void OnDestroy()
         {
             if (debugLogging)
@@ -117,7 +122,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
             // Отписываемся от событий
             UnsubscribeFromEvents();
-            
+
             // Очищаем Instance если это текущий экземпляр
             if (Instance == this)
             {
@@ -149,7 +154,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 if (debugLogging)
                     Debug.LogWarning($"Error cleaning up WithLoading: {ex.Message}");
             }
-            
+
             if (debugLogging)
                 Debug.Log("IdentityOrchestrator OnDestroy completed");
         }
@@ -161,7 +166,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             {
                 if (debugLogging)
                     Debug.Log("Editor exiting play mode, forcing cleanup");
-                
+
                 ForceCleanup();
             }
         }
@@ -198,17 +203,17 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             }
         }
 #endif
-        
+
         #endregion
-        
+
         #region Service Management
-        
+
         private void InitializeServiceContainer()
         {
             serviceContainer = new IdentityServiceContainer();
             serviceContainer.ConfigureServices(debugLogging, isLite);
         }
-        
+
         private void InjectDependencies()
         {
             canvasManager = serviceContainer.Resolve<ICanvasManager>();
@@ -217,12 +222,12 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             stateManager = serviceContainer.Resolve<IStateManager>();
             identityService = serviceContainer.Resolve<IIdentityService>();
         }
-        
+
         private void SubscribeToEvents()
         {
             stateManager.StateChanged += OnStateChanged;
         }
-        
+
         private void UnsubscribeFromEvents()
         {
             if (stateManager != null)
@@ -231,46 +236,69 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 stateManager.Dispose();
             }
         }
-        
+
         #endregion
-        
+
         #region State Coordination (простая координация между менеджерами)
-        
+
         private void OnStateChanged(IdentityState oldState, IdentityState newState)
         {
-            // Простая координация между менеджерами - никакой сложной логики!
             switch (newState)
             {
-                case IdentityState.AuthenticationInProgress:
-                    SetOpenState(true);
+                case IdentityState.PreAuthentication:
+                    // 1. Проверка обновления
+                    var updateService = serviceContainer.Resolve<IUpdateService>();
+                    var updateFlowManager = serviceContainer.Resolve<IUpdateFlowManager>();
+                    if (updateService != null && updateService.HasUpdate && updateFlowManager != null)
+                    {
+                        updateFlowManager.ShowUpdateFlowAsync(lifetimeCts.Token).ContinueWith(() =>
+                        {
+                            stateManager.TransitionTo(IdentityState.PreAuthentication);
+                        }).Forget();
+                        break;
+                    }
+                    // 2. Проверка аналитики
+                    var analyticsPermissionService = serviceContainer.Resolve<IAnalyticsPermissionService>();
+                    if (analyticsPermissionService != null && analyticsPermissionService.ShouldShowAnalyticsPermissionRequest)
+                    {
+                        analyticsPermissionService.RequestAnalyticsPermissionAsync(lifetimeCts.Token).ContinueWith(_ =>
+                        {
+                            stateManager.TransitionTo(IdentityState.PreAuthentication);
+                        }).Forget();
+                        break;
+                    }
+                    stateManager.TransitionTo(IdentityState.AuthCheck);
+                    identityService.Initialize(lifetimeCts.Token).Forget();
+                    break;
+                case IdentityState.AuthCheck:
                     break;
                 case IdentityState.SignedOut:
                     OnSignedOut?.Invoke();
-                    if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested)
-                    {
+                    if (authFlowManager != null)
                         authFlowManager.StartAuthFlowAsync(lifetimeCts.Token).Forget();
-                    }
+                    break;
+                case IdentityState.AuthFlowActive:
+                    if (authFlowManager != null)
+                        authFlowManager.StartAuthFlowAsync(lifetimeCts.Token).Forget();
                     break;
                 case IdentityState.SignedIn:
                     OnSignedIn?.Invoke();
-                    if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested)
-                    {
+                    if (userFlowManager != null)
                         userFlowManager.StartUserFlowAsync(lifetimeCts.Token).Forget();
-                    }
+                    break;
+                case IdentityState.UserFlowActive:
+                    // UserFlowManager сам управляет UI, здесь ничего не делаем
+                    break;
+                case IdentityState.Error:
+                    Debug.LogError("[IdentityOrchestrator] State machine entered Error state!");
                     break;
             }
         }
-        
-        private async UniTask StartIdentityFlow()
-        {
-            // Делегируем StateManager
-            await stateManager.StartInitialFlowAsync();
-        }
-        
+
         #endregion
-        
+
         #region Canvas Management API (перенос публичного API)
-        
+
         /// <summary>
         /// Автоматически находит CanvasController в сцене и подключается к нему
         /// </summary>
@@ -279,7 +307,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             // Если уже есть подключенный CanvasController, не ищем
             if (CurrentCanvasController != null)
                 return;
-            
+
             // Ищем CanvasController в сцене
             var canvasController = FindFirstObjectByType<IdentityCanvasController>();
             if (canvasController != null)
@@ -287,7 +315,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 SetCanvasController(canvasController);
             }
         }
-        
+
         /// <summary>
         /// Устанавливает Canvas контроллер для управления UI
         /// Точный перенос публичного API
@@ -315,7 +343,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         {
             canvasManager?.SetOpenState(isOpen);
         }
-        
+
         /// <summary>
         /// Включает/отключает логирование токенов доступа для отладки
         /// </summary>
@@ -323,11 +351,11 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         {
             identityService?.EnableTokenLogging(enabled);
         }
-        
+
         #endregion
-        
+
         #region Editor Support
-        
+
 #if UNITY_EDITOR
         [ContextMenu("SignOut")]
         private void SignOut()
@@ -347,7 +375,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                       $"Is Signed In: {identityService?.IsSignedIn ?? false}");
         }
 #endif
-        
+
         #endregion
     }
 }

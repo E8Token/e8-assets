@@ -22,7 +22,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
             this.httpClient = httpClient;
         }
 
-        public bool IsSignedIn => auth?.CurrentUser != null && auth.CurrentUser.IsValid();
+        public bool IsSignedIn { get; internal set; } = false;
         public FirebaseUser CurrentUser => auth?.CurrentUser;
 
         // В нативной версии мы не поддерживаем автоаутентификацию Telegram
@@ -109,14 +109,16 @@ namespace Energy8.Identity.Auth.Runtime.Providers
         private void AuthStateChanged(object sender, EventArgs args)
         {
             Debug.Log($"[NativeAuthProvider] AuthStateChanged called. CurrentUser: {auth.CurrentUser?.UserId}, IsValid: {auth.CurrentUser?.IsValid()}");
-            
+
             if (auth.CurrentUser != null && auth.CurrentUser.IsValid())
             {
+                IsSignedIn = true;
                 Debug.Log($"[NativeAuthProvider] User signed in, invoking OnSignedIn event for user: {auth.CurrentUser.UserId}");
                 OnSignedIn?.Invoke(auth.CurrentUser);
             }
             else
             {
+                IsSignedIn = false;
                 Debug.Log("[NativeAuthProvider] User signed out, invoking OnSignedOut event");
                 OnSignedOut?.Invoke();
             }

@@ -1,3 +1,4 @@
+// ...existing code...
 using System;
 using System.Collections.Generic;
 using Energy8.Identity.Http.Core;
@@ -14,6 +15,7 @@ using Energy8.Identity.UI.Runtime.Canvas;
 using Energy8.Identity.UI.Runtime.State;
 using Energy8.Identity.UI.Runtime.Error;
 using Energy8.Identity.UI.Runtime.Flows;
+using Energy8.Identity.UI.Runtime.Views.Management;
 
 namespace Energy8.Identity.UI.Runtime.DI
 {
@@ -25,42 +27,49 @@ namespace Energy8.Identity.UI.Runtime.DI
     {
         private readonly Dictionary<Type, Func<object>> services = new();
         private readonly Dictionary<Type, object> singletons = new();
-        
+
         /// <summary>
         /// Конфигурация всех сервисов системы
         /// Точный перенос инициализации из Awake (строки 204-215)
         /// </summary>
         public void ConfigureServices(bool debugLogging, bool isLite)
         {
-            // Core services (точный перенос из строк 204-215)
+            // 1. MonoBehaviour и базовые сервисы
+            RegisterSingleton<IViewManager>(() => {
+                var vm = UnityEngine.Object.FindFirstObjectByType<ViewManager>();
+                if (vm == null)
+                    throw new InvalidOperationException("ViewManager (MonoBehaviour) not found in scene. Please ensure a ViewManager exists in the scene before DI initialization.");
+                return vm;
+            });
             RegisterSingleton<IHttpClient>(() => new UnityHttpClient(IdentityConfiguration.SelectedIP));
             RegisterSingleton<IAuthProvider>(() => AuthProviderFactory.CreateProvider(Resolve<IHttpClient>()));
             RegisterSingleton<IUserService>(() => new Energy8.Identity.User.Runtime.Services.UserService(
                 Resolve<IHttpClient>(), Resolve<IAuthProvider>()));
-            
             var analyticsProvider = AnalyticsProviderFactory.CreateProvider();
             RegisterSingleton<IAnalyticsService>(() => new AnalyticsService(analyticsProvider));
-            
             RegisterSingleton<IIdentityService>(() => new IdentityService(
-                Resolve<IAuthProvider>(), 
-                Resolve<IUserService>(), 
-                Resolve<IHttpClient>(), 
+                Resolve<IAuthProvider>(),
+                Resolve<IUserService>(),
+                Resolve<IHttpClient>(),
                 Resolve<IAnalyticsService>()));
-            
-            // UI Managers
+
+            // 2. UI Managers
             RegisterSingleton<ICanvasManager>(() => new CanvasManager(debugLogging));
-            RegisterSingleton<IAnalyticsPermissionService>(() => new AnalyticsPermissionService(Resolve<ICanvasManager>(), debugLogging));
-            RegisterSingleton<IStateManager>(() => new StateManager(Resolve<IIdentityService>(), Resolve<IAnalyticsPermissionService>(), debugLogging));
+            RegisterSingleton<IStateManager>(() => new StateManager(Resolve<IIdentityService>(), null, debugLogging));
             RegisterSingleton<IErrorHandler>(() => new ErrorHandler(Resolve<ICanvasManager>(), debugLogging));
-            
-            // Flow Managers
+
+            // 3. Flow Managers (после всех базовых)
+            RegisterSingleton<IAnalyticsFlowManager>(() => new AnalyticsFlowManager(Resolve<IViewManager>(), Resolve<IStateManager>()));
+            RegisterSingleton<IUpdateFlowManager>(() => new UpdateFlowManager(Resolve<IViewManager>(), Resolve<IStateManager>()));
+            RegisterSingleton<IAnalyticsPermissionService>(() => new AnalyticsPermissionService(Resolve<ICanvasManager>(), debugLogging, Resolve<IAnalyticsFlowManager>()));
+
+            // 4. Остальные Flow Managers
             RegisterSingleton<IAuthFlowManager>(() => new AuthFlowManager(
                 Resolve<IIdentityService>(),
                 Resolve<ICanvasManager>(),
                 Resolve<IStateManager>(),
                 Resolve<IErrorHandler>(),
                 debugLogging));
-                
             RegisterSingleton<IUserFlowManager>(() => new UserFlowManager(
                 Resolve<IUserService>(),
                 Resolve<IIdentityService>(),
@@ -68,28 +77,29 @@ namespace Energy8.Identity.UI.Runtime.DI
                 Resolve<IStateManager>(),
                 Resolve<IErrorHandler>(),
                 debugLogging));
+            RegisterSingleton<IUpdateService>(() => new UpdateService(false)); // false — по умолчанию обновления нет
         }
-        
-        public void RegisterSingleton<TInterface, TImplementation>() 
-            where TImplementation : class, TInterface 
+
+        public void RegisterSingleton<TInterface, TImplementation>()
+            where TImplementation : class, TInterface
             where TInterface : class
         {
             services[typeof(TInterface)] = () => Activator.CreateInstance<TImplementation>();
         }
-        
+
         public void RegisterSingleton<T>(Func<T> factory) where T : class
         {
             services[typeof(T)] = () => factory();
         }
-        
+
         public T Resolve<T>() where T : class
         {
             var type = typeof(T);
-            
+
             // Проверяем кеш singletons
             if (singletons.ContainsKey(type))
                 return (T)singletons[type];
-                
+
             // Создаем новый экземпляр
             if (services.ContainsKey(type))
             {
@@ -97,7 +107,7 @@ namespace Energy8.Identity.UI.Runtime.DI
                 singletons[type] = instance;
                 return instance;
             }
-            
+
             throw new InvalidOperationException($"Service {type.Name} not registered");
         }
     }

@@ -4,7 +4,16 @@ namespace Energy8.Identity.UI.Runtime.Views.Models
 {
     public class UpdateViewResult : ViewResult
     {
-        // Empty result as original implementation didn't return any specific data
+        /// <summary>
+        /// Требуется ли обновление приложения
+        /// </summary>
+        public bool IsUpdateRequired { get; set; }
+
+        public UpdateViewResult() { }
+        public UpdateViewResult(bool isUpdateRequired)
+        {
+            IsUpdateRequired = isUpdateRequired;
+        }
     }
 }
 

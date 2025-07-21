@@ -1,4 +1,3 @@
-
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -22,16 +21,17 @@ namespace Energy8.Identity.UI.Runtime.Flows
             this.stateManager = stateManager;
         }
 
-        public async UniTask ShowAnalyticsFlowAsync(CancellationToken ct)
+        public async UniTask<bool> ShowAnalyticsFlowAsync(CancellationToken ct)
         {
-            stateManager.TransitionTo(IdentityState.AnalyticsViewOpen);
-            await viewManager.Show<AnalyticsView, AnalyticsViewParams, AnalyticsViewResult>(new AnalyticsViewParams(), ct);
-            stateManager.TransitionTo(IdentityState.UserFlowActive);
+            // Здесь просто показываем окно аналитики, не меняя state
+            var result = await viewManager.Show<AnalyticsView, AnalyticsViewParams, AnalyticsViewResult>(new AnalyticsViewParams(), ct);
+            // После завершения — возврат управления Orchestrator
+            return result.IsDetailedAnalyticsAllowed;
         }
     }
 
     public interface IAnalyticsFlowManager
     {
-        UniTask ShowAnalyticsFlowAsync(CancellationToken ct);
+        UniTask<bool> ShowAnalyticsFlowAsync(CancellationToken ct);
     }
 }

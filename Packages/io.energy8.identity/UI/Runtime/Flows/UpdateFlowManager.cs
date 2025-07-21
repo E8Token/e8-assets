@@ -1,4 +1,3 @@
-
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -24,9 +23,9 @@ namespace Energy8.Identity.UI.Runtime.Flows
 
         public async UniTask ShowUpdateFlowAsync(CancellationToken ct)
         {
-            stateManager.TransitionTo(IdentityState.UpdateViewOpen);
+            // Здесь просто показываем окно обновления, не меняя state
             await viewManager.Show<UpdateView, UpdateViewParams, UpdateViewResult>(new UpdateViewParams(), ct);
-            stateManager.TransitionTo(IdentityState.UserFlowActive);
+            // После завершения — возврат управления Orchestrator
         }
     }
 
