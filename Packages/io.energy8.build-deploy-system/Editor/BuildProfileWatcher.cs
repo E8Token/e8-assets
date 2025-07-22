@@ -3,9 +3,6 @@ using UnityEngine;
 
 namespace Energy8.BuildDeploySystem.Editor
 {
-    /// <summary>
-    /// Отслеживает изменения в Build Profiles и автоматически обновляет конфигурации
-    /// </summary>
     public class BuildProfileWatcher : AssetPostprocessor
     {
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, 
@@ -13,7 +10,6 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             bool needsUpdate = false;
 
-            // Проверяем импортированные ассеты
             foreach (var asset in importedAssets)
             {
                 if (IsBuildProfile(asset))
@@ -23,7 +19,6 @@ namespace Energy8.BuildDeploySystem.Editor
                 }
             }
 
-            // Проверяем удаленные ассеты
             if (!needsUpdate)
             {
                 foreach (var asset in deletedAssets)
@@ -36,7 +31,6 @@ namespace Energy8.BuildDeploySystem.Editor
                 }
             }
 
-            // Проверяем перемещенные ассеты
             if (!needsUpdate)
             {
                 foreach (var asset in movedAssets)
@@ -53,7 +47,6 @@ namespace Energy8.BuildDeploySystem.Editor
             {
                 EditorApplication.delayCall += () =>
                 {
-                    Debug.Log("Build Profiles changed, updating configurations...");
                     BuildProfileScanner.ScanAndCreateConfigurations();
                 };
             }
@@ -66,9 +59,6 @@ namespace Energy8.BuildDeploySystem.Editor
         }
     }
 
-    /// <summary>
-    /// Инициализатор который запускается при загрuzke редактора
-    /// </summary>
     [InitializeOnLoad]
     public static class BuildSystemInitializer
     {
@@ -79,10 +69,8 @@ namespace Energy8.BuildDeploySystem.Editor
 
         private static void Initialize()
         {
-            // Проверяем нужно ли обновить конфигурации при старте
             if (BuildProfileScanner.NeedsUpdate())
             {
-                Debug.Log("Initializing Build Deploy System configurations...");
                 BuildProfileScanner.ScanAndCreateConfigurations();
             }
         }

@@ -17,6 +17,8 @@ using Energy8.Identity.UI.Runtime.Management.Flows;
 using Energy8.Identity.UI.Runtime.Views.Management;
 using Energy8.Identity.UI.Core;
 using Energy8.Identity.UI.Core.Management;
+using Energy8.Identity.Game.Core.Services;
+using Energy8.Identity.Game.Runtime.Factory;
 
 namespace Energy8.Identity.UI.Runtime.DI
 {
@@ -34,6 +36,14 @@ namespace Energy8.Identity.UI.Runtime.DI
         /// Точный перенос инициализации из Awake (строки 204-215)
         /// </summary>
         public void ConfigureServices(bool debugLogging, bool isLite)
+        {
+            ConfigureServices(debugLogging, isLite, null);
+        }
+
+        /// <summary>
+        /// Конфигурация всех сервисов системы с возможностью передать кастомный игровой сервис
+        /// </summary>
+        public void ConfigureServices(bool debugLogging, bool isLite, IGameService customGameService)
         {
             // 1. MonoBehaviour и базовые сервисы
             RegisterSingleton<IViewManager>(() => {
@@ -53,6 +63,9 @@ namespace Energy8.Identity.UI.Runtime.DI
                 Resolve<IUserService>(),
                 Resolve<IHttpClient>(),
                 Resolve<IAnalyticsService>()));
+
+            // Game Service (добавляем базовый игровой сервис)
+            RegisterSingleton<IGameService>(() => GameServiceFactory.CreateDefaultService());
 
             // 2. UI Managers
             RegisterSingleton<ICanvasManager>(() => new CanvasManager());
@@ -74,10 +87,12 @@ namespace Energy8.Identity.UI.Runtime.DI
             RegisterSingleton<IUserFlowManager>(() => new UserFlowManager(
                 Resolve<IUserService>(),
                 Resolve<IIdentityService>(),
+                Resolve<IGameService>(),
                 Resolve<ICanvasManager>(),
                 Resolve<IStateManager>(),
                 Resolve<IErrorHandler>(),
-                debugLogging));
+                debugLogging,
+                customGameService));  // Передаем кастомный сервис если есть
             RegisterSingleton<IUpdateService>(() => new UpdateService(false)); // false — по умолчанию обновления нет
         }
 

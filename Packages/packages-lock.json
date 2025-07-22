@@ -7,6 +7,13 @@
       "dependencies": {},
       "hash": "f213ff497e4ff462a77319cf677cf20cc0860ca9"
     },
+    "com.github-glitchenzo.nugetforunity": {
+      "version": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "a7c6b49a0141a5bff9b1983e38137522ef61977d"
+    },
     "com.google.external-dependency-manager": {
       "version": "1.2.186",
       "depth": 0,
@@ -242,6 +249,15 @@
         "com.unity.ext.nunit": "1.0.6"
       },
       "url": "https://packages.unity.com"
+    },
+    "com.unity.ide.trae": {
+      "version": "https://github.com/dennyguotf/com.unity.ide.trae.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.9"
+      },
+      "hash": "0231d4b833feb294da5fc8fa7e04df85bd73773f"
     },
     "com.unity.ide.visualstudio": {
       "version": "2.0.23",

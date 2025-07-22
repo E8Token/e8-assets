@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 399b1a0b4991f364fa2b3b0e92649e82, type: 3}
+  m_Script: {fileID: 11500000, guid: 0a6504df648e55343869b93fccb296c3, type: 3}
   m_Name: GlobalVersion
   m_EditorClassIdentifier: 
-  version: 0.2.15
+  version: 0.3.2

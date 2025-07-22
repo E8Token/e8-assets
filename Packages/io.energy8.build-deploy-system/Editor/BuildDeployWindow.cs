@@ -8,12 +8,10 @@ namespace Energy8.BuildDeploySystem.Editor
 {
     public class BuildDeployWindow : EditorWindow
     {
-        private List<BuildConfiguration> configurations = new List<BuildConfiguration>();
+        private List<BuildConfiguration> configurations = new();
         private Vector2 scrollPosition;
-        private bool isBuilding = false;
-        private string currentBuildConfig = "";
         private BuildConfiguration selectedConfiguration;
-        private Dictionary<string, bool> configurationFoldouts = new Dictionary<string, bool>();
+        private readonly Dictionary<string, bool> configurationFoldouts = new();
 
         [MenuItem("Energy8/Build Deploy System")]
         public static void ShowWindow()
@@ -25,27 +23,22 @@ namespace Energy8.BuildDeploySystem.Editor
         private void OnEnable()
         {
             RefreshConfigurations();
-            BuildManager.OnBuildStarted += OnBuildStarted;
             BuildManager.OnBuildCompleted += OnBuildCompleted;
             BuildProfileScanner.OnConfigurationsUpdated += OnConfigurationsUpdated;
         }
 
         private void OnDisable()
         {
-            BuildManager.OnBuildStarted -= OnBuildStarted;
             BuildManager.OnBuildCompleted -= OnBuildCompleted;
             BuildProfileScanner.OnConfigurationsUpdated -= OnConfigurationsUpdated;
         }
 
         private void OnGUI()
         {
-            EditorGUILayout.Space(10); DrawHeader();
+            DrawHeader();
             EditorGUILayout.Space(10);
 
             DrawGlobalVersionSection();
-            EditorGUILayout.Space(10);
-
-            DrawRefreshSection();
             EditorGUILayout.Space(10);
 
             DrawConfigurationsSection();
@@ -64,35 +57,27 @@ namespace Energy8.BuildDeploySystem.Editor
             };
 
             EditorGUILayout.LabelField("Energy8 Build Deploy System", style);
-
-            var infoStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 12,
-                alignment = TextAnchor.MiddleCenter,
-                fontStyle = FontStyle.Italic
-            };
-
-            EditorGUILayout.LabelField("Автоматически синхронизируется с Build Profiles", infoStyle);
         }
 
         private void DrawGlobalVersionSection()
         {
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("📋 Project Version Management", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Project Version Management", EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Current Version:", GUILayout.Width(100));
 
-            // Редактируемое поле версии
-            string currentVersion = "1.0.1"; try
+            string currentVersion = "1.0.1";
+
+            try
             {
-                var globalVersion = Energy8.BuildDeploySystem.GlobalVersion.Instance;
+                var globalVersion = GlobalVersion.Instance;
                 if (globalVersion != null)
                 {
                     currentVersion = globalVersion.Version;
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Debug.LogWarning($"[BuildDeployWindow] Failed to get version: {ex.Message}");
             }
@@ -104,7 +89,7 @@ namespace Energy8.BuildDeploySystem.Editor
                 {
                     GlobalVersion.Instance.Version = newVersion;
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogError($"[BuildDeployWindow] Failed to set version: {ex.Message}");
                 }
@@ -116,7 +101,7 @@ namespace Energy8.BuildDeploySystem.Editor
                 {
                     GlobalVersion.Instance?.IncrementMinor();
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogError($"[BuildDeployWindow] Failed to increment minor version: {ex.Message}");
                 }
@@ -128,54 +113,27 @@ namespace Energy8.BuildDeploySystem.Editor
                 {
                     GlobalVersion.Instance?.IncrementMajor();
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogError($"[BuildDeployWindow] Failed to increment major version: {ex.Message}");
                 }
             }
 
             EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.HelpBox("Версия проекта управляется глобально для всех конфигураций. Каждая успешная сборка автоматически инкрементирует build номер.", MessageType.Info);
-            EditorGUILayout.EndVertical();
-        }
-
-        private void DrawRefreshSection()
-        {
-            EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("Управление", EditorStyles.boldLabel);
-
-            EditorGUILayout.BeginHorizontal();
-
-            if (GUILayout.Button("🔄 Обновить конфигурации", GUILayout.Height(25)))
-            {
-                RefreshConfigurations();
-            }
-
-            if (GUILayout.Button("📁 Открыть папку конфигураций", GUILayout.Height(25)))
-            {
-                EditorUtility.RevealInFinder(Path.GetFullPath("Assets/BuildSystem/Configs"));
-            }
-
-            EditorGUILayout.EndHorizontal();
-
-            // Показываем статистику
-            EditorGUILayout.LabelField($"Найдено конфигураций: {configurations.Count}", EditorStyles.miniLabel);
-
             EditorGUILayout.EndVertical();
         }
 
         private void DrawConfigurationsSection()
         {
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("Конфигурации Build Profiles", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Build Profiles", EditorStyles.boldLabel);
 
             if (configurations.Count == 0)
             {
                 EditorGUILayout.HelpBox(
-                    "Конфигурации не найдены.\n" +
-                    "Убедитесь что у вас есть Build Profiles в папке Assets/Settings/Build Profiles\n" +
-                    "Нажмите 'Обновить конфигурации' для создания.",
+                    "No configurations found.\n" +
+                    "Make sure you have Build Profiles in the folder Assets/Settings/Build Profiles\n" +
+                    "Click 'Refresh Configurations' to create them.",
                     MessageType.Info);
             }
             else
@@ -205,16 +163,13 @@ namespace Energy8.BuildDeploySystem.Editor
             EditorGUILayout.BeginVertical("box");
             GUI.backgroundColor = originalColor;
 
-            // Header with foldout
             EditorGUILayout.BeginHorizontal();
 
-            // Selection radio button
             if (GUILayout.Toggle(isSelected, "", GUILayout.Width(20)) && !isSelected)
             {
                 selectedConfiguration = config;
             }
 
-            // Foldout for configuration details
             string configKey = config.BuildProfileGUID;
             if (!configurationFoldouts.ContainsKey(configKey))
             {
@@ -231,7 +186,6 @@ namespace Energy8.BuildDeploySystem.Editor
                 EditorStyles.foldoutHeader
             );
 
-            // Status indicator
             if (config.IsValid())
             {
                 GUILayout.Label("✅", GUILayout.Width(20));
@@ -243,22 +197,14 @@ namespace Energy8.BuildDeploySystem.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            // Configuration details (shown when expanded)
             if (configurationFoldouts[configKey])
             {
                 EditorGUI.indentLevel++;
 
-                // Build Profile reference (read-only)
                 EditorGUI.BeginDisabledGroup(true);
                 EditorGUILayout.ObjectField("Build Profile", config.BuildProfile, typeof(UnityEditor.Build.Profile.BuildProfile), false);
                 EditorGUI.EndDisabledGroup();
 
-                // Custom build name
-                var newCustomName = EditorGUILayout.TextField("Custom Name", config.CustomBuildName);
-                if (newCustomName != config.CustomBuildName)
-                {
-                    config.CustomBuildName = newCustomName;
-                }                // Output path
                 EditorGUILayout.BeginHorizontal();
                 var newOutputPath = EditorGUILayout.TextField("Output Path", config.OutputPath);
                 if (newOutputPath != config.OutputPath)
@@ -274,51 +220,50 @@ namespace Energy8.BuildDeploySystem.Editor
                         config.OutputPath = Path.GetRelativePath(Application.dataPath + "/../", path);
                     }
                 }
-                EditorGUILayout.EndHorizontal();                // Подсказка о плейсхолдерах
-                EditorGUILayout.LabelField("💡 Available placeholders: {{{VERSION}}}, {{{PLATFORM}}}, {{{DATE}}}, {{{DATETIME}}}", EditorStyles.miniLabel);
+                EditorGUILayout.EndHorizontal();
 
-                // Пример использования
+                EditorGUILayout.LabelField(
+                    "💡 Available placeholders: {{{VERSION}}},{{{PLATFORM}}}, {{{DATE}}}, {{{DATETIME}}}", EditorStyles.miniLabel);
+
                 if (string.IsNullOrEmpty(config.OutputPath))
                 {
                     EditorGUILayout.LabelField("📋 Example: Builds/{{{PLATFORM}}}/{{{VERSION}}}", EditorStyles.miniLabel);
-                }// Показываем обработанный путь если есть плейсхолдеры
-                if (!string.IsNullOrEmpty(config.OutputPath) && (config.OutputPath.Contains("{{{") && config.OutputPath.Contains("}}}")))
+                }
+                if (!string.IsNullOrEmpty(config.OutputPath) &&
+                           config.OutputPath.Contains("{{{") &&
+                           config.OutputPath.Contains("}}}"))
                 {
-                    var processedPath = ProcessOutputPathTemplate(config.OutputPath, config);
+                    var processedPath = BuildManager.ProcessOutputPathTemplate(config.OutputPath, config);
                     EditorGUILayout.LabelField($"➤ Resolved: {processedPath}", EditorStyles.miniLabel);
                 }
 
-                // Build Options
                 EditorGUILayout.Space(5);
                 EditorGUILayout.LabelField("🔧 Build Options", EditorStyles.boldLabel);
-                var newCleanBefore = EditorGUILayout.Toggle("Clean Before Build", config.CleanBeforeBuild);
-                if (newCleanBefore != config.CleanBeforeBuild)
+                var alwaysCleanBuild = EditorGUILayout.Toggle("Always Clean Build", config.AlwaysCleanBuild);
+                if (alwaysCleanBuild != config.AlwaysCleanBuild)
                 {
-                    config.CleanBeforeBuild = newCleanBefore;
+                    config.AlwaysCleanBuild = alwaysCleanBuild;
                 }
 
-                // Platform-specific settings
                 DrawPlatformSpecificSettings(config);
 
-                // Deploy settings
-                DrawDeploySettings(config);
-
-                // Validation status
                 if (!config.IsValid())
                 {
                     if (config.BuildProfile == null)
                     {
-                        EditorGUILayout.HelpBox("❌ Build Profile не найден или был удален", MessageType.Error);
+                        EditorGUILayout.HelpBox("❌ Build Profile not found or has been deleted", MessageType.Error);
                     }
                     else if (string.IsNullOrEmpty(config.OutputPath))
                     {
-                        EditorGUILayout.HelpBox("❌ Не указан путь для вывода", MessageType.Error);
+                        EditorGUILayout.HelpBox("❌ Output path not specified", MessageType.Error);
                     }
                 }
                 else if (isSelected)
                 {
-                    EditorGUILayout.HelpBox("✅ Конфигурация готова к сборке", MessageType.Info);
+                    EditorGUILayout.HelpBox("✅ Configuration is ready for build", MessageType.Info);
                 }
+
+                DrawDeploySettings(config);
 
                 EditorGUI.indentLevel--;
             }
@@ -329,43 +274,39 @@ namespace Energy8.BuildDeploySystem.Editor
         private void DrawBuildSection()
         {
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("Действия сборки", EditorStyles.boldLabel); if (selectedConfiguration != null)
-            {
-                EditorGUILayout.LabelField($"Выбрано: {selectedConfiguration.GetDisplayName()}", EditorStyles.helpBox);
+            EditorGUILayout.LabelField("Build Actions", EditorStyles.boldLabel);
 
-                if (isBuilding)
-                {
-                    EditorGUILayout.HelpBox($"🔨 Выполняется сборка: {currentBuildConfig}...", MessageType.Info);
-                }
+            if (selectedConfiguration != null)
+            {
+                EditorGUILayout.LabelField($"Selected: {selectedConfiguration.GetDisplayName()}", EditorStyles.helpBox);
 
                 EditorGUILayout.BeginHorizontal();
 
-                GUI.enabled = !isBuilding && selectedConfiguration.IsValid();
-
-                // Clean Build кнопка доступна только если не включен Clean Before Build
-                if (!selectedConfiguration.CleanBeforeBuild)
+                if (!selectedConfiguration.AlwaysCleanBuild)
                 {
                     if (GUILayout.Button("🧹 Clean Build", GUILayout.Height(35)))
                     {
-                        BuildManager.CleanBuild(selectedConfiguration);
+                        BuildManager.BuildConfiguration(selectedConfiguration,
+                            selectedConfiguration.DeploySettings.AlwaysDeploy,
+                            true);
                     }
                 }
 
                 if (GUILayout.Button("🔨 Build", GUILayout.Height(35)))
                 {
-                    BuildManager.BuildConfiguration(selectedConfiguration);
+                    BuildManager.BuildConfiguration(selectedConfiguration,
+                        selectedConfiguration.DeploySettings.AlwaysDeploy,
+                        selectedConfiguration.AlwaysCleanBuild);
                 }
 
-                GUI.enabled = true;
                 EditorGUILayout.EndHorizontal();
 
-                // Deploy buttons
                 EditorGUILayout.Space(5);
                 DrawDeployButtons();
             }
             else
             {
-                EditorGUILayout.HelpBox("Выберите конфигурацию для сборки", MessageType.Info);
+                EditorGUILayout.HelpBox("Select a configuration to build", MessageType.Info);
             }
 
             EditorGUILayout.EndVertical();
@@ -374,37 +315,32 @@ namespace Energy8.BuildDeploySystem.Editor
         private void DrawDeployButtons()
         {
             if (selectedConfiguration == null) return;
+            if (!selectedConfiguration.DeploySettings.EnableDeploy) return;
 
             var deploySettings = selectedConfiguration.DeploySettings;
 
             if (deploySettings.AlwaysDeploy)
             {
-                EditorGUILayout.HelpBox("✅ Auto Deploy включен - каждая успешная сборка будет автоматически задеплоена", MessageType.Info);
+                EditorGUILayout.HelpBox("✅ Auto Deploy is enabled - every successful build will be automatically deployed", MessageType.Info);
             }
             else if (deploySettings.EnableDeploy)
             {
                 EditorGUILayout.BeginHorizontal();
 
-                GUI.enabled = !isBuilding;
-
-                if (GUILayout.Button("🚀 Deploy Only", GUILayout.Height(30)))
+                if (!selectedConfiguration.AlwaysCleanBuild)
                 {
-                    DeploySelectedConfiguration();
+                    if (GUILayout.Button("🧹🔨🚀 Clean Build & Deploy", GUILayout.Height(35)))
+                    {
+                        BuildManager.BuildConfiguration(selectedConfiguration, true, true);
+                    }
                 }
+
 
                 if (GUILayout.Button("🔨🚀 Build & Deploy", GUILayout.Height(30)))
                 {
-                    // Временно включаем AlwaysDeploy для этой сборки
-                    bool originalAlwaysDeploy = deploySettings.AlwaysDeploy;
-                    deploySettings.AlwaysDeploy = true;
-
-                    BuildManager.BuildConfiguration(selectedConfiguration);
-
-                    // Возвращаем настройку обратно
-                    deploySettings.AlwaysDeploy = originalAlwaysDeploy;
+                    BuildManager.BuildConfiguration(selectedConfiguration, true, false);
                 }
 
-                GUI.enabled = true;
                 EditorGUILayout.EndHorizontal();
             }
         }
@@ -419,7 +355,6 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             configurations = newConfigurations;
 
-            // Проверяем что выбранная конфигурация еще существует
             if (selectedConfiguration != null && !configurations.Contains(selectedConfiguration))
             {
                 selectedConfiguration = null;
@@ -428,19 +363,10 @@ namespace Energy8.BuildDeploySystem.Editor
             Repaint();
         }
 
-        private void OnBuildStarted(string configName)
-        {
-            isBuilding = true;
-            currentBuildConfig = configName;
-            Repaint();
-        }
         private void OnBuildCompleted(string configName, bool success)
         {
-            isBuilding = false;
-            currentBuildConfig = "";
             Repaint();
 
-            // Только логи, никаких диалогов
             if (success)
             {
                 Debug.Log($"[BuildSystem] Build '{configName}' completed successfully!");
@@ -476,15 +402,10 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             if (config.BuildProfile == null) return;
 
-            // Используем тот же метод определения платформы, что и в BuildManager
             var buildTarget = GetBuildTargetFromProfile(config.BuildProfile);
 
             EditorGUILayout.Space(5);
             EditorGUILayout.LabelField("Platform Settings", EditorStyles.boldLabel);
-
-            // Debug info для проверки
-            EditorGUILayout.LabelField($"Profile: {config.BuildProfileName}", EditorStyles.miniLabel);
-            EditorGUILayout.LabelField($"Detected Platform: {buildTarget}", EditorStyles.miniLabel);
 
             if (buildTarget == BuildTarget.WebGL)
             {
@@ -498,7 +419,9 @@ namespace Energy8.BuildDeploySystem.Editor
             {
                 DrawIOSSettings(config);
             }
-            else if (buildTarget == BuildTarget.StandaloneWindows64 || buildTarget == BuildTarget.StandaloneOSX || buildTarget == BuildTarget.StandaloneLinux64)
+            else if (buildTarget == BuildTarget.StandaloneWindows64 ||
+                           buildTarget == BuildTarget.StandaloneOSX ||
+                           buildTarget == BuildTarget.StandaloneLinux64)
             {
                 DrawStandaloneSettings(config);
             }
@@ -516,15 +439,8 @@ namespace Energy8.BuildDeploySystem.Editor
             var settings = config.WebGLSettings; EditorGUILayout.BeginVertical("box");
             EditorGUILayout.LabelField("🌐 WebGL Multi-Format Build", EditorStyles.boldLabel);
 
-            EditorGUILayout.HelpBox(
-                "Configure texture formats for WebGL build. " +
-                "The system will create separate builds for each selected format and merge data files.",
-                MessageType.Info
-            );
-
             EditorGUILayout.LabelField("Texture Formats to Build", EditorStyles.boldLabel);
 
-            // Показываем все форматы для выбора
             var newBuildDXT = EditorGUILayout.Toggle("Build DXT (Desktop)", settings.BuildDXT);
             if (newBuildDXT != settings.BuildDXT)
             {
@@ -546,8 +462,8 @@ namespace Energy8.BuildDeploySystem.Editor
                 config.WebGLSettings = settings;
             }
 
-
             EditorGUILayout.Space(10);
+
             EditorGUILayout.LabelField("Compression Algorithms to Build", EditorStyles.boldLabel);
             var availableAlgorithms = new[] { CompressionAlgorithm.Brotli, CompressionAlgorithm.Gzip };
             foreach (var algo in availableAlgorithms)
@@ -570,18 +486,11 @@ namespace Energy8.BuildDeploySystem.Editor
                 var additionalFormats = settings.GetTextureFormatsToBuild();
                 var compressionNames = settings.GetCompressionAlgorithmNames();
                 EditorGUILayout.HelpBox(
-                    "✨ Multi-Format Build Enabled!\n" +
+                    "Multi-Format Build Enabled!\n" +
                     $"Selected formats: {string.Join(", ", additionalFormats)}\n" +
                     $"Compression: {string.Join(", ", compressionNames)}\n" +
                     "Data files will be named: [appname].[format].[compression].data",
                     MessageType.Info
-                );
-            }
-            else
-            {
-                EditorGUILayout.HelpBox(
-                    "Select one or more texture formats and compression algorithms above to enable multi-format build.",
-                    MessageType.Warning
                 );
             }
 
@@ -727,14 +636,8 @@ namespace Energy8.BuildDeploySystem.Editor
                     config.DeploySettings = settings;
                 }
 
-                if (settings.AlwaysDeploy)
-                {
-                    EditorGUILayout.HelpBox("✅ Always Deploy включен - каждая успешная сборка будет автоматически задеплоена", MessageType.Info);
-                }
-
                 EditorGUILayout.Space(5);
 
-                // Deploy Method
                 var newDeployMethod = (DeployMethod)EditorGUILayout.EnumPopup("Deploy Method", settings.Method);
                 if (newDeployMethod != settings.Method)
                 {
@@ -742,7 +645,6 @@ namespace Energy8.BuildDeploySystem.Editor
                     config.DeploySettings = settings;
                 }
 
-                // LocalCopy: только путь и файловый браузер
                 if (settings.Method == DeployMethod.LocalCopy)
                 {
                     EditorGUILayout.BeginHorizontal();
@@ -763,11 +665,8 @@ namespace Energy8.BuildDeploySystem.Editor
                     }
                     EditorGUILayout.EndHorizontal();
                 }
-                else
+                else if (settings.Method == DeployMethod.FTP || settings.Method == DeployMethod.SFTP)
                 {
-                    // Server Settings
-                    EditorGUILayout.LabelField("Server Settings", EditorStyles.boldLabel);
-
                     var newServerHost = EditorGUILayout.TextField("Server Host", settings.ServerHost);
                     if (newServerHost != settings.ServerHost)
                     {
@@ -789,8 +688,8 @@ namespace Energy8.BuildDeploySystem.Editor
                         config.DeploySettings = settings;
                     }
 
-                    // Authentication
                     EditorGUILayout.Space(5);
+
                     EditorGUILayout.LabelField("Authentication", EditorStyles.boldLabel);
 
                     var newAuthMethod = (AuthenticationMethod)EditorGUILayout.EnumPopup("Auth Method", settings.AuthMethod);
@@ -846,10 +745,11 @@ namespace Energy8.BuildDeploySystem.Editor
                     }
                 }
 
-                // Deploy Options
                 EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("Deploy Options", EditorStyles.boldLabel);
 
+                EditorGUILayout.LabelField("🗂️ Deploy Options", EditorStyles.boldLabel);
+
+                // Основные опции очистки и архивирования
                 var newDeleteExisting = EditorGUILayout.Toggle("Delete Existing Files", settings.DeleteExistingFiles);
                 if (newDeleteExisting != settings.DeleteExistingFiles)
                 {
@@ -857,22 +757,25 @@ namespace Energy8.BuildDeploySystem.Editor
                     config.DeploySettings = settings;
                 }
 
-                var newCreateBackup = EditorGUILayout.Toggle("Create Backup", settings.CreateBackup);
+                var newCreateBackup = EditorGUILayout.Toggle("Create Backup Before Deploy", settings.CreateBackup);
                 if (newCreateBackup != settings.CreateBackup)
                 {
                     settings.CreateBackup = newCreateBackup;
                     config.DeploySettings = settings;
                 }
 
-                var newDeployZipOnly = EditorGUILayout.Toggle("Deploy ZIP Only", settings.DeployZipOnly);
+                EditorGUILayout.Space(3);
+                EditorGUILayout.LabelField("📦 Archive Options", EditorStyles.boldLabel);
+                
+                var newDeployZipOnly = EditorGUILayout.Toggle("Deploy as ZIP Archive", settings.DeployZipOnly);
                 if (newDeployZipOnly != settings.DeployZipOnly)
                 {
                     settings.DeployZipOnly = newDeployZipOnly;
                     config.DeploySettings = settings;
                 }
 
+                EditorGUILayout.Space(3);
 
-                // Validation
                 if (!settings.IsValid())
                 {
                     EditorGUILayout.HelpBox("❌ Deploy settings are incomplete. Please check server host, username and authentication settings.", MessageType.Error);
@@ -885,149 +788,27 @@ namespace Energy8.BuildDeploySystem.Editor
 
             EditorGUILayout.EndVertical();
         }
-        private async void DeploySelectedConfiguration()
-        {
-            if (selectedConfiguration == null || !selectedConfiguration.DeploySettings.EnableDeploy)
-            {
-                Debug.LogWarning("Deploy is not enabled for selected configuration.");
-                return;
-            }            // Обрабатываем шаблоны в OutputPath
-            string processedOutputPath = ProcessOutputPathTemplate(selectedConfiguration.OutputPath, selectedConfiguration);
-            string buildPath = Path.GetFullPath(processedOutputPath);
-            if (!Directory.Exists(buildPath))
-            {
-                EditorUtility.DisplayDialog("Deploy Error",
-                    "Build directory not found. Please build the project first.", "OK");
-                return;
-            }
-            try
-            {
-                Debug.Log("Starting manual deployment...");
 
-                // Открываем окно мониторинга деплоя
-                var monitorWindow = DeployMonitorWindow.GetInstance();
-                monitorWindow.StartDeployMonitoring($"{selectedConfiguration.DeploySettings.Username}@{selectedConfiguration.DeploySettings.ServerHost}:{selectedConfiguration.DeploySettings.RemotePath}");
-
-                // Запускаем деплой с мониторингом
-                bool success = await DeployManager.DeployBuild(selectedConfiguration, buildPath, monitorWindow);
-
-                // Окно мониторинга само покажет результат
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"Deploy error: {ex.Message}");
-
-                // В случае исключения всё равно покажем окно с ошибкой
-                var monitorWindow = DeployMonitorWindow.GetInstance();
-                monitorWindow.AddLog($"❌ Deployment failed with error: {ex.Message}", LogType.Error);
-                monitorWindow.CompleteDeployment(false);
-            }
-        }        /// <summary>
-                 /// Заменяет плейсхолдеры в OutputPath на актуальные значения
-                 /// </summary>
-                 /// <param name="outputPath">Исходный путь сборки</param>
-                 /// <param name="config">Конфигурация сборки для получения информации о платформе</param>
-                 /// <returns>Путь с замененными плейсхолдерами</returns>
-        private string ProcessOutputPathTemplate(string outputPath, BuildConfiguration config = null)
-        {
-            if (string.IsNullOrEmpty(outputPath))
-                return outputPath;
-
-            var processedPath = outputPath;
-            // Заменяем {{{VERSION}}} на текущую версию проекта
-            if (processedPath.Contains("{{{VERSION}}}"))
-            {
-                try
-                {
-                    var globalVersion = GlobalVersion.Instance;
-                    if (globalVersion != null)
-                    {
-                        processedPath = processedPath.Replace("{{{VERSION}}}", globalVersion.Version);
-                    }
-                    else
-                    {
-                        processedPath = processedPath.Replace("{{{VERSION}}}", "unknown");
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[BuildDeployWindow] Failed to get version for placeholder: {ex.Message}");
-                    processedPath = processedPath.Replace("{{{VERSION}}}", "error");
-                }
-            }
-
-            // Заменяем {{{PLATFORM}}} на название платформы
-            if (processedPath.Contains("{{{PLATFORM}}}") && config != null)
-            {
-                var buildTarget = GetBuildTargetFromProfile(config.BuildProfile);
-                var platformName = GetPlatformName(buildTarget);
-                processedPath = processedPath.Replace("{{{PLATFORM}}}", platformName);
-            }
-
-            // Заменяем {{{DATE}}} на текущую дату в формате yyyy-MM-dd
-            if (processedPath.Contains("{{{DATE}}}"))
-            {
-                var dateString = DateTime.Now.ToString("yyyy-MM-dd");
-                processedPath = processedPath.Replace("{{{DATE}}}", dateString);
-            }
-
-            // Заменяем {{{DATETIME}}} на текущую дату и время в формате yyyy-MM-dd_HH-mm
-            if (processedPath.Contains("{{{DATETIME}}}"))
-            {
-                var dateTimeString = DateTime.Now.ToString("yyyy-MM-dd_HH-mm");
-                processedPath = processedPath.Replace("{{{DATETIME}}}", dateTimeString);
-            }
-
-            return processedPath;
-        }
-
-        /// <summary>
-        /// Получает дружественное название платформы для использования в путях
-        /// </summary>
-        private string GetPlatformName(BuildTarget buildTarget)
-        {
-            switch (buildTarget)
-            {
-                case BuildTarget.StandaloneWindows:
-                case BuildTarget.StandaloneWindows64:
-                    return "Windows";
-                case BuildTarget.StandaloneOSX:
-                    return "macOS";
-                case BuildTarget.StandaloneLinux64:
-                    return "Linux";
-                case BuildTarget.WebGL:
-                    return "WebGL";
-                case BuildTarget.Android:
-                    return "Android";
-                case BuildTarget.iOS:
-                    return "iOS";
-                default:
-                    return buildTarget.ToString();
-            }
-        }
         private BuildTarget GetBuildTargetFromProfile(UnityEditor.Build.Profile.BuildProfile profile)
         {
-            // Пытаемся получить BuildTarget из профиля напрямую
             try
             {
-                // В Unity 2022.3+ Build Profiles могут иметь свойство для получения платформы
                 var serializedObject = new SerializedObject(profile);
                 var buildTargetProperty = serializedObject.FindProperty("m_BuildTarget");
                 if (buildTargetProperty != null)
                 {
                     var buildTargetValue = buildTargetProperty.intValue;
-                    if (System.Enum.IsDefined(typeof(BuildTarget), buildTargetValue))
+                    if (Enum.IsDefined(typeof(BuildTarget), buildTargetValue))
                     {
                         return (BuildTarget)buildTargetValue;
                     }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 Debug.LogWarning($"Failed to get BuildTarget from profile directly: {ex.Message}");
             }
 
-            // Fallback: определяем BuildTarget на основе имени профиля
             var profileName = profile.name.ToLower();
 
             if (profileName.Contains("windows") || profileName.Contains("win"))
@@ -1043,7 +824,6 @@ namespace Energy8.BuildDeploySystem.Editor
             if (profileName.Contains("webgl") || profileName.Contains("web") || profileName.Contains("dev"))
                 return BuildTarget.WebGL;
 
-            // По умолчанию
             return BuildTarget.StandaloneWindows64;
         }
     }

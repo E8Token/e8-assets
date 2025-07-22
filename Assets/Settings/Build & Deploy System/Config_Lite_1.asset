@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99c635851023c2b4eb808f1b657f13fa, type: 3}
+  m_Name: Config_Lite_1
+  m_EditorClassIdentifier: 
+  buildProfileGUID: 1170f909b88750d4ab1f6979b8aca56a
+  buildProfileName: Lite
+  outputPath: Builds/Lite
+  alwaysCleanBuild: 1
+  customBuildName: 
+  deploySettings:
+    enableDeploy: 0
+    alwaysDeploy: 0
+    deployMethod: 1
+    serverHost: 
+    serverPort: 21
+    remotePath: /
+    authMethod: 0
+    username: 
+    password: 
+    privateKeyPath: 
+    privateKeyPassphrase: 
+    deleteExistingFiles: 0
+    createBackup: 1
+    deployZipOnly: 0
+    localCopyTargetPath: 
+  webGLSettings:
+    buildDXT: 0
+    buildASTC: 0
+    buildETC2: 0
+    compressionAlgorithms: 
+  androidSettings:
+    buildAAB: 0
+    buildAPK: 1
+    keystorePath: 
+    useCustomKeystore: 0
+    buildARM64: 1
+    buildARMv7: 0
+  iosSettings:
+    developmentTeamId: 
+    automaticSigning: 1
+    provisioningProfilePath: 
+    buildSimulator: 0
+    buildDevice: 1
+  standaloneSettings:
+    createInstaller: 0
+    installerName: 
+    includeDebugSymbols: 0

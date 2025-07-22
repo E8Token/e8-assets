@@ -11,10 +11,12 @@ using Energy8.Identity.UI.Runtime.Views.Implementations;
 using Energy8.Identity.UI.Runtime.Views.Implementations.User;
 using Energy8.Identity.UI.Core.Views.Models;
 using Energy8.Identity.Shared.Core.Contracts.Dto.User;
+using Energy8.Identity.Shared.Core.Contracts.Dto.Games;
 using Energy8.Identity.Shared.Core.Exceptions;
 using Energy8.Identity.Shared.Core.Error;
 using Energy8.Identity.UI.Core.Management;
 using Energy8.Identity.UI.Core;
+using Energy8.Identity.Game.Core.Services;
 
 namespace Energy8.Identity.UI.Runtime.Management.Flows
 {
@@ -27,27 +29,35 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
     {
         private readonly IUserService userService;
         private readonly IIdentityService identityService;
+        private readonly IGameService gameService;
         private readonly ICanvasManager canvasManager;
         private readonly IStateManager stateManager;
         private readonly IErrorHandler errorHandler;
         private readonly bool debugLogging;
+        
+        // Дополнительный интерфейс для расширенной функциональности
+        private readonly object customGameService;
         
         private bool isShowingUserFlow = false; // Перенос флага из строки 57
         
         public UserFlowManager(
             IUserService userService,
             IIdentityService identityService,
+            IGameService gameService,
             ICanvasManager canvasManager,
             IStateManager stateManager,
             IErrorHandler errorHandler,
-            bool debugLogging)
+            bool debugLogging,
+            object customGameService = null)
         {
             this.userService = userService;
             this.identityService = identityService;
+            this.gameService = gameService;
             this.canvasManager = canvasManager;
             this.stateManager = stateManager;
             this.errorHandler = errorHandler;
             this.debugLogging = debugLogging;
+            this.customGameService = customGameService;
         }
         
         #region Main User Flow (точный перенос из строк 576-631)
@@ -107,11 +117,28 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                             var user = await getUser.WithErrorHandler(errorHandler.ShowErrorAsync, ct);
                             Debug.Log($"[UserFlowManager] User data retrieved: {user.Name}");
 
-                            // Показ UserView (строки 603-606)
+                            // НОВОЕ: Получение игровых данных пользователя (опционально)
+                            GameUserDto gameUser = null;
+                            try
+                            {
+                                gameUser = await GetGameUserWithErrorHandlingAsync(ct);
+                                Debug.Log($"[UserFlowManager] Game user data retrieved: Balance={gameUser.Balance}");
+                            }
+                            catch (Exception gameEx)
+                            {
+                                if (debugLogging)
+                                    Debug.LogWarning($"[UserFlowManager] Game user data unavailable: {gameEx.Message}");
+                                // Продолжаем без игровых данных
+                            }
+
+                            // Показ UserView с игровыми данными
                             Debug.Log("[UserFlowManager] Showing UserView");
+                            var userViewParams = gameUser != null 
+                                ? new UserViewParams($"{user.Name} (Balance: {gameUser.Balance})") 
+                                : new UserViewParams(user.Name);
+                                
                             var result = await viewManager
-                                .Show<UserView, UserViewParams, UserViewResult>(
-                                    new UserViewParams(user.Name), ct);
+                                .Show<UserView, UserViewParams, UserViewResult>(userViewParams, ct);
                                     
                             // Обработка действий пользователя (строки 608-618)
                             bool shouldContinue = await ProcessUserAction(result.Action, ct);
@@ -257,6 +284,15 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                 case SettingsAction.Close:
                     return false;
                     
+                // TODO: Добавить эти действия в enum SettingsAction
+                // case SettingsAction.ViewGameStats:
+                //     await ShowGameStatsAsync(ct);
+                //     return true;
+                    
+                // case SettingsAction.CreateGameSession:
+                //     await CreateGameSessionWithUIAsync(ct);
+                //     return true;
+                    
                 default:
                     return true;
             }
@@ -388,6 +424,93 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                     // Упрощенная версия - убираем WithLoading пока не будет extension
                     await identityService.SignInWithTelegramAsync(true, ct);
                     break;
+            }
+        }
+        
+        #endregion
+        
+        #region Game Integration (игровая интеграция)
+        
+        /// <summary>
+        /// Получает игровые данные пользователя
+        /// </summary>
+        public async UniTask<GameUserDto> GetGameUserAsync(CancellationToken ct)
+        {
+            try
+            {
+                return await gameService.GetUserAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                if (debugLogging)
+                    Debug.LogError($"[UserFlowManager] Failed to get game user: {ex.Message}");
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Создает новую игровую сессию
+        /// </summary>
+        public async UniTask<GameSessionDto> CreateGameSessionAsync(CancellationToken ct)
+        {
+            try
+            {
+                return await gameService.CreateSessionsAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                if (debugLogging)
+                    Debug.LogError($"[UserFlowManager] Failed to create game session: {ex.Message}");
+                throw;
+            }
+        }
+        
+        /// <summary>
+        /// Получает игровые данные пользователя с обработкой ошибок через UI
+        /// </summary>
+        public async UniTask<GameUserDto> GetGameUserWithErrorHandlingAsync(CancellationToken ct)
+        {
+            Func<CancellationToken, UniTask<GameUserDto>> getGameUser = (ct) => gameService.GetUserAsync(ct);
+            return await getGameUser.WithErrorHandler(errorHandler.ShowErrorAsync, ct);
+        }
+        
+        /// <summary>
+        /// Создает игровую сессию с Loading UI и обработкой ошибок
+        /// </summary>
+        public async UniTask<GameSessionDto> CreateGameSessionWithUIAsync(CancellationToken ct)
+        {
+            Func<CancellationToken, UniTask<GameSessionDto>> createSession = (ct) => gameService.CreateSessionsAsync(ct);
+            var sessionTask = createSession.WithErrorHandler(errorHandler.ShowErrorAsync, ct);
+            return await ShowLoadingAsync(sessionTask, ct);
+        }
+        
+        /// <summary>
+        /// Показывает игровую статистику пользователя
+        /// </summary>
+        public async UniTask ShowGameStatsAsync(CancellationToken ct)
+        {
+            var viewManager = GetViewManager();
+            if (viewManager == null)
+                throw new InvalidOperationException("No ViewManager available");
+
+            try
+            {
+                var gameUser = await GetGameUserWithErrorHandlingAsync(ct);
+                
+                // Здесь можно показать кастомное View для игровой статистики
+                // Пока используем простое уведомление через Debug
+                if (debugLogging)
+                    Debug.Log($"[UserFlowManager] Game Stats - Balance: {gameUser.Balance}");
+                
+                // TODO: Создать GameStatsView и показать его
+                // await viewManager.Show<GameStatsView, GameStatsViewParams, GameStatsViewResult>(
+                //     new GameStatsViewParams(gameUser), ct);
+            }
+            catch (Exception ex)
+            {
+                if (debugLogging)
+                    Debug.LogError($"[UserFlowManager] Failed to show game stats: {ex.Message}");
+                throw;
             }
         }
         
