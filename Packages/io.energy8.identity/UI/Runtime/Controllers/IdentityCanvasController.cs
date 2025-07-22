@@ -14,6 +14,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
     /// </summary>
     [RequireComponent(typeof(UnityEngine.Canvas))]
     public class IdentityCanvasController : MonoBehaviour, IIdentityCanvasController
+
     {
         [Header("UI")]
         [SerializeField] private Button showButton;
@@ -23,6 +24,20 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         [Header("Animation")]
         [SerializeField] private float animationDuration = 0.5f;
         [SerializeField] private AnimationCurve animationCurve;
+
+        public enum CanvasOrientation
+        {
+            Portrait,
+            Landscape
+        }
+
+        [Header("Canvas Orientation")]
+        [SerializeField] private CanvasOrientation orientation = CanvasOrientation.Portrait;
+
+        /// <summary>
+        /// Ориентация этого CanvasController
+        /// </summary>
+        public CanvasOrientation Orientation => orientation;
 
         public bool IsOpen { get; private set; } = false;
         public IViewManager ViewManager => viewManager;

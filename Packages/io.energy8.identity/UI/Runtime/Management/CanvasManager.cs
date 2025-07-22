@@ -1,10 +1,9 @@
 using System;
-using UnityEngine;
-using Energy8.Identity.UI.Runtime.Views.Management;
 using Energy8.Identity.UI.Runtime.Controllers;
 using Energy8.Identity.UI.Runtime.Extensions;
 using Energy8.Identity.UI.Core.Management;
 using Energy8.Identity.UI.Core.Controllers;
+using System.Collections.Generic;
 
 namespace Energy8.Identity.UI.Runtime.Canvas
 {
@@ -15,17 +14,69 @@ namespace Energy8.Identity.UI.Runtime.Canvas
     /// </summary>
     public class CanvasManager : ICanvasManager
     {
-        private IIdentityCanvasController currentCanvasController;
+        private readonly Dictionary<IdentityCanvasController.CanvasOrientation, IdentityCanvasController> controllers = new();
+
+        public void RegisterCanvasController(IdentityCanvasController controller)
+        {
+            if (controller == null) return;
+            controllers[controller.Orientation] = controller;
+            UnityEngine.Debug.Log($"[CanvasManager] Зарегистрирован контроллер: {controller.name}, Orientation: {controller.Orientation}");
+        }
+
+        private void Awake()
+        {
+            ViewportManager.ViewportManager.OnContextChanged += OnViewportContextChanged;
+            UpdateActiveControllerByOrientation(GetCurrentOrientation());
+        }
+
+        private void OnDestroy()
+        {
+            ViewportManager.ViewportManager.OnContextChanged -= OnViewportContextChanged;
+        }
+
+        private void OnViewportContextChanged(ViewportManager.Core.ViewportContext context)
+        {
+            UnityEngine.Debug.Log($"[CanvasManager] OnViewportContextChanged: orientation={context.orientation}");
+            UpdateActiveControllerByOrientation(MapOrientation(context.orientation));
+        }
+
+        private IdentityCanvasController.CanvasOrientation GetCurrentOrientation()
+        {
+            var ctx = ViewportManager.ViewportManager.CurrentContext;
+            return MapOrientation(ctx.orientation);
+        }
+
+        private IdentityCanvasController.CanvasOrientation MapOrientation(ViewportManager.Core.ScreenOrientation orientation)
+        {
+            return orientation == Energy8.ViewportManager.Core.ScreenOrientation.Portrait
+                ? IdentityCanvasController.CanvasOrientation.Portrait
+                : IdentityCanvasController.CanvasOrientation.Landscape;
+        }
+
+        private void UpdateActiveControllerByOrientation(IdentityCanvasController.CanvasOrientation orientation)
+        {
+            UnityEngine.Debug.Log($"[CanvasManager] Переключение CanvasController. Активная ориентация: {orientation}");
+            foreach (var kvp in controllers)
+            {
+                kvp.Value.SetActive(kvp.Key == orientation);
+            }
+            if (controllers.TryGetValue(orientation, out var activeController))
+            {
+                SetCanvasController(activeController);
+            }
+        }
         
+        private IIdentityCanvasController currentCanvasController;
+
         public bool IsOpen { get; private set; }
         public event Action<bool> OnOpenStateChanged;
-        
+
         public CanvasManager()
         {
         }
-        
+
         #region Canvas Management (точный перенос из строк 82-140)
-        
+
         /// <summary>
         /// Устанавливает Canvas контроллер для управления UI
         /// Точный перенос из SetCanvasController (строки 82-105)
@@ -38,11 +89,11 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             }
 
             currentCanvasController = canvasController;
-            
+
             if (currentCanvasController != null)
             {
                 currentCanvasController.OnOpenStateChanged += OnCanvasOpenStateChanged;
-                
+
                 // Инициализируем WithLoading для нового ViewManager
                 var viewManager = currentCanvasController.GetViewManager();
                 if (viewManager != null)
@@ -51,7 +102,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
                 }
             }
         }
-        
+
         /// <summary>
         /// Переключает состояние открытия/закрытия UI
         /// Точный перенос из ToggleOpenState (строки 108-111)
@@ -60,7 +111,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         {
             SetOpenState(!IsOpen);
         }
-        
+
         /// <summary>
         /// Устанавливает состояние открытия/закрытия UI
         /// Точный перенос из SetOpenState (строки 113-127)
@@ -71,15 +122,15 @@ namespace Energy8.Identity.UI.Runtime.Canvas
                 return;
 
             IsOpen = isOpen;
-            
+
             if (currentCanvasController != null)
             {
                 currentCanvasController.SetOpenState(isOpen);
             }
-                        
+
             OnOpenStateChanged?.Invoke(isOpen);
         }
-        
+
         /// <summary>
         /// Получает ViewManager из текущего Canvas контроллера
         /// Точный перенос из GetViewManager (строки 129-132)
@@ -88,7 +139,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         {
             return currentCanvasController?.GetViewManager();
         }
-        
+
         /// <summary>
         /// Обработчик изменения состояния Canvas
         /// Точный перенос из OnCanvasOpenStateChanged (строки 134-140)
@@ -96,10 +147,10 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         private void OnCanvasOpenStateChanged(bool isOpen)
         {
             IsOpen = isOpen;
-                        
+
             OnOpenStateChanged?.Invoke(isOpen);
         }
-        
+
         #endregion
     }
 }

@@ -93,7 +93,6 @@ MonoBehaviour:
   - name: IDLE
     type: 0
     sprites:
-    - {fileID: 21300000, guid: 507d0592fd8e8954dab54b531e28ee2a, type: 3}
     - {fileID: 21300000, guid: 663ee5e044cfafd468c9106706f3e7d8, type: 3}
     - {fileID: 21300000, guid: 81e875b553ba2fd4797879a51710a5eb, type: 3}
     - {fileID: 21300000, guid: fd11cb75d27d57943b7f07344f032126, type: 3}
@@ -121,9 +120,10 @@ MonoBehaviour:
     - {fileID: 21300000, guid: a7e8ee2e38e20a643af7df0e8f3692db, type: 3}
     - {fileID: 21300000, guid: 7b3ba81cfd33f744690ad76f1c51f93b, type: 3}
     - {fileID: 21300000, guid: dbfa6d7d7f1f6614c9b22c1fb3513268, type: 3}
-    - {fileID: 21300000, guid: 5a718c8b254d32f48b2e848cf5d1e958, type: 3}
     - {fileID: 21300000, guid: 7d6d9c990a0ec7445b1a00bcff96dfa7, type: 3}
+    - {fileID: 21300000, guid: 5a718c8b254d32f48b2e848cf5d1e958, type: 3}
     - {fileID: 21300000, guid: d84fdc6e3d19abb40830968dd7cdd1c7, type: 3}
+    - {fileID: 21300000, guid: 507d0592fd8e8954dab54b531e28ee2a, type: 3}
     randomProbability: 0
     canPlayInReverse: 0
     frameRate: 30
@@ -144,7 +144,7 @@ GameObject:
   - component: {fileID: 8729286260625210418}
   - component: {fileID: 8441387699650883438}
   - component: {fileID: 3300732403441784261}
-  - component: {fileID: 6814393548344288240}
+  - component: {fileID: 1751730915545675929}
   m_Layer: 5
   m_Name: IdentityUI_Portrait
   m_TagString: Untagged
@@ -235,7 +235,7 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &6814393548344288240
+--- !u!114 &1751730915545675929
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -244,15 +244,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1746855775091212645}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3c8b6832456f8747922812d8a43f90b, type: 3}
+  m_Script: {fileID: 11500000, guid: b078fae322fbe6240bc35d2a8c57bfb5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  viewManager: {fileID: 1645480068005076004}
-  isLite: 1
-  useViewportManager: 1
-  forceMode: 0
   showButton: {fileID: 7908476751862073785}
   canvas: {fileID: 8729286260625210418}
+  viewManager: {fileID: 1645480068005076004}
   animationDuration: 0.5
   animationCurve:
     serializedVersion: 2
@@ -260,8 +257,8 @@ MonoBehaviour:
     - serializedVersion: 3
       time: 0
       value: 0
-      inSlope: 2
-      outSlope: 2
+      inSlope: 0
+      outSlope: 0
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
@@ -278,6 +275,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  orientation: 0
 --- !u!1 &2424161266549246680
 GameObject:
   m_ObjectHideFlags: 0
