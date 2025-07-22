@@ -39,7 +39,7 @@ namespace Energy8.ViewportManager.Configuration
 
             public ViewportConfigEntry()
             {
-                orientation = VmScreenOrientation.LandscapeLeft;
+                orientation = VmScreenOrientation.Landscape;
                 deviceType = VmDeviceType.Desktop;
                 platform = Platform.WebGL;
                 unityQualityLevel = 2;
@@ -123,18 +123,15 @@ namespace Energy8.ViewportManager.Configuration
                 new ViewportConfigEntry(VmScreenOrientation.Portrait, VmDeviceType.Mobile, Platform.WebGL, 0),
                 
                 // Mobile Landscape - Medium quality
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeLeft, VmDeviceType.Mobile, Platform.Android, 2),
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeRight, VmDeviceType.Mobile, Platform.Android, 2),
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeLeft, VmDeviceType.Mobile, Platform.iOS, 2),
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeRight, VmDeviceType.Mobile, Platform.iOS, 2),
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeLeft, VmDeviceType.Mobile, Platform.WebGL, 2),
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeRight, VmDeviceType.Mobile, Platform.WebGL, 2),
+                new ViewportConfigEntry(VmScreenOrientation.Landscape, VmDeviceType.Mobile, Platform.Android, 2),
+                new ViewportConfigEntry(VmScreenOrientation.Landscape, VmDeviceType.Mobile, Platform.iOS, 2),
+                new ViewportConfigEntry(VmScreenOrientation.Landscape, VmDeviceType.Mobile, Platform.WebGL, 2),
                 
                 // Desktop - High quality
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeLeft, VmDeviceType.Desktop, Platform.WebGL, 3),
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeLeft, VmDeviceType.Desktop, Platform.Windows, 4),
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeLeft, VmDeviceType.Desktop, Platform.macOS, 4),
-                new ViewportConfigEntry(VmScreenOrientation.LandscapeLeft, VmDeviceType.Desktop, Platform.Linux, 3)
+                new ViewportConfigEntry(VmScreenOrientation.Landscape, VmDeviceType.Desktop, Platform.WebGL, 3),
+                new ViewportConfigEntry(VmScreenOrientation.Landscape, VmDeviceType.Desktop, Platform.Windows, 4),
+                new ViewportConfigEntry(VmScreenOrientation.Landscape, VmDeviceType.Desktop, Platform.macOS, 4),
+                new ViewportConfigEntry(VmScreenOrientation.Landscape, VmDeviceType.Desktop, Platform.Linux, 3)
             };
         }
 

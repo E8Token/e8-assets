@@ -3,8 +3,6 @@ using System.Threading;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
 using Energy8.Identity.UI.Runtime.Services;
-using Energy8.Identity.UI.Runtime.Canvas;
-using Energy8.Identity.UI.Runtime.State;
 using Energy8.Identity.UI.Runtime.Management.Flows;
 using Energy8.Identity.UI.Runtime.DI;
 using Energy8.Identity.UI.Runtime.Extensions;
@@ -45,6 +43,9 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         // Lifecycle management
         private CancellationTokenSource lifetimeCts;
+        
+        // TG MiniApp environment detection
+        private bool isTelegramMiniApp = false;
 
         // События (публичный API - точный перенос из строк 59-60)
         public event Action OnSignedOut;
@@ -53,6 +54,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         // Публичные свойства (точный перенос API)
         public bool IsOpen => canvasManager?.IsOpen ?? false;
         public bool IsLite => isLite;
+        public bool IsTelegramMiniApp => isTelegramMiniApp;
         public IdentityCanvasController CurrentCanvasController { get; private set; }
 
         #region Unity Lifecycle (точный перенос из строк 179-362)
@@ -94,9 +96,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         void Start()
         {
-            // Автоматически найти и подключить CanvasController если есть
-            FindAndRegisterCanvasController();
-
             stateManager.TransitionTo(IdentityState.PreAuthentication);
         }
 
@@ -271,6 +270,11 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                         }).Forget();
                         break;
                     }
+                    // 3. Проверка TG MiniApp среды
+                    isTelegramMiniApp = identityService != null && identityService.HasTelegramAutoAuthData;
+                    if (debugLogging)
+                        Debug.Log($"[IdentityOrchestrator] TG MiniApp detected: {isTelegramMiniApp}");
+                    
                     stateManager.TransitionTo(IdentityState.AuthCheck);
                     identityService.Initialize(lifetimeCts.Token).Forget();
                     break;
@@ -278,8 +282,18 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     break;
                 case IdentityState.SignedOut:
                     OnSignedOut?.Invoke();
-                    if (authFlowManager != null)
-                        authFlowManager.StartAuthFlowAsync(lifetimeCts.Token).Forget();
+                    // Если мы в TG MiniApp, запускаем Telegram авторизацию вместо обычного AuthFlow
+                    if (isTelegramMiniApp)
+                    {
+                        if (debugLogging)
+                            Debug.Log("[IdentityOrchestrator] Starting Telegram authentication in MiniApp environment");
+                        StartTelegramAuthAsync(lifetimeCts.Token).Forget();
+                    }
+                    else
+                    {
+                        if (authFlowManager != null)
+                            authFlowManager.StartAuthFlowAsync(lifetimeCts.Token).Forget();
+                    }
                     break;
                 case IdentityState.AuthFlowActive:
                     if (authFlowManager != null)
@@ -301,34 +315,34 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         #endregion
 
-        #region Canvas Management API (перенос публичного API)
+        #region Telegram Authentication (для TG MiniApp среды)
 
         /// <summary>
-        /// Автоматически находит CanvasController в сцене и подключается к нему
+        /// Запускает Telegram авторизацию для MiniApp среды
         /// </summary>
-        private void FindAndRegisterCanvasController()
+        private async UniTask StartTelegramAuthAsync(CancellationToken ct)
         {
-            // Если уже есть подключенный CanvasController, не ищем
-            if (CurrentCanvasController != null)
-                return;
-
-            // Ищем CanvasController в сцене
-            var canvasController = FindFirstObjectByType<IdentityCanvasController>();
-            if (canvasController != null)
+            try
             {
-                SetCanvasController(canvasController);
+                if (debugLogging)
+                    Debug.Log("[IdentityOrchestrator] Attempting Telegram authentication");
+
+                await identityService.SignInWithTelegramAsync(false, ct);
+                
+                if (debugLogging)
+                    Debug.Log("[IdentityOrchestrator] Telegram authentication completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[IdentityOrchestrator] Telegram authentication failed: {ex.Message}");
+                // В случае ошибки переходим в состояние Error
+                stateManager.TransitionTo(IdentityState.Error);
             }
         }
 
-        /// <summary>
-        /// Устанавливает Canvas контроллер для управления UI
-        /// Точный перенос публичного API
-        /// </summary>
-        public void SetCanvasController(IdentityCanvasController canvasController)
-        {
-            CurrentCanvasController = canvasController;
-            canvasManager?.SetCanvasController(canvasController);
-        }
+        #endregion
+
+        #region Canvas Management API (перенос публичного API)
 
         /// <summary>
         /// Переключает состояние открытия/закрытия UI
@@ -374,6 +388,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             Debug.Log($"IdentityOrchestrator State:\n" +
                       $"IsOpen: {IsOpen}\n" +
                       $"IsLite: {isLite}\n" +
+                      $"IsTelegramMiniApp: {isTelegramMiniApp}\n" +
                       $"Canvas Controller: {(CurrentCanvasController != null ? CurrentCanvasController.name : "null")}\n" +
                       $"Current State: {stateManager?.CurrentState}\n" +
                       $"Is Signed In: {identityService?.IsSignedIn ?? false}");

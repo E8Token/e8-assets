@@ -5,6 +5,8 @@ using UnityEngine.UI;
 using Energy8.Identity.UI.Runtime.Views.Management;
 using Energy8.Identity.UI.Core.Management;
 using Energy8.Identity.UI.Core.Controllers;
+using Energy8.ViewportManager.Core;
+using ScreenOrientation = Energy8.ViewportManager.Core.ScreenOrientation;
 
 namespace Energy8.Identity.UI.Runtime.Controllers
 {
@@ -25,19 +27,13 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         [SerializeField] private float animationDuration = 0.5f;
         [SerializeField] private AnimationCurve animationCurve;
 
-        public enum CanvasOrientation
-        {
-            Portrait,
-            Landscape
-        }
-
         [Header("Canvas Orientation")]
-        [SerializeField] private CanvasOrientation orientation = CanvasOrientation.Portrait;
+        [SerializeField] private ScreenOrientation orientation = ScreenOrientation.Portrait;
 
         /// <summary>
         /// Ориентация этого CanvasController
         /// </summary>
-        public CanvasOrientation Orientation => orientation;
+        public ScreenOrientation Orientation => orientation;
 
         public bool IsOpen { get; private set; } = false;
         public IViewManager ViewManager => viewManager;
@@ -62,7 +58,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 );
             }
             InitializeUI();
-            RegisterWithOrchestrator();
         }
 
         private void OnDestroy()
@@ -124,12 +119,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 if (IdentityOrchestrator.Instance != null)
                     IdentityOrchestrator.Instance.ToggleOpenState();
             });
-        }
-
-        private void RegisterWithOrchestrator()
-        {
-            if (IdentityOrchestrator.Instance != null)
-                IdentityOrchestrator.Instance.SetCanvasController(this);
         }
 
         private IEnumerator AnimateRectTransform(bool opening)

@@ -79,9 +79,9 @@ namespace Energy8.ViewportManager.Core
 #if !UNITY_WEBGL || UNITY_EDITOR
             var unityOrientation = Screen.orientation;
             if (unityOrientation == UnityEngine.ScreenOrientation.LandscapeLeft)
-                return ScreenOrientation.LandscapeLeft;
+                return ScreenOrientation.Landscape;
             else if (unityOrientation == UnityEngine.ScreenOrientation.LandscapeRight)
-                return ScreenOrientation.LandscapeRight;
+                return ScreenOrientation.Landscape;
 #endif
             
             // Default landscape fallback
@@ -165,8 +165,8 @@ namespace Energy8.ViewportManager.Core
             // Mobile + Landscape (any) = Level 2 (better performance but still mobile)
             if (deviceType == DeviceType.Mobile && 
                 (orientation == ScreenOrientation.Landscape || 
-                 orientation == ScreenOrientation.LandscapeLeft || 
-                 orientation == ScreenOrientation.LandscapeRight))
+                 orientation == ScreenOrientation.Landscape || 
+                 orientation == ScreenOrientation.Landscape))
                 return 2;
                 
             // Desktop + WebGL = Level 3 (good performance in browsers)

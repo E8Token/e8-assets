@@ -20,11 +20,6 @@ namespace Energy8.Identity.UI.Core.Management
         event Action<bool> OnOpenStateChanged;
         
         /// <summary>
-        /// Устанавливает Canvas контроллер
-        /// </summary>
-        void SetCanvasController(IIdentityCanvasController canvasController);
-        
-        /// <summary>
         /// Переключает состояние открытия/закрытия UI
         /// </summary>
         void ToggleOpenState();

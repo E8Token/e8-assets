@@ -145,6 +145,7 @@ GameObject:
   - component: {fileID: 8441387699650883438}
   - component: {fileID: 3300732403441784261}
   - component: {fileID: 1751730915545675929}
+  - component: {fileID: 9160829135007259129}
   m_Layer: 5
   m_Name: IdentityUI_Portrait
   m_TagString: Untagged
@@ -275,7 +276,19 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  orientation: 0
+  orientation: 1
+--- !u!225 &9160829135007259129
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746855775091212645}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &2424161266549246680
 GameObject:
   m_ObjectHideFlags: 0

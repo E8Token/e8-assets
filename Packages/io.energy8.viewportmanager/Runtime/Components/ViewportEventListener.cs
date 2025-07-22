@@ -303,9 +303,7 @@ namespace Energy8.ViewportManager.Components
         /// </summary>
         protected bool IsLandscapeOrientation()
         {
-            return CurrentContext.orientation == VMScreenOrientation.Landscape ||
-                   CurrentContext.orientation == VMScreenOrientation.LandscapeLeft ||
-                   CurrentContext.orientation == VMScreenOrientation.LandscapeRight;
+            return CurrentContext.orientation == VMScreenOrientation.Landscape;
         }
 
         /// <summary>

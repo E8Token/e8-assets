@@ -8,8 +8,6 @@ namespace Energy8.ViewportManager.Core
     public enum ScreenOrientation
     {
         Landscape,
-        LandscapeLeft,
-        LandscapeRight,
         Portrait
     }
 
