@@ -1,12 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
-using Energy8.BuildDeploySystem;
-using GlobalVersion = Energy8.BuildDeploySystem.GlobalVersion;
 
 namespace Energy8.BuildDeploySystem.Editor
 {
@@ -77,16 +73,18 @@ namespace Energy8.BuildDeploySystem.Editor
             };
 
             EditorGUILayout.LabelField("Автоматически синхронизируется с Build Profiles", infoStyle);
-        }        private void DrawGlobalVersionSection()
+        }
+
+        private void DrawGlobalVersionSection()
         {
             EditorGUILayout.BeginVertical("box");
             EditorGUILayout.LabelField("📋 Project Version Management", EditorStyles.boldLabel);
 
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Current Version:", GUILayout.Width(100));
-            
+
             // Редактируемое поле версии
-            string currentVersion = "1.0.1";            try
+            string currentVersion = "1.0.1"; try
             {
                 var globalVersion = Energy8.BuildDeploySystem.GlobalVersion.Instance;
                 if (globalVersion != null)
@@ -98,7 +96,7 @@ namespace Energy8.BuildDeploySystem.Editor
             {
                 Debug.LogWarning($"[BuildDeployWindow] Failed to get version: {ex.Message}");
             }
-            
+
             var newVersion = EditorGUILayout.TextField(currentVersion, GUILayout.Width(80));
             if (newVersion != currentVersion)
             {
@@ -278,7 +276,7 @@ namespace Energy8.BuildDeploySystem.Editor
                 }
                 EditorGUILayout.EndHorizontal();                // Подсказка о плейсхолдерах
                 EditorGUILayout.LabelField("💡 Available placeholders: {{{VERSION}}}, {{{PLATFORM}}}, {{{DATE}}}, {{{DATETIME}}}", EditorStyles.miniLabel);
-                
+
                 // Пример использования
                 if (string.IsNullOrEmpty(config.OutputPath))
                 {
@@ -435,7 +433,8 @@ namespace Energy8.BuildDeploySystem.Editor
             isBuilding = true;
             currentBuildConfig = configName;
             Repaint();
-        }        private void OnBuildCompleted(string configName, bool success)
+        }
+        private void OnBuildCompleted(string configName, bool success)
         {
             isBuilding = false;
             currentBuildConfig = "";
@@ -547,21 +546,41 @@ namespace Energy8.BuildDeploySystem.Editor
                 config.WebGLSettings = settings;
             }
 
+
+            EditorGUILayout.Space(10);
+            EditorGUILayout.LabelField("Compression Algorithms to Build", EditorStyles.boldLabel);
+            var availableAlgorithms = new[] { CompressionAlgorithm.Brotli, CompressionAlgorithm.Gzip };
+            foreach (var algo in availableAlgorithms)
+            {
+                bool selected = settings.CompressionAlgorithms.Contains(algo);
+                bool newSelected = EditorGUILayout.Toggle(algo.ToString(), selected);
+                if (newSelected != selected)
+                {
+                    if (newSelected)
+                        settings.CompressionAlgorithms.Add(algo);
+                    else
+                        settings.CompressionAlgorithms.Remove(algo);
+                    config.WebGLSettings = settings;
+                }
+            }
+
             EditorGUILayout.Space(5);
-            if (settings.HasMultipleFormats())
+            if (settings.HasMultipleFormats() || settings.CompressionAlgorithms.Count > 0)
             {
                 var additionalFormats = settings.GetTextureFormatsToBuild();
+                var compressionNames = settings.GetCompressionAlgorithmNames();
                 EditorGUILayout.HelpBox(
                     "✨ Multi-Format Build Enabled!\n" +
                     $"Selected formats: {string.Join(", ", additionalFormats)}\n" +
-                    "Data files will be named: [appname].[format].data",
+                    $"Compression: {string.Join(", ", compressionNames)}\n" +
+                    "Data files will be named: [appname].[format].[compression].data",
                     MessageType.Info
                 );
             }
             else
             {
                 EditorGUILayout.HelpBox(
-                    "Select one or more texture formats above to enable multi-format build.",
+                    "Select one or more texture formats and compression algorithms above to enable multi-format build.",
                     MessageType.Warning
                 );
             }
@@ -723,83 +742,107 @@ namespace Energy8.BuildDeploySystem.Editor
                     config.DeploySettings = settings;
                 }
 
-                // Server Settings
-                EditorGUILayout.LabelField("Server Settings", EditorStyles.boldLabel);
-
-                var newServerHost = EditorGUILayout.TextField("Server Host", settings.ServerHost);
-                if (newServerHost != settings.ServerHost)
-                {
-                    settings.ServerHost = newServerHost;
-                    config.DeploySettings = settings;
-                }
-
-                var newServerPort = EditorGUILayout.IntField("Server Port", settings.ServerPort);
-                if (newServerPort != settings.ServerPort)
-                {
-                    settings.ServerPort = newServerPort;
-                    config.DeploySettings = settings;
-                }
-
-                var newRemotePath = EditorGUILayout.TextField("Remote Path", settings.RemotePath);
-                if (newRemotePath != settings.RemotePath)
-                {
-                    settings.RemotePath = newRemotePath;
-                    config.DeploySettings = settings;
-                }
-
-                // Authentication
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("Authentication", EditorStyles.boldLabel);
-
-                var newAuthMethod = (AuthenticationMethod)EditorGUILayout.EnumPopup("Auth Method", settings.AuthMethod);
-                if (newAuthMethod != settings.AuthMethod)
-                {
-                    settings.AuthMethod = newAuthMethod;
-                    config.DeploySettings = settings;
-                }
-
-                var newUsername = EditorGUILayout.TextField("Username", settings.Username);
-                if (newUsername != settings.Username)
-                {
-                    settings.Username = newUsername;
-                    config.DeploySettings = settings;
-                }
-
-                if (settings.AuthMethod == AuthenticationMethod.Password)
-                {
-                    var newPassword = EditorGUILayout.PasswordField("Password", settings.Password);
-                    if (newPassword != settings.Password)
-                    {
-                        settings.Password = newPassword;
-                        config.DeploySettings = settings;
-                    }
-                }
-                else if (settings.AuthMethod == AuthenticationMethod.PrivateKey)
+                // LocalCopy: только путь и файловый браузер
+                if (settings.Method == DeployMethod.LocalCopy)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    var newPrivateKeyPath = EditorGUILayout.TextField("Private Key Path", settings.PrivateKeyPath);
-                    if (newPrivateKeyPath != settings.PrivateKeyPath)
+                    var newLocalPath = EditorGUILayout.TextField("Local Copy Target Path", settings.LocalCopyTargetPath);
+                    if (newLocalPath != settings.LocalCopyTargetPath)
                     {
-                        settings.PrivateKeyPath = newPrivateKeyPath;
+                        settings.LocalCopyTargetPath = newLocalPath;
                         config.DeploySettings = settings;
                     }
-
                     if (GUILayout.Button("📁", GUILayout.Width(30)))
                     {
-                        string path = EditorUtility.OpenFilePanel("Select Private Key", "", "");
+                        string path = EditorUtility.OpenFolderPanel("Select Local Deploy Directory", settings.LocalCopyTargetPath, "");
                         if (!string.IsNullOrEmpty(path))
                         {
-                            settings.PrivateKeyPath = path;
+                            settings.LocalCopyTargetPath = path;
                             config.DeploySettings = settings;
                         }
                     }
                     EditorGUILayout.EndHorizontal();
+                }
+                else
+                {
+                    // Server Settings
+                    EditorGUILayout.LabelField("Server Settings", EditorStyles.boldLabel);
 
-                    var newPassphrase = EditorGUILayout.PasswordField("Key Passphrase (optional)", settings.PrivateKeyPassphrase);
-                    if (newPassphrase != settings.PrivateKeyPassphrase)
+                    var newServerHost = EditorGUILayout.TextField("Server Host", settings.ServerHost);
+                    if (newServerHost != settings.ServerHost)
                     {
-                        settings.PrivateKeyPassphrase = newPassphrase;
+                        settings.ServerHost = newServerHost;
                         config.DeploySettings = settings;
+                    }
+
+                    var newServerPort = EditorGUILayout.IntField("Server Port", settings.ServerPort);
+                    if (newServerPort != settings.ServerPort)
+                    {
+                        settings.ServerPort = newServerPort;
+                        config.DeploySettings = settings;
+                    }
+
+                    var newRemotePath = EditorGUILayout.TextField("Remote Path", settings.RemotePath);
+                    if (newRemotePath != settings.RemotePath)
+                    {
+                        settings.RemotePath = newRemotePath;
+                        config.DeploySettings = settings;
+                    }
+
+                    // Authentication
+                    EditorGUILayout.Space(5);
+                    EditorGUILayout.LabelField("Authentication", EditorStyles.boldLabel);
+
+                    var newAuthMethod = (AuthenticationMethod)EditorGUILayout.EnumPopup("Auth Method", settings.AuthMethod);
+                    if (newAuthMethod != settings.AuthMethod)
+                    {
+                        settings.AuthMethod = newAuthMethod;
+                        config.DeploySettings = settings;
+                    }
+
+                    var newUsername = EditorGUILayout.TextField("Username", settings.Username);
+                    if (newUsername != settings.Username)
+                    {
+                        settings.Username = newUsername;
+                        config.DeploySettings = settings;
+                    }
+
+                    if (settings.AuthMethod == AuthenticationMethod.Password)
+                    {
+                        var newPassword = EditorGUILayout.PasswordField("Password", settings.Password);
+                        if (newPassword != settings.Password)
+                        {
+                            settings.Password = newPassword;
+                            config.DeploySettings = settings;
+                        }
+                    }
+                    else if (settings.AuthMethod == AuthenticationMethod.PrivateKey)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        var newPrivateKeyPath = EditorGUILayout.TextField("Private Key Path", settings.PrivateKeyPath);
+                        if (newPrivateKeyPath != settings.PrivateKeyPath)
+                        {
+                            settings.PrivateKeyPath = newPrivateKeyPath;
+                            config.DeploySettings = settings;
+                        }
+
+                        if (GUILayout.Button("📁", GUILayout.Width(30)))
+                        {
+                            string path = EditorUtility.OpenFilePanel("Select Private Key", "", "");
+                            if (!string.IsNullOrEmpty(path))
+                            {
+                                settings.PrivateKeyPath = path;
+                                config.DeploySettings = settings;
+                            }
+                        }
+                        EditorGUILayout.EndHorizontal();
+
+                        var newPassphrase = EditorGUILayout.PasswordField("Key Passphrase (optional)", settings.PrivateKeyPassphrase);
+                        if (newPassphrase != settings.PrivateKeyPassphrase)
+                        {
+                            settings.PrivateKeyPassphrase = newPassphrase;
+                            config.DeploySettings = settings;
+                        }
                     }
                 }
 
@@ -828,6 +871,7 @@ namespace Energy8.BuildDeploySystem.Editor
                     config.DeploySettings = settings;
                 }
 
+
                 // Validation
                 if (!settings.IsValid())
                 {
@@ -840,7 +884,8 @@ namespace Energy8.BuildDeploySystem.Editor
             }
 
             EditorGUILayout.EndVertical();
-        }        private async void DeploySelectedConfiguration()
+        }
+        private async void DeploySelectedConfiguration()
         {
             if (selectedConfiguration == null || !selectedConfiguration.DeploySettings.EnableDeploy)
             {
@@ -854,41 +899,42 @@ namespace Energy8.BuildDeploySystem.Editor
                 EditorUtility.DisplayDialog("Deploy Error",
                     "Build directory not found. Please build the project first.", "OK");
                 return;
-            }            try
+            }
+            try
             {
                 Debug.Log("Starting manual deployment...");
-                
+
                 // Открываем окно мониторинга деплоя
                 var monitorWindow = DeployMonitorWindow.GetInstance();
                 monitorWindow.StartDeployMonitoring($"{selectedConfiguration.DeploySettings.Username}@{selectedConfiguration.DeploySettings.ServerHost}:{selectedConfiguration.DeploySettings.RemotePath}");
-                
+
                 // Запускаем деплой с мониторингом
                 bool success = await DeployManager.DeployBuild(selectedConfiguration, buildPath, monitorWindow);
-                
+
                 // Окно мониторинга само покажет результат
             }
             catch (System.Exception ex)
             {
                 Debug.LogError($"Deploy error: {ex.Message}");
-                
+
                 // В случае исключения всё равно покажем окно с ошибкой
                 var monitorWindow = DeployMonitorWindow.GetInstance();
                 monitorWindow.AddLog($"❌ Deployment failed with error: {ex.Message}", LogType.Error);
                 monitorWindow.CompleteDeployment(false);
             }
         }        /// <summary>
-        /// Заменяет плейсхолдеры в OutputPath на актуальные значения
-        /// </summary>
-        /// <param name="outputPath">Исходный путь сборки</param>
-        /// <param name="config">Конфигурация сборки для получения информации о платформе</param>
-        /// <returns>Путь с замененными плейсхолдерами</returns>
+                 /// Заменяет плейсхолдеры в OutputPath на актуальные значения
+                 /// </summary>
+                 /// <param name="outputPath">Исходный путь сборки</param>
+                 /// <param name="config">Конфигурация сборки для получения информации о платформе</param>
+                 /// <returns>Путь с замененными плейсхолдерами</returns>
         private string ProcessOutputPathTemplate(string outputPath, BuildConfiguration config = null)
         {
             if (string.IsNullOrEmpty(outputPath))
                 return outputPath;
 
             var processedPath = outputPath;
-              // Заменяем {{{VERSION}}} на текущую версию проекта
+            // Заменяем {{{VERSION}}} на текущую версию проекта
             if (processedPath.Contains("{{{VERSION}}}"))
             {
                 try

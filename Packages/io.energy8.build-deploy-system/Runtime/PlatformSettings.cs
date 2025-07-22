@@ -13,6 +13,10 @@ namespace Energy8.BuildDeploySystem
         [Tooltip("Build additional ETC2 format for mobile browsers")]
         [SerializeField] private bool buildETC2 = false;
 
+        [Header("WebGL Compression Algorithms")]
+        [Tooltip("Select compression algorithms for WebGL build output")]
+        [SerializeField] private System.Collections.Generic.List<CompressionAlgorithm> compressionAlgorithms = new System.Collections.Generic.List<CompressionAlgorithm>();
+
         public bool BuildDXT
         {
             get => buildDXT;
@@ -31,6 +35,13 @@ namespace Energy8.BuildDeploySystem
             set => buildETC2 = value;
         }
 
+        /// <summary>Selected compression algorithms for WebGL build output.</summary>
+        public System.Collections.Generic.List<CompressionAlgorithm> CompressionAlgorithms
+        {
+            get => compressionAlgorithms;
+            set => compressionAlgorithms = value;
+        }
+
         public string[] GetTextureFormatsToBuild()
         {
             var formats = new System.Collections.Generic.List<string>();
@@ -47,6 +58,17 @@ namespace Energy8.BuildDeploySystem
             if (buildASTC) count++;
             if (buildETC2) count++;
             return count > 0;
+        }
+
+        /// <summary>Gets the selected compression algorithms as strings.</summary>
+        public string[] GetCompressionAlgorithmNames()
+        {
+            var names = new System.Collections.Generic.List<string>();
+            foreach (var algo in compressionAlgorithms)
+            {
+                names.Add(algo.ToString());
+            }
+            return names.ToArray();
         }
     }
 
@@ -175,7 +197,8 @@ namespace Energy8.BuildDeploySystem
     {
         None = 0,
         FTP = 1,
-        SFTP = 2
+        SFTP = 2,
+        LocalCopy = 3
     }
 
     [Serializable]
@@ -186,28 +209,42 @@ namespace Energy8.BuildDeploySystem
     }
 
     [Serializable]
+    public enum CompressionAlgorithm
+    {
+        None,
+        Brotli,
+        Gzip
+    }
+
+    [Serializable]
     public class DeploySettings
-    {        [Header("Deploy Configuration")]
+    {
+        [Header("Deploy Configuration")]
         [SerializeField] private bool enableDeploy = false;
         [SerializeField] private bool alwaysDeploy = false;
         [SerializeField] private DeployMethod deployMethod = DeployMethod.FTP;
-        
+
         [Header("Server Settings")]
         [SerializeField] private string serverHost = "";
         [SerializeField] private int serverPort = 21;
         [SerializeField] private string remotePath = "/";
-        
+
         [Header("Authentication")]
         [SerializeField] private AuthenticationMethod authMethod = AuthenticationMethod.Password;
         [SerializeField] private string username = "";
         [SerializeField] private string password = "";
         [SerializeField] private string privateKeyPath = "";
         [SerializeField] private string privateKeyPassphrase = "";
-        
+
         [Header("Deploy Options")]
         [SerializeField] private bool deleteExistingFiles = false;
         [SerializeField] private bool createBackup = true;
-        [SerializeField] private bool deployZipOnly = false;        public bool EnableDeploy
+        [SerializeField] private bool deployZipOnly = false;
+
+        [Header("Local Copy Deploy")]
+        [SerializeField] private string localCopyTargetPath = "";
+
+        public bool EnableDeploy
         {
             get => enableDeploy;
             set => enableDeploy = value;
@@ -291,19 +328,28 @@ namespace Energy8.BuildDeploySystem
             set => deployZipOnly = value;
         }
 
+        public string LocalCopyTargetPath
+        {
+            get => localCopyTargetPath;
+            set => localCopyTargetPath = value;
+        }
+
         public bool IsValid()
         {
             if (!enableDeploy) return true;
-            
+
+            if (deployMethod == DeployMethod.LocalCopy)
+                return !string.IsNullOrEmpty(localCopyTargetPath);
+
             if (string.IsNullOrEmpty(serverHost) || string.IsNullOrEmpty(username))
                 return false;
-                
+
             if (authMethod == AuthenticationMethod.Password && string.IsNullOrEmpty(password))
                 return false;
-                
+
             if (authMethod == AuthenticationMethod.PrivateKey && string.IsNullOrEmpty(privateKeyPath))
                 return false;
-                
+
             return true;
         }
     }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -7,6 +8,7 @@ using UnityEditor.Build.Profile;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 using Energy8.BuildDeploySystem;
+using Newtonsoft.Json;
 
 namespace Energy8.BuildDeploySystem.Editor
 {
@@ -16,18 +18,18 @@ namespace Energy8.BuildDeploySystem.Editor
         public static event Action<string, bool> OnBuildCompleted;
         public static event Action<string> OnCleanStarted;
         public static event Action<string, bool> OnCleanCompleted;        /// <summary>
-        /// Заменяет плейсхолдеры в OutputPath на актуальные значения
-        /// </summary>
-        /// <param name="outputPath">Исходный путь сборки</param>
-        /// <param name="config">Конфигурация сборки для получения информации о платформе</param>
-        /// <returns>Путь с замененными плейсхолдерами</returns>
+                                                                          /// Заменяет плейсхолдеры в OutputPath на актуальные значения
+                                                                          /// </summary>
+                                                                          /// <param name="outputPath">Исходный путь сборки</param>
+                                                                          /// <param name="config">Конфигурация сборки для получения информации о платформе</param>
+                                                                          /// <returns>Путь с замененными плейсхолдерами</returns>
         private static string ProcessOutputPathTemplate(string outputPath, BuildConfiguration config = null)
         {
             if (string.IsNullOrEmpty(outputPath))
                 return outputPath;
 
             var processedPath = outputPath;
-              // Заменяем {{{VERSION}}} на текущую версию проекта
+            // Заменяем {{{VERSION}}} на текущую версию проекта
             if (processedPath.Contains("{{{VERSION}}}"))
             {
                 try
@@ -98,7 +100,8 @@ namespace Energy8.BuildDeploySystem.Editor
                 default:
                     return buildTarget.ToString();
             }
-        }public static void BuildConfiguration(BuildConfiguration config)
+        }
+        public static void BuildConfiguration(BuildConfiguration config)
         {
             if (config == null || !config.IsValid())
             {
@@ -139,6 +142,7 @@ namespace Energy8.BuildDeploySystem.Editor
 
                 // Устанавливаем Bundle ID для мобильных платформ
                 SetBundleIdForMobilePlatforms(config, buildTarget);
+
                 if (buildTarget == BuildTarget.WebGL && HasMultipleWebGLFormats(config))
                 {
                     Debug.Log("[BuildSystem] Starting WebGL multi-format build");
@@ -147,7 +151,21 @@ namespace Energy8.BuildDeploySystem.Editor
                 else
                 {
                     Debug.Log("[BuildSystem] Starting regular build");
-                    success = BuildWithProfile(buildProfile, executablePath);                }                // Инкрементируем версию билда если сборка успешна
+                    success = BuildWithProfile(buildProfile, executablePath);
+                }
+
+                if (buildTarget == BuildTarget.WebGL
+                    && config.WebGLSettings.CompressionAlgorithms != null
+                    && config.WebGLSettings.CompressionAlgorithms.Count > 0)
+                {
+                    CompressWebGLDataFiles(fullOutputPath, config);
+                }
+
+                if (buildTarget == BuildTarget.WebGL)
+                    GenerateBuildJson(fullOutputPath);
+
+
+                // Инкрементируем версию билда если сборка успешна
                 if (success)
                 {
                     try
@@ -189,16 +207,17 @@ namespace Energy8.BuildDeploySystem.Editor
             }
 
             CleanBuildInternal(config);
-        }        private static void CleanBuildInternal(BuildConfiguration config)
+        }
+        private static void CleanBuildInternal(BuildConfiguration config)
         {
             try
             {
                 var displayName = config.GetDisplayName();
-                OnCleanStarted?.Invoke(displayName);                Debug.Log($"[BuildSystem] Cleaning build directory for configuration: {displayName}");
+                OnCleanStarted?.Invoke(displayName); Debug.Log($"[BuildSystem] Cleaning build directory for configuration: {displayName}");
 
                 // Обрабатываем шаблоны в OutputPath
                 string processedOutputPath = ProcessOutputPathTemplate(config.OutputPath, config);
-                string fullOutputPath = Path.GetFullPath(processedOutputPath);if (Directory.Exists(fullOutputPath))
+                string fullOutputPath = Path.GetFullPath(processedOutputPath); if (Directory.Exists(fullOutputPath))
                 {
                     Directory.Delete(fullOutputPath, true);
                     Debug.Log($"[BuildSystem] Cleaned directory: {fullOutputPath}");
@@ -219,16 +238,16 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             try
             {
-            // Устанавливаем активный Build Profile перед сборкой
-            try
-            {
-                SetActiveBuildProfile(profile);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[BuildSystem] Failed to set active build profile: {profile?.name}. {ex.Message}");
-                return false;
-            }
+                // Устанавливаем активный Build Profile перед сборкой
+                try
+                {
+                    SetActiveBuildProfile(profile);
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"[BuildSystem] Failed to set active build profile: {profile?.name}. {ex.Message}");
+                    return false;
+                }
 
                 // Используем Build Profile API для сборки
                 // Пока что используем старый API, позже можно будет перейти на новый
@@ -251,7 +270,9 @@ namespace Energy8.BuildDeploySystem.Editor
                 Debug.LogError($"[BuildSystem] Build with profile failed: {ex.Message}");
                 return false;
             }
-        }        /// <summary>
+        }
+
+        /// <summary>
         /// Устанавливает Bundle ID для мобильных платформ на основе версии
         /// </summary>
         private static void SetBundleIdForMobilePlatforms(BuildConfiguration config, BuildTarget buildTarget)
@@ -263,17 +284,18 @@ namespace Energy8.BuildDeploySystem.Editor
                     string bundleId = GlobalVersion.Instance.GenerateBundleId();
                     string basePackageName = PlayerSettings.applicationIdentifier;
 
-                // Получаем базовое имя пакета без версии
-                if (basePackageName.Contains("."))
-                {
-                    var parts = basePackageName.Split('.');
-                    if (parts.Length >= 2)
-                    {                        string baseName = string.Join(".", parts.Take(parts.Length - 1));
-                        string newPackageName = $"{baseName}.{bundleId}";
-                        var targetGroup = buildTarget == BuildTarget.Android ? BuildTargetGroup.Android : BuildTargetGroup.iOS;
-                        PlayerSettings.applicationIdentifier = newPackageName;                        Debug.Log($"[BuildSystem] Set Bundle ID for {buildTarget}: {newPackageName}");
+                    // Получаем базовое имя пакета без версии
+                    if (basePackageName.Contains("."))
+                    {
+                        var parts = basePackageName.Split('.');
+                        if (parts.Length >= 2)
+                        {
+                            string baseName = string.Join(".", parts.Take(parts.Length - 1));
+                            string newPackageName = $"{baseName}.{bundleId}";
+                            var targetGroup = buildTarget == BuildTarget.Android ? BuildTargetGroup.Android : BuildTargetGroup.iOS;
+                            PlayerSettings.applicationIdentifier = newPackageName; Debug.Log($"[BuildSystem] Set Bundle ID for {buildTarget}: {newPackageName}");
+                        }
                     }
-                }
                 }
                 catch (System.Exception ex)
                 {
@@ -657,7 +679,7 @@ namespace Energy8.BuildDeploySystem.Editor
                 Debug.Log($"[BuildSystem] Extracted base app name: '{baseAppName}' from file name: '{fileNameWithoutExt}'");
 
                 // Создаем новое имя файла: [baseappname].[texture_type].data[.compression]
-                // Например: Assets.astc.data.gz вместо Assets_ASTC.astc.data.gz
+                // Например: Assets.astc.data.gz вместо Assets_ASTC.astц.data.gz
                 string targetFileName = $"{baseAppName}.{format.ToLower()}.data{compressionExt}";
                 // Целевой файл должен быть в подпапке Build основной папки
                 string targetBuildSubPath = Path.Combine(targetBuildPath, "Build");
@@ -788,6 +810,9 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             try
             {
+                // Отключаем встроенное сжатие WebGL
+                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+
                 // Используем BuildPipeline напрямую с указанным профилем
                 Debug.Log($"[BuildSystem] Building with profile: {profile.name} to {outputPath}");
 
@@ -800,7 +825,8 @@ namespace Energy8.BuildDeploySystem.Editor
                     scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray()
                 };
 
-                var result = BuildPipeline.BuildPlayer(buildOptions); if (result.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded)
+                var result = BuildPipeline.BuildPlayer(buildOptions);
+                if (result.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded)
                 {
                     Debug.Log($"[BuildSystem] Build succeeded: {outputPath}");
                     return true;
@@ -818,35 +844,81 @@ namespace Energy8.BuildDeploySystem.Editor
             }
         }
 
-        public static string GetCurrentWebGLTextureFormat()
-        {
-            switch (EditorUserBuildSettings.webGLBuildSubtarget)
-            {
-                case WebGLTextureSubtarget.DXT:
-                    return "DXT";
-                case WebGLTextureSubtarget.ASTC:
-                    return "ASTC";
-                case WebGLTextureSubtarget.ETC2:
-                    return "ETC2";
-                default:
-                    return "ETC2"; // Значение по умолчанию
-            }
-        }
-        private static string GetWebGLTextureFormatFromProfile(BuildProfile profile)
+        // --- Новый метод ---
+        private static void CompressWebGLDataFiles(string outputPath, BuildConfiguration config)
         {
             try
             {
-                // Пока что Unity не предоставляет стабильный публичный API для чтения настроек из Build Profile
-                // Используем fallback к текущим настройкам редактора
-                Debug.Log($"[BuildSystem] Getting WebGL texture format for Build Profile: {profile.name}");
+                string buildSubPath = Path.Combine(outputPath, "Build");
+                if (!Directory.Exists(buildSubPath))
+                {
+                    Debug.LogWarning($"[BuildSystem] Build subdirectory not found: {buildSubPath}");
+                    return;
+                }
+                var dataFiles = Directory.GetFiles(buildSubPath, "*.data", SearchOption.TopDirectoryOnly)
+                    .Concat(Directory.GetFiles(buildSubPath, "*.wasm", SearchOption.TopDirectoryOnly))
+                    .Concat(Directory.GetFiles(buildSubPath, "*.framework.js", SearchOption.TopDirectoryOnly))
+                    .Concat(Directory.GetFiles(buildSubPath, "*.symbols.json", SearchOption.TopDirectoryOnly))
+                    .ToArray();
+                Debug.Log($"[BuildSystem] Found {dataFiles.Length} .data files for compression");
 
-                // TODO: Implement proper Build Profile texture format reading when Unity provides stable API
-                return GetCurrentWebGLTextureFormat();
+                foreach (var algo in config.WebGLSettings.CompressionAlgorithms)
+                {
+                    foreach (var dataFile in dataFiles)
+                    {
+                        if (algo == CompressionAlgorithm.Gzip)
+                            RunExternalCompressor("gzip.exe", dataFile, ".gz", 9);
+                        if (algo == CompressionAlgorithm.Brotli)
+                            RunExternalCompressor("brotli.exe", dataFile, ".br", 11);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[BuildSystem] Failed to get WebGL texture format from profile {profile.name}: {ex.Message}. Using current Editor settings as fallback.");
-                return GetCurrentWebGLTextureFormat();
+                Debug.LogError($"[BuildSystem] Compression error: {ex.Message}");
+            }
+        }
+
+        private static void RunExternalCompressor(string exeName, string dataFile, string ext, int compressionLevel = 6)
+        {
+            try
+            {
+                string exePath = Path.Combine(Application.dataPath, "../Packages/io.energy8.build-deploy-system/Tools", exeName);
+                if (!File.Exists(exePath))
+                {
+                    Debug.LogWarning($"[BuildSystem] Compressor not found: {exePath}");
+                    return;
+                }
+                string outputFile = dataFile + ext;
+                string args;
+                if (exeName.ToLower().Contains("brotli"))
+                    args = $"\"{dataFile}\" -o \"{outputFile}\" --keep --quality={compressionLevel}";
+                else if (exeName.ToLower().Contains("gzip"))
+                    args = $"-k -{compressionLevel} \"{dataFile}\"";
+                else
+                    args = $"\"{dataFile}\"";
+                var process = new System.Diagnostics.Process();
+                process.StartInfo.FileName = exePath;
+                process.StartInfo.Arguments = args;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                string stdout = process.StandardOutput.ReadToEnd();
+                string stderr = process.StandardError.ReadToEnd();
+                process.WaitForExit();
+                Debug.Log($"[BuildSystem] {exeName} output: {stdout}");
+                if (!string.IsNullOrEmpty(stderr))
+                    Debug.LogWarning($"[BuildSystem] {exeName} error: {stderr}");
+                if (File.Exists(outputFile))
+                    Debug.Log($"[BuildSystem] ✅ Compressed: {outputFile}");
+                else
+                    Debug.LogWarning($"[BuildSystem] Compression failed: {outputFile} not found");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[BuildSystem] Failed to run compressor {exeName}: {ex.Message}");
             }
         }
 
@@ -880,6 +952,80 @@ namespace Energy8.BuildDeploySystem.Editor
             // Если суффикс не найден, возвращаем исходное имя
             Debug.Log($"[BuildSystem] No texture suffix found, using original name: '{fileName}'");
             return fileName;
+        }
+
+        private static void GenerateBuildJson(string outputPath)
+        {
+            string buildSubPath = Path.Combine(outputPath, "Build");
+            if (!Directory.Exists(buildSubPath))
+            {
+                Debug.LogWarning($"[BuildSystem] Build subdirectory not found: {buildSubPath}");
+                return;
+            }
+
+            // basename = последняя папка в buildSubPath
+            string baseName = new DirectoryInfo(outputPath).Name;
+
+            var template = new
+            {
+                wasm = new List<object>(),
+                framework = new List<object>(),
+                data = new List<object>(),
+                symbols = new List<object>()
+            };
+
+            // --- wasm ---
+            string wasmBase = baseName + ".wasm";
+            var wasmFiles = new[] {
+                ("none", wasmBase),
+                ("gz", wasmBase + ".gz"),
+                ("br", wasmBase + ".br")
+            };
+            foreach (var (compression, filename) in wasmFiles)
+                if (File.Exists(Path.Combine(buildSubPath, filename)))
+                    template.wasm.Add(new { compression, filename });
+
+            // --- framework ---
+            string frameworkBase = baseName + ".framework.js";
+            var frameworkFiles = new[] {
+                ("none", frameworkBase),
+                ("gz", frameworkBase + ".gz"),
+                ("br", frameworkBase + ".br")
+            };
+            foreach (var (compression, filename) in frameworkFiles)
+                if (File.Exists(Path.Combine(buildSubPath, filename)))
+                    template.framework.Add(new { compression, filename });
+
+            // --- symbols ---
+            string symbolsBase = baseName + ".symbols.json";
+            var symbolsFiles = new[] {
+                ("none", symbolsBase),
+                ("gz", symbolsBase + ".gz"),
+                ("br", symbolsBase + ".br")
+            };
+            foreach (var (compression, filename) in symbolsFiles)
+                if (File.Exists(Path.Combine(buildSubPath, filename)))
+                    template.symbols.Add(new { compression, filename });
+
+            // --- data ---
+            var formats = new[] { "dxt", "astc", "etc2" };
+            foreach (var format in formats)
+            {
+                string baseDataName = baseName + $".{format}.data";
+                var files = new[] {
+                    ("none", baseDataName),
+                    ("gz", baseDataName + ".gz"),
+                    ("br", baseDataName + ".br")
+                };
+                foreach (var (compression, filename) in files)
+                    if (File.Exists(Path.Combine(buildSubPath, filename)))
+                        template.data.Add(new { format, compression, filename });
+            }
+
+            // --- Сохраняем JSON ---
+            string json = JsonConvert.SerializeObject(template, Formatting.Indented);
+            File.WriteAllText(Path.Combine(buildSubPath, "Build.json"), json);
+            Debug.Log($"[BuildSystem] Build.json generated: {Path.Combine(buildSubPath, "Build.json")}");
         }
     }
 }

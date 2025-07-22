@@ -1,0 +1,146 @@
+html {
+    box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+    box-sizing: inherit;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+canvas {
+    display: block;
+}
+
+body {
+    margin: 0;
+}
+
+#unity-container {
+    width: 100%;
+    height: 100%;
+}
+
+#unity-canvas {
+    width: 100%;
+    height: 100%;
+
+    background: white;
+}
+
+#loading-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    z-index: 1000;
+}
+
+#loading-ring {
+    position: relative;
+    width: 40vw;
+    /* 40% от ширины экрана */
+    height: 40vh;
+    /* 40% от высоты экрана */
+    max-width: 40%;
+    /* Максимальная ширина */
+    max-height: 40%;
+    /* Максимальная высота */
+}
+
+#loading-ring svg {
+    width: 100%;
+    height: 100%;
+}
+
+#loading-ring img {
+    object-fit: contain;
+    aspect-ratio: 1 / 1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40%;
+    height: 40%;
+}
+
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Device-specific optimizations */
+.mobile-device #unity-canvas {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.desktop-device #unity-canvas {
+    cursor: default;
+}
+
+.low-end-device #unity-canvas {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: pixelated;
+}
+
+/* Button hover effects */
+.warning-buttons button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(125, 58, 237, 0.3);
+    transition: all 0.2s ease;
+}
+
+/* Texture optimization debug info */
+.debug-texture-info {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    z-index: 10002;
+    max-width: 300px;
+    display: none;
+}
+
+.debug-texture-info.visible {
+    display: block;
+}
+
+/* Loading optimizations for low-end devices */
+.low-end-device #loading-ring svg {
+    animation-duration: 2s; /* Slower animation for performance */
+}
+
+.low-end-device #loading-screen {
+    backdrop-filter: none; /* Disable expensive effects */
+    -webkit-backdrop-filter: none;
+}
+
+/* High-end device enhancements */
+.desktop-device:not(.low-end-device) #loading-screen {
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}

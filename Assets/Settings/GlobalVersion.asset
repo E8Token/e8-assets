@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 399b1a0b4991f364fa2b3b0e92649e82, type: 3}
   m_Name: GlobalVersion
   m_EditorClassIdentifier: 
-  version: 0.2.1
+  version: 0.2.15

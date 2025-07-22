@@ -18,24 +18,26 @@ MonoBehaviour:
   cleanBeforeBuild: 0
   customBuildName: 
   deploySettings:
-    enableDeploy: 0
-    alwaysDeploy: 0
-    deployMethod: 2
-    serverHost: 176.223.131.88
-    serverPort: 58976
-    remotePath: /var/www/html/debug/assets
+    enableDeploy: 1
+    alwaysDeploy: 1
+    deployMethod: 3
+    serverHost: 
+    serverPort: 0
+    remotePath: 
     authMethod: 1
-    username: deployer
+    username: 
     password: 
-    privateKeyPath: C:/Users/dlemo/.ssh/deployer-key
+    privateKeyPath: 
     privateKeyPassphrase: 
     deleteExistingFiles: 1
-    createBackup: 1
+    createBackup: 0
     deployZipOnly: 0
+    localCopyTargetPath: C:/Projects/Energy8/e8-io-web-stack/dev/www/games/assets
   webGLSettings:
     buildDXT: 1
-    buildASTC: 1
-    buildETC2: 1
+    buildASTC: 0
+    buildETC2: 0
+    compressionAlgorithms: 02000000
   androidSettings:
     buildAAB: 0
     buildAPK: 1

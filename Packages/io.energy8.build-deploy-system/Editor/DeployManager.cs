@@ -79,11 +79,15 @@ namespace Energy8.BuildDeploySystem.Editor
             {
                 bool result;
                 switch (deploySettings.Method)
-                {                    case DeployMethod.FTP:
+                {
+                    case Energy8.BuildDeploySystem.DeployMethod.FTP:
                         result = await DeployViaFTP(deploySettings, buildPath, deployMonitor);
                         break;
-                    case DeployMethod.SFTP:
+                    case Energy8.BuildDeploySystem.DeployMethod.SFTP:
                         result = await DeployViaSFTP(deploySettings, buildPath, deployMonitor);
+                        break;
+                    case Energy8.BuildDeploySystem.DeployMethod.LocalCopy:
+                        result = await DeployViaLocalCopy(deploySettings, buildPath, deployMonitor);
                         break;
                     default:
                         Debug.LogError($"Unsupported deploy method: {deploySettings.Method}");
@@ -358,6 +362,52 @@ namespace Energy8.BuildDeploySystem.Editor
                 // Получаем все файлы и папки
                 var files = Directory.GetFiles(buildPath, "*", SearchOption.AllDirectories);
                 return files;
+            }
+        }
+        
+        /// <summary>
+        /// Копирует билд в локальную папку
+        /// </summary>
+        private static async Task<bool> DeployViaLocalCopy(Energy8.BuildDeploySystem.DeploySettings settings, string buildPath, IDeployMonitor monitor)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(settings.LocalCopyTargetPath))
+                {
+                    monitor.AddLog("LocalCopyTargetPath не указан!", UnityEngine.LogType.Error);
+                    return false;
+                }
+                if (!Directory.Exists(buildPath))
+                {
+                    monitor.AddLog($"Build path не найден: {buildPath}", UnityEngine.LogType.Error);
+                    return false;
+                }
+                string targetPath = settings.LocalCopyTargetPath;
+                if (!Directory.Exists(targetPath))
+                    Directory.CreateDirectory(targetPath);
+
+                var files = Directory.GetFiles(buildPath, "*", SearchOption.AllDirectories);
+                monitor.AddLog($"Копируем {files.Length} файлов в {targetPath}");
+                int copied = 0;
+                foreach (var file in files)
+                {
+                    string relPath = Path.GetRelativePath(buildPath, file);
+                    string destFile = Path.Combine(targetPath, relPath);
+                    string destDir = Path.GetDirectoryName(destFile);
+                    if (!Directory.Exists(destDir))
+                        Directory.CreateDirectory(destDir);
+                    File.Copy(file, destFile, true);
+                    copied++;
+                    monitor.UpdateDeployProgress((float)copied / files.Length, $"Копируем: {relPath}");
+                    await Task.Yield();
+                }
+                monitor.AddLog($"✅ Локальный деплой завершён: {targetPath}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                monitor.AddLog($"❌ Ошибка локального деплоя: {ex.Message}", UnityEngine.LogType.Error);
+                return false;
             }
         }
     }
