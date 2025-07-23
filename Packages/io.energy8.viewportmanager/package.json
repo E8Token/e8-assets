@@ -21,8 +21,5 @@
     "url": "https://git.energy8.io/Energy8/e8-assets.git",
     "directory": "Packages/io.energy8.viewportmanager",
     "revision": "main"
-  },
-  "dependencies": {
-    "com.unity.ugui": "1.0.0"
   }
 }

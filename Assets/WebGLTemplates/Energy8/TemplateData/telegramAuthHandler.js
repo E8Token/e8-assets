@@ -2,7 +2,10 @@ function haveTgAuthResult() {
     var locationHash = '', re = /[#\?\&]tgAuthResult=([A-Za-z0-9\-_=]*)$/, match;
     try {
         locationHash = location.hash.toString();
+        console.log("[TelegramAuth] Checking location hash:", locationHash);
+        
         if (match = locationHash.match(re)) {
+            console.log("[TelegramAuth] Found tgAuthResult match:", match[1]);
             location.hash = locationHash.replace(re, '');
             var data = match[1] || '';
             data = data.replace(/-/g, '+').replace(/_/g, '/');
@@ -10,9 +13,15 @@ function haveTgAuthResult() {
             if (pad > 1) {
                 data += new Array(5 - pad).join('=');
             }
-            return JSON.parse(window.atob(data));
+            var result = JSON.parse(window.atob(data));
+            console.log("[TelegramAuth] Decoded auth result:", JSON.stringify(result));
+            console.log("[TelegramAuth] Auth result hash:", result.hash);
+            console.log("[TelegramAuth] Auth result photo_url:", result.photo_url);
+            return result;
         }
-    } catch (e) { }
+    } catch (e) {
+        console.error("[TelegramAuth] Error in haveTgAuthResult:", e);
+    }
     return false;
 }
 
@@ -31,8 +40,20 @@ var TelegramLogin = {
 
         // Check Telegram Web App data
         if (window.Telegram?.WebApp?.initData) {
-            console.log("Telgram WebAPP Data found: " + window.Telegram?.WebApp?.initData)
-            TelegramLogin.auth_callback(window.Telegram.WebApp.initDatah);
+            console.log("[TelegramAuth] Telegram WebApp Data found: " + window.Telegram?.WebApp?.initData);
+            
+            // Log detailed WebApp data for debugging
+            if (window.Telegram.WebApp.initDataUnsafe?.user) {
+                const user = window.Telegram.WebApp.initDataUnsafe.user;
+                console.log("[TelegramAuth] WebApp user object:", JSON.stringify(user));
+                console.log("[TelegramAuth] WebApp user.photo_url:", user.photo_url);
+            }
+            
+            // Check if hash is present in initData
+            const hasHash = window.Telegram.WebApp.initData.includes('hash=');
+            console.log("[TelegramAuth] WebApp initData contains hash:", hasHash);
+            
+            TelegramLogin.auth_callback(window.Telegram.WebApp.initData);
             return;
         }
 

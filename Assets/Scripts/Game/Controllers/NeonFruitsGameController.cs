@@ -4,35 +4,25 @@ using Cysharp.Threading.Tasks;
 using Game.Dto;
 using Game.Factory;
 using Game.Services;
+using Energy8.Identity.UI.Runtime.Controllers;
+using Energy8.Identity.Http.Core;
 using UnityEngine;
 
 namespace Game.Controllers
 {
     /// <summary>
-    /// Основной контроллер для управления игрой NeonFruits
-    /// Демонстрирует полный игровой цикл с интеграцией UI
+    /// Простой контроллер для управления игровым сервисом NeonFruits
+    /// Использует HttpClient из Identity системы для переиспользования соединений.
     /// </summary>
     public class NeonFruitsGameController : MonoBehaviour
     {
         [Header("Game Settings")]
         [SerializeField] private string gameEndpoint = "neon-fruits";
         [SerializeField] private bool enableDebugLogging = true;
-        [SerializeField] private long defaultBetAmount = 100;
-        [SerializeField] private int defaultLines = 20;
 
-        [Header("Auto Play Settings")]
-        [SerializeField] private bool autoPlayEnabled = false;
-        [SerializeField] private int autoPlayCount = 10;
-
-        // Сервисы
-        private INeonFruitsGameService neonFruitsService;
-        
-        // Состояние игры
-        private string currentSessionId;
-        private bool gameInitialized = false;
+        // Игровой сервис
+        private INeonFruitsGameService gameService;
         private CancellationTokenSource cancellationTokenSource;
-
-        #region Unity Lifecycle
 
         private void Start()
         {
@@ -45,27 +35,30 @@ namespace Game.Controllers
             cancellationTokenSource?.Dispose();
         }
 
-        #endregion
-
-        #region Initialization
-
         /// <summary>
-        /// Инициализирует игровые сервисы
+        /// Инициализирует игровой сервис
         /// </summary>
         private void Initialize()
         {
             try
             {
                 cancellationTokenSource = new CancellationTokenSource();
-
+                
+                // Получаем HttpClient из Identity системы для переиспользования
+                if (IdentityOrchestrator.Instance != null)
+                {
+                    var httpClient = IdentityOrchestrator.Instance.ServiceContainer.Resolve<IHttpClient>();
+                    gameService = NeonFruitsGameServiceFactory.CreateService(httpClient, gameEndpoint);
+                }
+                else
+                {
+                    // Fallback: создаем новый HttpClient если Identity система не инициализирована
+                    Debug.LogWarning("[NeonFruitsGameController] IdentityOrchestrator not found, creating new HttpClient");
+                    gameService = NeonFruitsGameServiceFactory.CreateService(gameEndpoint);
+                }
+                
                 if (enableDebugLogging)
-                    Debug.Log("[NeonFruitsGameController] Initializing game controller");
-
-                // Создаем игровой сервис
-                neonFruitsService = NeonFruitsGameServiceFactory.CreateService(gameEndpoint);
-
-                if (enableDebugLogging)
-                    Debug.Log("[NeonFruitsGameController] Game controller initialized successfully");
+                    Debug.Log("[NeonFruitsGameController] Game service initialized");
             }
             catch (Exception ex)
             {
@@ -73,254 +66,101 @@ namespace Game.Controllers
             }
         }
 
-        #endregion
-
-        #region Public API (для UI кнопок)
-
         /// <summary>
-        /// Запускает новую игру
+        /// Получает данные пользователя
         /// </summary>
-        public async void StartNewGame()
+        [ContextMenu("Get User Data")]
+        public async void GetUserData()
         {
             try
             {
-                await StartNewGameAsync(cancellationTokenSource.Token);
+                var userData = await gameService.GetUserAsync(cancellationTokenSource.Token);
+                if (enableDebugLogging)
+                    Debug.Log($"User Balance: {userData.Balance}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[NeonFruitsGameController] Failed to start new game: {ex.Message}");
+                Debug.LogError($"Failed to get user data: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Создает игровую сессию
+        /// </summary>
+        [ContextMenu("Create Session")]
+        public async void CreateSession()
+        {
+            try
+            {
+                var session = await gameService.CreateSessionsAsync(cancellationTokenSource.Token);
+                if (enableDebugLogging)
+                    Debug.Log($"Session created: {session.SessionId}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to create session: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Инициализирует игру
+        /// </summary>
+        [ContextMenu("Initialize Game")]
+        public async void InitializeGame()
+        {
+            try
+            {
+                var session = await gameService.CreateSessionsAsync(cancellationTokenSource.Token);
+                var gameStatus = await gameService.InitializeGameAsync(session.SessionId, cancellationTokenSource.Token);
+                if (enableDebugLogging)
+                    Debug.Log($"Game initialized. Balance: {gameStatus.Balance}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Failed to initialize game: {ex.Message}");
             }
         }
 
         /// <summary>
         /// Выполняет спин
         /// </summary>
-        public async void Spin()
+        [ContextMenu("Perform Spin")]
+        public async void PerformSpin()
         {
             try
             {
-                await SpinAsync(defaultBetAmount, defaultLines, cancellationTokenSource.Token);
+                var session = await gameService.CreateSessionsAsync(cancellationTokenSource.Token);
+                var spinRequest = new NeonFruitsSpinRequestDto(session.SessionId, 100, 20, false, 0);
+                var result = await gameService.SpinAsync<NeonFruitsSpinRequestDto, NeonFruitsSpinResponseDto>(
+                    spinRequest, cancellationTokenSource.Token);
+                
+                if (enableDebugLogging)
+                    Debug.Log($"Spin result - Win: {result.WinAmount}, Balance: {result.Balance}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[NeonFruitsGameController] Failed to spin: {ex.Message}");
+                Debug.LogError($"Failed to perform spin: {ex.Message}");
             }
         }
 
         /// <summary>
         /// Активирует бонус
         /// </summary>
+        [ContextMenu("Activate Bonus")]
         public async void ActivateBonus()
         {
             try
             {
-                await ActivateBonusAsync(cancellationTokenSource.Token);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[NeonFruitsGameController] Failed to activate bonus: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Завершает игру
-        /// </summary>
-        public async void EndGame()
-        {
-            try
-            {
-                await EndGameAsync(cancellationTokenSource.Token);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[NeonFruitsGameController] Failed to end game: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Game Logic
-
-        /// <summary>
-        /// Запускает новую игровую сессию
-        /// </summary>
-        public async UniTask StartNewGameAsync(CancellationToken ct)
-        {
-            if (neonFruitsService == null)
-            {
-                Debug.LogError("[NeonFruitsGameController] NeonFruitsGameService is null");
-                return;
-            }
-
-            try
-            {
-                if (enableDebugLogging)
-                    Debug.Log("[NeonFruitsGameController] Starting new game");
-
-                // 1. Создаем игровую сессию
-                var session = await neonFruitsService.CreateSessionsAsync(ct);
-                currentSessionId = session.SessionId;
-
-                // 2. Инициализируем игру  
-                var gameStatus = await neonFruitsService.InitializeGameAsync(currentSessionId, ct);
-                gameInitialized = true;
-
-                if (enableDebugLogging)
-                {
-                    Debug.Log($"[NeonFruitsGameController] Game started successfully");
-                    Debug.Log($"  - Session ID: {currentSessionId}");
-                    Debug.Log($"  - Initial Balance: {gameStatus.Balance}");
-                    Debug.Log($"  - Bonus Available: {gameStatus.BonusAvailable}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[NeonFruitsGameController] Failed to start game: {ex.Message}");
-                gameInitialized = false;
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Выполняет спин в слоте
-        /// </summary>
-        public async UniTask<NeonFruitsSpinResponseDto> SpinAsync(long betAmount, int lines, CancellationToken ct)
-        {
-            if (!ValidateGameState())
-                throw new InvalidOperationException("Game not properly initialized");
-
-            try
-            {
-                if (enableDebugLogging)
-                    Debug.Log($"[NeonFruitsGameController] Spinning with bet: {betAmount}, lines: {lines}");
-
-                // Создаем запрос спина
-                var spinRequest = new NeonFruitsSpinRequestDto(
-                    currentSessionId, 
-                    betAmount, 
-                    lines, 
-                    autoPlayEnabled, 
-                    autoPlayCount);
-
-                // Выполняем спин
-                var result = await neonFruitsService.SpinAsync<NeonFruitsSpinRequestDto, NeonFruitsSpinResponseDto>(
-                    spinRequest, ct);
-
-                if (enableDebugLogging)
-                {
-                    Debug.Log($"[NeonFruitsGameController] Spin result:");
-                    Debug.Log($"  - Win: {result.WinAmount}");
-                    Debug.Log($"  - Balance: {result.Balance}");
-                    Debug.Log($"  - Free Spins: {result.FreeSpinsTriggered}");
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[NeonFruitsGameController] Spin failed: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Активирует бонусную игру
-        /// </summary>
-        public async UniTask<NFGameStatusResponseDto> ActivateBonusAsync(CancellationToken ct)
-        {
-            if (!ValidateGameState())
-                throw new InvalidOperationException("Game not properly initialized");
-
-            try
-            {
-                if (enableDebugLogging)
-                    Debug.Log("[NeonFruitsGameController] Activating bonus");
-
-                var result = await neonFruitsService.ActivateBonusAsync(currentSessionId, ct);
-
-                if (enableDebugLogging)
-                    Debug.Log($"[NeonFruitsGameController] Bonus activated. Status: {result.Status}");
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[NeonFruitsGameController] Failed to activate bonus: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Завершает текущую игровую сессию
-        /// </summary>
-        public async UniTask EndGameAsync(CancellationToken ct)
-        {
-            if (string.IsNullOrEmpty(currentSessionId))
-                return;
-
-            try
-            {
-                if (enableDebugLogging)
-                    Debug.Log($"[NeonFruitsGameController] Ending game session: {currentSessionId}");
-
-                var finalStatus = await neonFruitsService.EndGameSessionAsync(currentSessionId, ct);
+                var session = await gameService.CreateSessionsAsync(cancellationTokenSource.Token);
+                var result = await gameService.ActivateBonusAsync(session.SessionId, cancellationTokenSource.Token);
                 
-                // Сбрасываем состояние
-                currentSessionId = null;
-                gameInitialized = false;
-
                 if (enableDebugLogging)
-                    Debug.Log($"[NeonFruitsGameController] Game ended. Final balance: {finalStatus.Balance}");
+                    Debug.Log($"Bonus activated. Status: {result.Status}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[NeonFruitsGameController] Failed to end game: {ex.Message}");
-                throw;
+                Debug.LogError($"Failed to activate bonus: {ex.Message}");
             }
         }
-
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Проверяет валидность состояния игры
-        /// </summary>
-        private bool ValidateGameState()
-        {
-            if (neonFruitsService == null)
-            {
-                Debug.LogError("[NeonFruitsGameController] NeonFruitsGameService is null");
-                return false;
-            }
-
-            if (!gameInitialized)
-            {
-                Debug.LogError("[NeonFruitsGameController] Game not initialized. Call StartNewGame() first");
-                return false;
-            }
-
-            if (string.IsNullOrEmpty(currentSessionId))
-            {
-                Debug.LogError("[NeonFruitsGameController] No active session. Call StartNewGame() first");
-                return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Получает текущее состояние игры для отладки
-        /// </summary>
-        [ContextMenu("Get Game State")]
-        public void LogGameState()
-        {
-            Debug.Log($"[NeonFruitsGameController] Current Game State:");
-            Debug.Log($"  - Session ID: {currentSessionId ?? "None"}");
-            Debug.Log($"  - Game Initialized: {gameInitialized}");
-            Debug.Log($"  - Service Ready: {neonFruitsService != null}");
-        }
-
-        #endregion
     }
 }

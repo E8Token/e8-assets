@@ -56,6 +56,11 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         public bool IsLite => isLite;
         public bool IsTelegramMiniApp => isTelegramMiniApp;
         public IdentityCanvasController CurrentCanvasController { get; private set; }
+        
+        /// <summary>
+        /// Доступ к DI контейнеру для внешних компонентов
+        /// </summary>
+        public IServiceContainer ServiceContainer => serviceContainer;
 
         #region Unity Lifecycle (точный перенос из строк 179-362)
 
@@ -272,8 +277,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     }
                     // 3. Проверка TG MiniApp среды
                     isTelegramMiniApp = identityService != null && identityService.HasTelegramAutoAuthData;
-                    if (debugLogging)
-                        Debug.Log($"[IdentityOrchestrator] TG MiniApp detected: {isTelegramMiniApp}");
                     
                     stateManager.TransitionTo(IdentityState.AuthCheck);
                     identityService.Initialize(lifetimeCts.Token).Forget();
@@ -285,8 +288,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     // Если мы в TG MiniApp, запускаем Telegram авторизацию вместо обычного AuthFlow
                     if (isTelegramMiniApp)
                     {
-                        if (debugLogging)
-                            Debug.Log("[IdentityOrchestrator] Starting Telegram authentication in MiniApp environment");
                         StartTelegramAuthAsync(lifetimeCts.Token).Forget();
                     }
                     else
@@ -324,13 +325,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         {
             try
             {
-                if (debugLogging)
-                    Debug.Log("[IdentityOrchestrator] Attempting Telegram authentication");
-
                 await identityService.SignInWithTelegramAsync(false, ct);
-                
-                if (debugLogging)
-                    Debug.Log("[IdentityOrchestrator] Telegram authentication completed successfully");
             }
             catch (Exception ex)
             {

@@ -1,7 +1,9 @@
-using Energy8.Identity.Http.Core;
-using Energy8.Identity.Http.Runtime.Factory;
 using Energy8.Identity.Configuration.Core;
+using Energy8.Identity.Http.Core;
 using Game.Services;
+using Energy8.Identity.Http.Core;
+using Energy8.Identity.Configuration.Core;
+using Energy8.Identity.Http.Runtime.Clients;
 using UnityEngine;
 
 namespace Game.Factory
@@ -12,20 +14,18 @@ namespace Game.Factory
     public static class NeonFruitsGameServiceFactory
     {
         /// <summary>
-        /// Создает NeonFruitsGameService с дефолтными настройками
+        /// Создает экземпляр NeonFruitsGameService с переданным HttpClient
         /// </summary>
-        /// <param name="gameEndpoint">Эндпоинт игрового API (по умолчанию "neon-fruits")</param>
+        /// <param name="httpClient">HTTP клиент для API вызовов</param>
+        /// <param name="gameEndpoint">Эндпоинт игрового API</param>
         /// <returns>Экземпляр INeonFruitsGameService</returns>
-        public static INeonFruitsGameService CreateService(string gameEndpoint = "neon-fruits")
+        public static INeonFruitsGameService CreateService(IHttpClient httpClient, string gameEndpoint = "neon-fruits")
         {
             try
             {
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.Log($"[NeonFruitsGameServiceFactory] Creating service with endpoint: {gameEndpoint}");
-                }
-
-                var httpClient = HttpClientFactory.CreateDefaultClient();
+                if (httpClient == null)
+                    throw new System.ArgumentNullException(nameof(httpClient));
+                    
                 return new NeonFruitsGameService(httpClient, gameEndpoint);
             }
             catch (System.Exception ex)
@@ -34,90 +34,24 @@ namespace Game.Factory
                 throw;
             }
         }
-
+        
         /// <summary>
-        /// Создает NeonFruitsGameService с кастомным HttpClient
+        /// Создает экземпляр NeonFruitsGameService с новым HttpClient (для обратной совместимости)
         /// </summary>
-        /// <param name="httpClient">Кастомный HTTP клиент</param>
-        /// <param name="gameEndpoint">Эндпоинт игрового API (по умолчанию "neon-fruits")</param>
+        /// <param name="gameEndpoint">Эндпоинт игрового API</param>
         /// <returns>Экземпляр INeonFruitsGameService</returns>
-        public static INeonFruitsGameService CreateService(IHttpClient httpClient, string gameEndpoint = "neon-fruits")
-        {
-            if (httpClient == null)
-            {
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.LogError("[NeonFruitsGameServiceFactory] HttpClient is null");
-                }
-                throw new System.ArgumentNullException(nameof(httpClient));
-            }
-
-            if (string.IsNullOrWhiteSpace(gameEndpoint))
-            {
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.LogWarning("[NeonFruitsGameServiceFactory] GameEndpoint is null or empty, using default 'neon-fruits'");
-                }
-                gameEndpoint = "neon-fruits";
-            }
-
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log($"[NeonFruitsGameServiceFactory] Creating service with custom HttpClient and endpoint: {gameEndpoint}");
-            }
-
-            return new NeonFruitsGameService(httpClient, gameEndpoint);
-        }
-
-        /// <summary>
-        /// Создает тестовый сервис для разработки
-        /// </summary>
-        /// <param name="gameEndpoint">Тестовый эндпоинт (по умолчанию "test-neon-fruits")</param>
-        /// <returns>Экземпляр INeonFruitsGameService для тестирования</returns>
-        public static INeonFruitsGameService CreateTestService(string gameEndpoint = "test-neon-fruits")
+        public static INeonFruitsGameService CreateService(string gameEndpoint = "neon-fruits")
         {
             try
             {
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.Log($"[NeonFruitsGameServiceFactory] Creating TEST service with endpoint: {gameEndpoint}");
-                }
-
-                // Для тестового сервиса можно использовать специальный тестовый HttpClient
-                var httpClient = HttpClientFactory.CreateTestClient();
-                return new NeonFruitsGameService(httpClient, gameEndpoint);
+                var httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
+                return CreateService(httpClient, gameEndpoint);
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[NeonFruitsGameServiceFactory] Failed to create test service: {ex.Message}");
+                Debug.LogError($"[NeonFruitsGameServiceFactory] Failed to create service: {ex.Message}");
                 throw;
             }
-        }
-
-        /// <summary>
-        /// Создает сервис с полной кастомной конфигурацией
-        /// </summary>
-        /// <param name="httpClient">HTTP клиент</param>
-        /// <param name="gameEndpoint">Игровой эндпоинт</param>
-        /// <param name="enableLogging">Включить логирование</param>
-        /// <returns>Сконфигурированный сервис</returns>
-        public static INeonFruitsGameService CreateCustomService(
-            IHttpClient httpClient, 
-            string gameEndpoint, 
-            bool enableLogging = true)
-        {
-            if (httpClient == null)
-                throw new System.ArgumentNullException(nameof(httpClient));
-
-            if (string.IsNullOrWhiteSpace(gameEndpoint))
-                throw new System.ArgumentException("Game endpoint cannot be null or empty", nameof(gameEndpoint));
-
-            if (enableLogging)
-            {
-                Debug.Log($"[NeonFruitsGameServiceFactory] Creating custom service with endpoint: {gameEndpoint}");
-            }
-
-            return new NeonFruitsGameService(httpClient, gameEndpoint);
         }
     }
 }

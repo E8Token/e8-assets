@@ -117,25 +117,9 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                             var user = await getUser.WithErrorHandler(errorHandler.ShowErrorAsync, ct);
                             Debug.Log($"[UserFlowManager] User data retrieved: {user.Name}");
 
-                            // НОВОЕ: Получение игровых данных пользователя (опционально)
-                            GameUserDto gameUser = null;
-                            try
-                            {
-                                gameUser = await GetGameUserWithErrorHandlingAsync(ct);
-                                Debug.Log($"[UserFlowManager] Game user data retrieved: Balance={gameUser.Balance}");
-                            }
-                            catch (Exception gameEx)
-                            {
-                                if (debugLogging)
-                                    Debug.LogWarning($"[UserFlowManager] Game user data unavailable: {gameEx.Message}");
-                                // Продолжаем без игровых данных
-                            }
-
                             // Показ UserView с игровыми данными
                             Debug.Log("[UserFlowManager] Showing UserView");
-                            var userViewParams = gameUser != null 
-                                ? new UserViewParams($"{user.Name} (Balance: {gameUser.Balance})") 
-                                : new UserViewParams(user.Name);
+                            var userViewParams = new UserViewParams(user.Name);
                                 
                             var result = await viewManager
                                 .Show<UserView, UserViewParams, UserViewResult>(userViewParams, ct);

@@ -10,8 +10,8 @@ using System.Threading;
 using UnityEngine;
 using Energy8.Identity.Shared.Core.Contracts.Dto.Auth;
 using Energy8.Identity.Shared.Core.Exceptions;
-using AuthTelegramSignInDto = Energy8.Identity.Auth.Core.Providers.TelegramSignInDto;
-using AuthTelegramLinkDto = Energy8.Identity.Auth.Core.Providers.TelegramLinkDto;
+using AuthTelegramSignInDto = Energy8.Identity.Shared.Core.Contracts.Dto.Auth.TelegramSignInDto;
+using AuthTelegramLinkDto = Energy8.Identity.Shared.Core.Contracts.Dto.Auth.TelegramSignInLinkDto;
 
 
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -142,11 +142,8 @@ namespace Energy8.Identity.UI.Runtime.Services
         {
             try
             {
-                Debug.Log($"[IdentityService] HandleSignedIn called for user: {user?.UserId}");
-                
                 var token = await authProvider.GetToken(false, CancellationToken.None);
                 httpClient.SetAuthToken(token);
-                Debug.Log("[IdentityService] Auth token set in HTTP client");
 
                 // Log sign-in event to analytics
                 if (analyticsService != null && analyticsService.IsInitialized)
@@ -163,9 +160,7 @@ namespace Energy8.Identity.UI.Runtime.Services
                     analyticsService.SetUserProperties(userProps);
                 }
 
-                Debug.Log("[IdentityService] Invoking OnSignedIn event");
                 OnSignedIn?.Invoke(authProvider.CurrentUser);
-                Debug.Log("[IdentityService] OnSignedIn event invoked successfully");
             }
             catch (Exception ex)
             {
@@ -196,7 +191,6 @@ namespace Energy8.Identity.UI.Runtime.Services
             if (string.IsNullOrEmpty(pendingEmailToken))
                 throw new InvalidOperationException("No pending email confirmation");
 
-            Debug.Log("[IdentityService] Confirming email code with server");
             var response = await httpClient.PostAsync<AccessTokenDto>(
                 "auth/email/confirm",
                 new EmailConfirmDto()
@@ -206,9 +200,7 @@ namespace Energy8.Identity.UI.Runtime.Services
                 }, ct);
 
             pendingEmailToken = null;
-            Debug.Log("[IdentityService] Email confirmed, signing in with token");
             var result = await authProvider.SignInWithToken(response.Token, ct);
-            Debug.Log($"[IdentityService] SignInWithToken completed with result: {result.User?.UserId}");
             return result;
         }
 
@@ -231,20 +223,11 @@ namespace Energy8.Identity.UI.Runtime.Services
                     throw new Energy8Exception("Sign in failed", "Unable to retrieve Telegram user data");
                 }
 
-                Debug.Log($"Got Telegram user: ID={user.Id}, Name={user.FirstName} {user.LastName}, Username={user.Username}, LanguageCode={user.LanguageCode}, AllowsWriteToPM={user.AllowsWriteToPm}");
+                Debug.Log($"Got Telegram user: ID={user.Id}, Name={user.FirstName} {user.LastName}, Username={user.Username}");
 
                 AuthTelegramSignInDto telegramUserDto = linkProvider ?
                      new AuthTelegramLinkDto(user, CurrentUser.UserId) :
                      new AuthTelegramSignInDto(user);
-
-                // Подробный вывод объекта для отладки
-                string jsonDto = JsonUtility.ToJson(telegramUserDto);
-                Debug.Log($"TelegramSignInDto: {jsonDto}");
-                Debug.Log($"Language code in DTO: {telegramUserDto.User.LanguageCode}, Allows write to PM: {telegramUserDto.User.AllowsWriteToPm}");
-
-                // Проверка Newtonsoft.Json сериализации
-                string newtonsoftJson = Newtonsoft.Json.JsonConvert.SerializeObject(telegramUserDto);
-                Debug.Log($"TelegramSignInDto (Newtonsoft): {newtonsoftJson}");
 
                 if (linkProvider)
                 {
@@ -259,7 +242,7 @@ namespace Energy8.Identity.UI.Runtime.Services
                         var response = await httpClient.PostAsync<AccessTokenDto>(
                             "auth/telegram/sign-in", telegramUserDto, ct);
 
-                        Debug.Log("Successfully received token from server");
+                        // Token received successfully
                         return await authProvider.SignInWithToken(response.Token, ct);
                     }
                     catch (Exception ex)

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Energy8.Identity.UI.Runtime.Controllers;
@@ -131,7 +132,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
 
         /// <summary>
         /// Устанавливает состояние открытия/закрытия UI
-        /// Точный перенос из SetOpenState (строки 113-127)
+        /// ГОВНОКОД: Синхронизирует состояние между всеми контроллерами
         /// </summary>
         public void SetOpenState(bool isOpen)
         {
@@ -140,9 +141,13 @@ namespace Energy8.Identity.UI.Runtime.Canvas
 
             IsOpen = isOpen;
 
-            if (currentCanvasController != null)
+            // Синхронизируем состояние между всеми контроллерами
+            foreach (var controller in controllers.Values)
             {
-                currentCanvasController.SetOpenState(isOpen);
+                if (controller != null)
+                {
+                    controller.SetOpenState(isOpen);
+                }
             }
 
             OnOpenStateChanged?.Invoke(isOpen);
@@ -155,12 +160,8 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         /// </summary>
         public IViewManager GetViewManager()
         {
-            var currentViewManager = currentCanvasController?.GetViewManager();
-            if (currentViewManager == null)
-                return null;
-
             // Возвращаем прокси, который будет синхронизировать операции между всеми ViewManager
-            return new ViewManagerSynchronizationProxy(this, currentViewManager);
+            return new ViewManagerSynchronizationProxy(this);
         }
 
         /// <summary>
@@ -187,6 +188,14 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             }
         }
 
+        /// <summary>
+        /// ГОВНОКОД: Получает все контроллеры для синхронизации OpenState
+        /// </summary>
+        internal IEnumerable<IdentityCanvasController> GetAllControllers()
+        {
+            return controllers.Values;
+        }
+
         #endregion
     }
 
@@ -196,12 +205,10 @@ namespace Energy8.Identity.UI.Runtime.Canvas
     internal class ViewManagerSynchronizationProxy : IViewManager
     {
         private readonly CanvasManager canvasManager;
-        private readonly IViewManager targetViewManager;
 
-        public ViewManagerSynchronizationProxy(CanvasManager canvasManager, IViewManager targetViewManager)
+        public ViewManagerSynchronizationProxy(CanvasManager canvasManager)
         {
             this.canvasManager = canvasManager;
-            this.targetViewManager = targetViewManager;
         }
 
         // Прокси основные методы Show для синхронизации
@@ -212,14 +219,24 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         {
             Debug.Log($"[ViewManagerProxy] Show<{typeof(TView).Name}> - синхронизируем между всеми ViewManager");
 
-            // Создаем список задач для всех ViewManager (включая target)
+            var allViewManagers = canvasManager.GetAllViewManagers().ToList();
+            if (!allViewManagers.Any())
+            {
+                Debug.LogWarning("[ViewManagerProxy] No ViewManagers available");
+                throw new InvalidOperationException("No ViewManagers available");
+            }
+
+            // Создаем список задач для всех ViewManager
             var tasks = new List<UniTask<TResult>>();
+            var cancellationTokenSources = new List<CancellationTokenSource>();
             
-            foreach (var viewManager in canvasManager.GetAllViewManagers())
+            foreach (var viewManager in allViewManagers)
             {
                 try
                 {
-                    tasks.Add(viewManager.Show<TView, TParams, TResult>(parameters, ct));
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    cancellationTokenSources.Add(cts);
+                    tasks.Add(viewManager.Show<TView, TParams, TResult>(parameters, cts.Token));
                 }
                 catch (Exception ex)
                 {
@@ -227,26 +244,54 @@ namespace Energy8.Identity.UI.Runtime.Canvas
                 }
             }
 
-            // Ждем завершения всех задач и возвращаем результат от target ViewManager
-            var results = await UniTask.WhenAll(tasks);
-            
-            // Находим результат от target ViewManager
-            var targetIndex = 0;
-            var currentIndex = 0;
-            foreach (var viewManager in canvasManager.GetAllViewManagers())
+            if (!tasks.Any())
             {
-                if (viewManager == targetViewManager)
-                {
-                    targetIndex = currentIndex;
-                    break;
-                }
-                currentIndex++;
+                Debug.LogWarning("[ViewManagerProxy] No tasks created");
+                throw new InvalidOperationException("No tasks created");
             }
 
-            return results[targetIndex];
+            try
+            {
+                // Ждем завершения первой задачи и отменяем остальные
+                var (winnerIndex, result) = await UniTask.WhenAny(tasks);
+                
+                Debug.Log($"[ViewManagerProxy] Task {winnerIndex} completed first, cancelling others");
+                
+                // Отменяем все остальные задачи
+                for (int i = 0; i < cancellationTokenSources.Count; i++)
+                {
+                    if (i != winnerIndex)
+                    {
+                        cancellationTokenSources[i].Cancel();
+                    }
+                }
+                
+                return result;
+            }
+            finally
+            {
+                // Освобождаем ресурсы
+                foreach (var cts in cancellationTokenSources)
+                {
+                    cts?.Dispose();
+                }
+            }
         }
 
-        // Делегируем Extension методы к targetViewManager без синхронизации (говнокод - but it works!)
-        public void InitializeLoading() => targetViewManager.InitializeLoading();
+        // Инициализируем Loading для всех ViewManager
+        public void InitializeLoading()
+        {
+            foreach (var viewManager in canvasManager.GetAllViewManagers())
+            {
+                try
+                {
+                    viewManager.InitializeLoading();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[ViewManagerProxy] Failed to initialize loading for ViewManager: {ex.Message}");
+                }
+            }
+        }
     }
 }

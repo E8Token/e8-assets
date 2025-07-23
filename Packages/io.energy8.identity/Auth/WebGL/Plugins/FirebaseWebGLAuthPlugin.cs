@@ -54,7 +54,7 @@ namespace Energy8.Identity.Auth.WebGL.Plugins
         // No need for a DllImport for this function
 
         [DllImport("__Internal")]
-        private static extern void InitializeTelegramAuth(string botId);
+        private static extern void InitializeTelegramAuth(long botId);
 
         [DllImport("__Internal")]
         private static extern string GetCurrentUser();
@@ -77,7 +77,7 @@ namespace Energy8.Identity.Auth.WebGL.Plugins
             instance = this;
         }
 
-        public async Task Initialize(string config, string botId = "8114226239")
+        public async Task Initialize(string config, long botId = 7891020167)
         {
             Debug.Log("Initialize Firebase WebGL");
 
@@ -91,8 +91,6 @@ namespace Energy8.Identity.Auth.WebGL.Plugins
                 nameof(HandleError)
             );
             
-            CheckForTelegramAuth();
-
             InitializeTelegramAuth(botId);
 
             CheckForTelegramAuth();
@@ -112,14 +110,15 @@ namespace Energy8.Identity.Auth.WebGL.Plugins
         public void HandleToken(string token) => OnTokenReceived?.Invoke(token);
         public void HandleError(string error) => OnError?.Invoke(error);
         
-        // Улучшенный обработчик Telegram аутентификации
+        // Обработчик Telegram аутентификации
         public void HandleTelegramAuth(string userJson)
         {
-            Debug.Log($"HandleTelegramAuth called with data: {userJson?.Substring(0, Math.Min(userJson?.Length ?? 0, 100))}...");
             OnTelegramAuth?.Invoke(userJson);
-            
-            // Вызываем событие завершения автоаутентификации - это поможет согласовать процессы
-            // между FirebaseWebGLAuthPlugin и WebGLAuthProvider
+        }
+
+        // Обработчик завершения проверки Telegram автоаутентификации
+        public void HandleTelegramAutoAuthComplete()
+        {
             OnTelegramAutoAuthComplete?.Invoke();
         }
 

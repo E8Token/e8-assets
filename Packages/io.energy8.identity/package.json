@@ -6,7 +6,7 @@
   "unity": "6000.0",
   "keywords": [
     "identity",
-    "authentication", 
+    "authentication",
     "analytics",
     "user-management"
   ],
@@ -32,7 +32,6 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.ui": "1.0.0",
     "com.unity.modules.uielements": "1.0.0",
-    "com.unity.ugui": "2.0.0",
     "com.unity.inputsystem": "1.12.0"
   }
 }

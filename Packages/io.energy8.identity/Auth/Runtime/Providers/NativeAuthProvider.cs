@@ -9,6 +9,7 @@ using System.Threading;
 using UnityEngine;
 using Energy8.Identity.Configuration.Core;
 using Energy8.Identity.Shared.Core.Exceptions;
+using Energy8.Identity.Shared.Core.Contracts.Dto.Auth;
 
 namespace Energy8.Identity.Auth.Runtime.Providers
 {

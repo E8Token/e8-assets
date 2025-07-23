@@ -5,7 +5,6 @@ using UnityEngine.UI;
 using Energy8.Identity.UI.Runtime.Views.Management;
 using Energy8.Identity.UI.Core.Management;
 using Energy8.Identity.UI.Core.Controllers;
-using Energy8.ViewportManager.Core;
 using ScreenOrientation = Energy8.ViewportManager.Core.ScreenOrientation;
 
 namespace Energy8.Identity.UI.Runtime.Controllers
@@ -30,10 +29,18 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         [Header("Canvas Orientation")]
         [SerializeField] private ScreenOrientation orientation = ScreenOrientation.Portrait;
 
+        [Header("Portrait Screen Adaptation")]
+        [SerializeField] private bool enablePortraitAdaptation = false;
+        [SerializeField] private float targetAspectRatio = 9f / 16f; // Целевое соотношение сторон (9:16)
+
+        private float initialViewportWidth;
+        private bool isViewportInitialized = false;
+        private Vector2 lastScreenSize; // Для отслеживания изменений размера экрана
+
         /// <summary>
-        /// Ориентация этого CanvasController
-        /// </summary>
-        public ScreenOrientation Orientation => orientation;
+    /// Ориентация этого CanvasController
+    /// </summary>
+    public ScreenOrientation Orientation => orientation;
 
         public bool IsOpen { get; private set; } = false;
         public IViewManager ViewManager => viewManager;
@@ -57,6 +64,16 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     new Keyframe(1, 1, 1, 0)
                 );
             }
+
+            // Инициализация адаптации для Portrait ориентации
+            if (enablePortraitAdaptation && orientation == ScreenOrientation.Portrait)
+            {
+                InitializePortraitAdaptation();
+
+                // Запоминаем текущий размер экрана для отслеживания изменений
+                lastScreenSize = new Vector2(Screen.width, Screen.height);
+            }
+
             InitializeUI();
         }
 
@@ -64,6 +81,8 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         {
             if (showButton != null)
                 showButton.onClick.RemoveAllListeners();
+
+
         }
 
         /// <summary>
@@ -141,6 +160,77 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             finalPosition.x = endX;
             containerRectTransform.anchoredPosition = finalPosition;
             currentAnimationCoroutine = null;
+        }
+
+        /// <summary>
+        /// Инициализация адаптации для Portrait ориентации
+        /// </summary>
+        private void InitializePortraitAdaptation()
+        {
+            if (containerRectTransform != null && !isViewportInitialized)
+            {
+                // Запоминаем начальную ширину Viewport для целевого aspect ratio
+                initialViewportWidth = containerRectTransform.sizeDelta.x;
+                isViewportInitialized = true;
+
+                Debug.Log($"[CanvasController] Инициализация Portrait адаптации. Базовая ширина Viewport: {initialViewportWidth} для aspect ratio {targetAspectRatio:F3}");
+
+                // Применяем адаптацию для текущего размера экрана
+                AdaptViewportForCurrentScreen();
+            }
+        }
+
+        /// <summary>
+        /// Отслеживание изменений размера экрана
+        /// </summary>
+        private void Update()
+        {
+            if (enablePortraitAdaptation && orientation == ScreenOrientation.Portrait)
+            {
+                Vector2 currentScreenSize = new Vector2(Screen.width, Screen.height);
+                if (currentScreenSize != lastScreenSize)
+                {
+                    lastScreenSize = currentScreenSize;
+                    AdaptViewportForCurrentScreen();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Адаптация ширины Viewport под текущий размер экрана по aspect ratio
+        /// </summary>
+        private void AdaptViewportForCurrentScreen()
+        {
+            if (!isViewportInitialized || containerRectTransform == null) return;
+
+            float currentScreenWidth = Screen.width;
+            float currentScreenHeight = Screen.height;
+            float currentAspectRatio = currentScreenWidth / currentScreenHeight;
+
+            // Вычисляем масштаб на основе отношения aspect ratio
+            float aspectRatioScale = currentAspectRatio / targetAspectRatio;
+            float newViewportWidth = initialViewportWidth * aspectRatioScale;
+
+            // Сохраняем старую ширину для расчета сдвига
+            float oldWidth = containerRectTransform.sizeDelta.x;
+
+            // Устанавливаем новую ширину
+            Vector2 sizeDelta = containerRectTransform.sizeDelta;
+            sizeDelta.x = newViewportWidth;
+            containerRectTransform.sizeDelta = sizeDelta;
+
+            // Если окно открыто, сдвигаем его на разность ширин
+            if (IsOpen)
+            {
+                float widthDifference = newViewportWidth - oldWidth;
+                Vector2 anchoredPosition = containerRectTransform.anchoredPosition;
+                anchoredPosition.x += widthDifference;
+                containerRectTransform.anchoredPosition = anchoredPosition;
+
+                Debug.Log($"[CanvasController] Сдвиг открытого окна на {widthDifference:F1}px");
+            }
+
+            Debug.Log($"[CanvasController] Адаптация Viewport: экран {currentScreenWidth}x{currentScreenHeight} (AR: {currentAspectRatio:F3}), целевой AR: {targetAspectRatio:F3}, масштаб: {aspectRatioScale:F2}, новая ширина: {newViewportWidth:F1}");
         }
 
         private void Reset()

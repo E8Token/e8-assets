@@ -33,26 +33,27 @@ var FirebaseAuthPlugin = {
             window.telegramCallback = UTF8ToString(telegramCallback);
             window.errorCallback = UTF8ToString(errorCallback);
 
+            // Флаг для отслеживания завершения проверки Telegram авторизации
+            window.telegramAuthCheckCompleted = false;
+            window.hasTelegramAuthData = false;
+            window.initialized = false;
+
             // Инициализируем Firebase
             window.initializeFirebase(JSON.parse(UTF8ToString(config)));
-            console.log("Firebase initialized with object name:", window.firebaseAuthObjectName);
 
-            // Настраиваем отслеживание состояния аутентификации
+            // Настраиваем отслеживание состояния аутентификации с учетом Telegram проверки
             window.firebaseAuth.onAuthStateChanged(function (user) {
+                window.initialized = true;
                 if (user) {
-                    console.log("User signed in:", user.uid);
                     window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.signInCallback, JSON.stringify(user));
                 } else {
-                    console.log("User signed out");
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.signOutCallback);
+                    if (window.telegramAuthCheckCompleted && !window.hasTelegramAuthData) {
+                        window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.signOutCallback);
+                    }
                 }
             });
 
-            // Check for Telegram authentication result in URL immediately
-            var self = this;
-            window.setTimeout(function () {
-                _CheckForTelegramAuth();
-            }, 100); // Сокращаем задержку для быстрой проверки
+            _CheckForTelegramAuth();
         } catch (error) {
             console.error("Error initializing Firebase Auth:", error);
             window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.errorCallback, "Error initializing Firebase Auth: " + error.message);
@@ -61,149 +62,64 @@ var FirebaseAuthPlugin = {
 
     // Check if Telegram authentication data is present in URL
     CheckForTelegramAuth: function () {
-        console.log("Checking for Telegram auth in URL...");
-        var foundData = false;
         try {
-            // First check the URL params for standard Telegram Login Widget format
-            var url = new URL(window.location.href);
-            var searchParams = new URLSearchParams(url.search);
-
-            // If Telegram auth params are present
-            if (searchParams.has('id') && searchParams.has('first_name') && searchParams.has('hash')) {
-                console.log("Found Telegram auth data in URL params");
-
-                // Build the full query string
-                var telegramData = url.search.substring(1); // remove the leading '?'
-
-                // Send to Unity
-                if (window.unityInstance && window.firebaseAuthObjectName) {
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.telegramCallback, telegramData);
-                    console.log("Sent Telegram auth data to Unity:", telegramData);
-                    foundData = true;
-                } else {
-                    console.error("Unity instance or object name not available for Telegram auth");
-                }
-            }
-
-            // Check for Mini App format
-            if (!foundData && window.Telegram && window.Telegram.WebApp) {
-                console.log("Found Telegram WebApp data, processing...");
-
+            if (!window.hasTelegramAuthData && window.Telegram && window.Telegram.WebApp) {
                 try {
                     var tgWebApp = window.Telegram.WebApp;
 
-                    if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.user) {
-                        var user = tgWebApp.initDataUnsafe.user;
-                        // Add hash and auth_date to make compatible with standard format
-
-                        // Избегаем использования оператора optional chaining (?.)
-                        var hashValue = "";
-                        if (tgWebApp.initData) {
-                            var parts = tgWebApp.initData.split('&');
-                            for (var i = 0; i < parts.length; i++) {
-                                var part = parts[i];
-                                if (part.indexOf('hash=') === 0) {
-                                    var hashParts = part.split('=');
-                                    if (hashParts.length > 1) {
-                                        hashValue = hashParts[1];
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                        user.hash = hashValue;
-                        user.auth_date = tgWebApp.initDataUnsafe.auth_date || Math.floor(Date.now() / 1000);
-
-                        console.log("Extracted Telegram user from WebApp:", user);
-
-                        // Build compatibility query string format for consistency
-                        var params = new URLSearchParams();
-                        params.append('id', user.id);
-                        params.append('first_name', user.first_name || "");
-                        params.append('last_name', user.last_name || "");
-                        params.append('username', user.username || "");
-                        params.append('photo_url', user.photo_url || "");
-                        params.append('auth_date', user.auth_date);
-                        params.append('hash', user.hash);
-
-                        // Добавляем поля language_code и allows_write_to_pm
-                        if (user.language_code) {
-                            params.append('language_code', user.language_code);
-                        }
-                        if (typeof user.allows_write_to_pm !== 'undefined') {
-                            params.append('allows_write_to_pm', user.allows_write_to_pm ? 'true' : 'false');
-                        }
-
-                        // Добавляем query_id если он доступен
-                        if (tgWebApp.initDataUnsafe && tgWebApp.initDataUnsafe.query_id) {
-                            params.append('query_id', tgWebApp.initDataUnsafe.query_id);
-                            console.log("Added query_id to auth data:", tgWebApp.initDataUnsafe.query_id);
-                        }
-
-                        var telegramData = params.toString();
-                        window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.telegramCallback, telegramData);
-                        console.log("Sent Telegram WebApp data to Unity in standard format:", telegramData);
-                        foundData = true;
-                    } else if (tgWebApp.initData) {
-                        // If we only have raw initData
+                    if (tgWebApp.initData) {
+                        window.hasTelegramAuthData = true;
+                        window.telegramAuthCheckCompleted = true;
                         window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.telegramCallback, tgWebApp.initData);
-                        console.log("Sent raw Telegram WebApp initData to Unity");
-                        foundData = true;
                     }
                 } catch (webAppError) {
                     console.error("Error processing Telegram WebApp data:", webAppError);
                 }
             }
 
-            // Then try using the haveTgAuthResult function from telegramAuthHandler.js if available
-            if (!foundData && window.haveTgAuthResult && typeof window.haveTgAuthResult === 'function') {
-                var tgAuthResult = window.haveTgAuthResult();
-                if (tgAuthResult) {
-                    console.log("Found Telegram auth data via haveTgAuthResult()");
-                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.telegramCallback, JSON.stringify(tgAuthResult));
-                    foundData = true;
-                }
-            }
-
-            if (!foundData) {
-                console.log("No Telegram auth data found in the URL or WebApp");
-            }
-
-            // Always notify that checking is done, even if no data found
             if (window.unityInstance && window.firebaseAuthObjectName) {
-                // Send a special completion event to notify Unity that the search process is finished
-                var self = this;
+                if (window.initialized && !window.hasTelegramAuthData && !window.firebaseAuth.currentUser) {
+                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.signOutCallback);
+                }
+
                 window.setTimeout(function () {
                     window.unityInstance.SendMessage(window.firebaseAuthObjectName, "HandleTelegramAutoAuthComplete");
                 }, 500);
             }
 
-            return foundData;
         } catch (error) {
             console.error("Error checking Telegram auth:", error);
             // Don't throw error here, just continue
 
             // Still notify that checking is done even after error
             if (window.unityInstance && window.firebaseAuthObjectName) {
+                // Отмечаем завершение проверки Telegram авторизации даже при ошибке
+                window.telegramAuthCheckCompleted = true;
+                window.hasTelegramAuthData = false;
+
+                // Если пользователь не авторизован в Firebase, вызываем signOut
+                if (window.initialized && !window.firebaseAuth.currentUser) {
+                    window.unityInstance.SendMessage(window.firebaseAuthObjectName, window.signOutCallback);
+                }
+
                 var self = this;
                 window.setTimeout(function () {
                     window.unityInstance.SendMessage(window.firebaseAuthObjectName, "HandleTelegramAutoAuthComplete");
                 }, 500);
             }
         }
-        return false;
     },
 
     InitializeTelegramAuth: function (botId) {
         try {
-            var parsedBotId = botId ? JSON.parse(UTF8ToString(botId)) : 8114226239;
+            console.log("Telegram init: " + botId);
 
-            console.log("Telegram init: " + parsedBotId);
-
-            window.initializeTelegramAuth({ bot_id: parsedBotId },
+            window.initializeTelegramAuth({ bot_id: botId },
                 function (user) {
                     console.log("Telegram auth initialized" + window.telegramCallback);
-                    window.unityInstance.SendMessage("FirebaseWebGLAuthPlugin", window.telegramCallback, JSON.stringify(user));
+                    // Ensure we pass the user data as a parameter
+                    var userData = user ? JSON.stringify(user) : "";
+                    window.unityInstance.SendMessage("FirebaseWebGLAuthPlugin", window.telegramCallback, userData);
                 },
                 function (error) {
                     console.error("Telegram auth error:", error);

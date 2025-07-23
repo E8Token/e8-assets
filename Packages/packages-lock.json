@@ -14,6 +14,15 @@
       "dependencies": {},
       "hash": "a7c6b49a0141a5bff9b1983e38137522ef61977d"
     },
+    "com.github.kou-yeung": {
+      "version": "https://github.com/kou-yeung/WebGLInput.git?path=Assets/WebGLSupport",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0~"
+      },
+      "hash": "171a010824ed6c68452b237933457a2dd061ba83"
+    },
     "com.google.external-dependency-manager": {
       "version": "1.2.186",
       "depth": 0,
@@ -484,7 +493,6 @@
         "com.unity.modules.unitywebrequestwww": "1.0.0",
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.uielements": "1.0.0",
-        "com.unity.ugui": "2.0.0",
         "com.unity.inputsystem": "1.12.0"
       }
     },
@@ -492,9 +500,7 @@
       "version": "file:io.energy8.viewportmanager",
       "depth": 0,
       "source": "embedded",
-      "dependencies": {
-        "com.unity.ugui": "1.0.0"
-      }
+      "dependencies": {}
     },
     "io.energy8.webgl-plugin-platform": {
       "version": "file:io.energy8.webgl-plugin-platform",

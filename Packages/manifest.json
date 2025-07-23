@@ -2,6 +2,7 @@
   "dependencies": {
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+    "com.github.kou-yeung": "https://github.com/kou-yeung/WebGLInput.git?path=Assets/WebGLSupport",
     "com.google.external-dependency-manager": "1.2.186",
     "com.google.firebase.analytics": "https://git.energy8.tech/Energy8/e8-firebase-unity.git?path=firebase-packages/com.google.firebase.analytics",
     "com.google.firebase.app": "https://git.energy8.tech/Energy8/e8-firebase-unity.git?path=firebase-packages/com.google.firebase.app",
@@ -17,7 +18,7 @@
     "com.unity.nuget.newtonsoft-json": "3.2.1",
     "com.unity.render-pipelines.universal": "17.1.0",
     "com.unity.toolchain.win-x86_64-linux-x86_64": "2.0.10",
-    "com.unity.ugui": "2.0.0",
+    "com.unity.ugui": "3.0.0-exp.4",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.amd": "1.0.0",
