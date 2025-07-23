@@ -35,9 +35,9 @@ MonoBehaviour:
     localCopyTargetPath: 
   webGLSettings:
     buildDXT: 1
-    buildASTC: 0
-    buildETC2: 0
-    compressionAlgorithms: 02000000
+    buildASTC: 1
+    buildETC2: 1
+    compressionAlgorithms: 0200000001000000
   androidSettings:
     buildAAB: 0
     buildAPK: 1
