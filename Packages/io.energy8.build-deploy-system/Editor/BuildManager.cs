@@ -161,11 +161,11 @@ namespace Energy8.BuildDeploySystem.Editor
                     else
                         success = BuildWithProfile(buildProfile, executablePath, clean);
 
+                    GenerateDataTypesJson(fullOutputPath);
+
                     if (config.WebGLSettings.CompressionAlgorithms != null &&
                         config.WebGLSettings.CompressionAlgorithms.Count > 0)
                         CompressWebGLDataFiles(fullOutputPath, config);
-
-                    GenerateBuildJson(fullOutputPath);
                 }
                 else
                 {
@@ -680,24 +680,60 @@ namespace Energy8.BuildDeploySystem.Editor
                     .Concat(Directory.GetFiles(buildSubPath, "*.symbols.json", SearchOption.TopDirectoryOnly))
                     .ToArray();
 
+                var filesToDelete = new List<string>();
+
                 foreach (var algo in config.WebGLSettings.CompressionAlgorithms)
                 {
-                    foreach (var dataFile in dataFiles)
+                    string compressionName = algo == CompressionAlgorithm.Gzip ? "GZIP" : "Brotli";
+                    string progressTitle = $"Compressing {compressionName}";
+                    
+                    for (int i = 0; i < dataFiles.Length; i++)
                     {
+                        var dataFile = dataFiles[i];
+                        string fileName = Path.GetFileName(dataFile);
+                        
+                        EditorUtility.DisplayProgressBar(progressTitle, $"Compressing {fileName}...", (float)i / dataFiles.Length);
+                        
                         if (algo == CompressionAlgorithm.Gzip)
-                            RunExternalCompressor("gzip.exe", dataFile, ".gz", 9);
-                        if (algo == CompressionAlgorithm.Brotli)
-                            RunExternalCompressor("brotli.exe", dataFile, ".br", 11);
+                        {
+                            if (RunExternalCompressor("gzip.exe", dataFile, ".gz", 9))
+                                filesToDelete.Add(dataFile);
+                        }
+                        else if (algo == CompressionAlgorithm.Brotli)
+                        {
+                            if (RunExternalCompressor("brotli.exe", dataFile, ".br", 11))
+                                filesToDelete.Add(dataFile);
+                        }
+                    }
+                    
+                    EditorUtility.ClearProgressBar();
+                }
+
+                // Удаляем несжатые файлы после успешной компрессии
+                foreach (var fileToDelete in filesToDelete.Distinct())
+                {
+                    try
+                    {
+                        if (File.Exists(fileToDelete))
+                        {
+                            File.Delete(fileToDelete);
+                            Debug.Log($"[BuildSystem] Deleted uncompressed file: {Path.GetFileName(fileToDelete)}");
+                        }
+                    }
+                    catch (Exception deleteEx)
+                    {
+                        Debug.LogWarning($"[BuildSystem] Failed to delete uncompressed file {fileToDelete}: {deleteEx.Message}");
                     }
                 }
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[BuildSystem] Compression error: {ex.Message}");
+                EditorUtility.ClearProgressBar();
             }
         }
 
-        private static void RunExternalCompressor(string exeName, string dataFile, string ext, int compressionLevel = 6)
+        private static bool RunExternalCompressor(string exeName, string dataFile, string ext, int compressionLevel = 6)
         {
             try
             {
@@ -705,7 +741,7 @@ namespace Energy8.BuildDeploySystem.Editor
                 if (!File.Exists(exePath))
                 {
                     Debug.LogWarning($"[BuildSystem] Compressor not found: {exePath}");
-                    return;
+                    return false;
                 }
                 string outputFile = dataFile + ext;
                 string args;
@@ -726,14 +762,29 @@ namespace Energy8.BuildDeploySystem.Editor
                 string stdout = process.StandardOutput.ReadToEnd();
                 string stderr = process.StandardError.ReadToEnd();
                 process.WaitForExit();
+                
+                if (process.ExitCode != 0)
+                {
+                    Debug.LogWarning($"[BuildSystem] {exeName} failed with exit code {process.ExitCode}: {stderr}");
+                    return false;
+                }
+                
                 if (!string.IsNullOrEmpty(stderr))
-                    Debug.LogWarning($"[BuildSystem] {exeName} error: {stderr}");
+                    Debug.LogWarning($"[BuildSystem] {exeName} warning: {stderr}");
+                    
                 if (!File.Exists(outputFile))
+                {
                     Debug.LogWarning($"[BuildSystem] Compression failed: {outputFile} not found");
+                    return false;
+                }
+                
+                Debug.Log($"[BuildSystem] Successfully compressed: {Path.GetFileName(dataFile)} -> {Path.GetFileName(outputFile)}");
+                return true;
             }
             catch (Exception ex)
             {
                 Debug.LogError($"[BuildSystem] Failed to run compressor {exeName}: {ex.Message}");
+                return false;
             }
         }
 
@@ -756,7 +807,7 @@ namespace Energy8.BuildDeploySystem.Editor
             return fileName;
         }
 
-        private static void GenerateBuildJson(string outputPath)
+        private static void GenerateDataTypesJson(string outputPath)
         {
             string buildSubPath = Path.Combine(outputPath, "Build");
             if (!Directory.Exists(buildSubPath))
@@ -767,60 +818,24 @@ namespace Energy8.BuildDeploySystem.Editor
 
             string baseName = new DirectoryInfo(outputPath).Name;
 
-            var template = new
-            {
-                wasm = new List<object>(),
-                framework = new List<object>(),
-                data = new List<object>(),
-                symbols = new List<object>()
-            };
+            // Словарь только для типов data файлов
+            var dataTypes = new Dictionary<string, string>();
 
-            string wasmBase = baseName + ".wasm";
-            var wasmFiles = new[] {
-                ("none", wasmBase),
-                ("gz", wasmBase + ".gz"),
-                ("br", wasmBase + ".br")
-            };
-            foreach (var (compression, filename) in wasmFiles)
-                if (File.Exists(Path.Combine(buildSubPath, filename)))
-                    template.wasm.Add(new { compression, filename });
-
-            string frameworkBase = baseName + ".framework.js";
-            var frameworkFiles = new[] {
-                ("none", frameworkBase),
-                ("gz", frameworkBase + ".gz"),
-                ("br", frameworkBase + ".br")
-            };
-            foreach (var (compression, filename) in frameworkFiles)
-                if (File.Exists(Path.Combine(buildSubPath, filename)))
-                    template.framework.Add(new { compression, filename });
-
-            string symbolsBase = baseName + ".symbols.json";
-            var symbolsFiles = new[] {
-                ("none", symbolsBase),
-                ("gz", symbolsBase + ".gz"),
-                ("br", symbolsBase + ".br")
-            };
-            foreach (var (compression, filename) in symbolsFiles)
-                if (File.Exists(Path.Combine(buildSubPath, filename)))
-                    template.symbols.Add(new { compression, filename });
-
+            // Добавляем только форматы текстур (data файлы)
             var formats = new[] { "dxt", "astc", "etc2" };
             foreach (var format in formats)
             {
-                string baseDataName = baseName + $".{format}.data";
-                var files = new[] {
-                    ("none", baseDataName),
-                    ("gz", baseDataName + ".gz"),
-                    ("br", baseDataName + ".br")
-                };
-                foreach (var (compression, filename) in files)
-                    if (File.Exists(Path.Combine(buildSubPath, filename)))
-                        template.data.Add(new { format, compression, filename });
+                string dataFileName = baseName + $".{format}.data";
+                if (File.Exists(Path.Combine(buildSubPath, dataFileName)))
+                {
+                    dataTypes[format] = dataFileName;
+                }
             }
 
-            string json = JsonConvert.SerializeObject(template, Formatting.Indented);
-            File.WriteAllText(Path.Combine(buildSubPath, "Build.json"), json);
+            string json = JsonConvert.SerializeObject(dataTypes, Formatting.Indented);
+            File.WriteAllText(Path.Combine(buildSubPath, "data-types.json"), json);
+            
+            Debug.Log($"[BuildSystem] Generated data-types.json with {dataTypes.Count} data file types");
         }
     }
 }

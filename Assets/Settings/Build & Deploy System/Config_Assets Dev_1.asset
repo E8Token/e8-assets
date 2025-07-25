@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buildProfileGUID: ffd5e6db18510474da72b5cc32a48770
   buildProfileName: Assets Dev
-  outputPath: Builds/Assets Dev
-  alwaysCleanBuild: 1
+  outputPath: Builds/Dev/WebGL/assets_{{{VERSION}}}
+  alwaysCleanBuild: 0
   customBuildName: 
   deploySettings:
-    enableDeploy: 0
-    alwaysDeploy: 0
-    deployMethod: 1
+    enableDeploy: 1
+    alwaysDeploy: 1
+    deployMethod: 3
     serverHost: 
     serverPort: 21
     remotePath: /
@@ -29,15 +29,15 @@ MonoBehaviour:
     password: 
     privateKeyPath: 
     privateKeyPassphrase: 
-    deleteExistingFiles: 0
-    createBackup: 1
+    deleteExistingFiles: 1
+    createBackup: 0
     deployZipOnly: 0
-    localCopyTargetPath: 
+    localCopyTargetPath: C:/Projects/Energy8/e8-io-web-stack/dev/www/games/assets
   webGLSettings:
-    buildDXT: 0
-    buildASTC: 0
-    buildETC2: 0
-    compressionAlgorithms: 
+    buildDXT: 1
+    buildASTC: 1
+    buildETC2: 1
+    compressionAlgorithms: 02000000
   androidSettings:
     buildAAB: 0
     buildAPK: 1
