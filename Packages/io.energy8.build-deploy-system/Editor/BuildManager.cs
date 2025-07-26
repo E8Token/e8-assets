@@ -737,12 +737,8 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             try
             {
-                string exePath = Path.Combine(Application.dataPath, "../Packages/io.energy8.build-deploy-system/Tools", exeName);
-                if (!File.Exists(exePath))
-                {
-                    Debug.LogWarning($"[BuildSystem] Compressor not found: {exePath}");
-                    return false;
-                }
+                // Используем exe файлы из PATH вместо локальной папки Tools
+                string exePath = exeName;
                 string outputFile = dataFile + ext;
                 string args;
                 if (exeName.ToLower().Contains("brotli"))
@@ -766,6 +762,10 @@ namespace Energy8.BuildDeploySystem.Editor
                 if (process.ExitCode != 0)
                 {
                     Debug.LogWarning($"[BuildSystem] {exeName} failed with exit code {process.ExitCode}: {stderr}");
+                    if (process.ExitCode == -1 || stderr.Contains("not found") || stderr.Contains("not recognized"))
+                    {
+                        Debug.LogError($"[BuildSystem] {exeName} not found in PATH. Please ensure {exeName} is installed and available in system PATH.");
+                    }
                     return false;
                 }
                 
@@ -784,6 +784,10 @@ namespace Energy8.BuildDeploySystem.Editor
             catch (Exception ex)
             {
                 Debug.LogError($"[BuildSystem] Failed to run compressor {exeName}: {ex.Message}");
+                if (ex.Message.Contains("cannot find") || ex.Message.Contains("not found") || ex is System.ComponentModel.Win32Exception)
+                {
+                    Debug.LogError($"[BuildSystem] {exeName} not found in PATH. Please ensure {exeName} is installed and available in system PATH.");
+                }
                 return false;
             }
         }

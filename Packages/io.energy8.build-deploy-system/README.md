@@ -169,6 +169,13 @@ if (config != null && config.IsValid())
 - **Автообновление**: AssetPostprocessor + InitializeOnLoad
 - **Зависимости**: Только стандартные Unity API
 
+### 📋 Требования для WebGL компрессии
+Для использования компрессии WebGL файлов необходимо установить в системе:
+- **gzip.exe** - для GZIP компрессии
+- **brotli.exe** - для Brotli компрессии
+
+Утилиты должны быть доступны через PATH системы. Система автоматически найдет их и использует для сжатия .data, .wasm и других файлов WebGL сборки.
+
 ## 🎨 UI особенности
 
 - **🎯 Эмодзи индикаторы**: Визуальная обратная связь
@@ -206,6 +213,13 @@ if (config != null && config.IsValid())
 
 ### Права доступа к папке
 - Убедитесь что Unity имеет права записи в папку `Assets/BuildSystem/Configs`
+
+### Компрессия WebGL не работает
+- Убедитесь что `gzip.exe` и `brotli.exe` установлены в системе
+- Проверьте что утилиты доступны через PATH: откройте командную строку и выполните `gzip --version` и `brotli --version`
+- В Windows можно установить через chocolatey: `choco install gzip brotli`
+- В macOS через homebrew: `brew install gzip brotli`
+- В Linux через пакетный менеджер: `apt install gzip brotli` или `yum install gzip brotli`
 
 ## 📄 Лицензия
 
