@@ -1,46 +1,42 @@
 using System;
 using UnityEngine;
-using Energy8.WebGL.PluginPlatform;
 
 namespace Energy8.ViewportManager.Plugins
 {
     /// <summary>
     /// WebGL Plugin for detecting viewport information including device type, user agent, and screen properties
+    /// Simplified version without external dependencies
     /// </summary>
-    public class ViewportDetectionPlugin : BasePlugin
+    public class ViewportDetectionPlugin : MonoBehaviour
     {
         private static ViewportDetectionPlugin instance;
         public static ViewportDetectionPlugin Instance => instance;
 
-        public override IPluginSettings Settings => null; // No settings needed for this plugin
-
-        public override void Initialize()
+        private void Awake()
         {
-            instance = this;
-            Priority = 10; // Load early to provide detection capabilities
-            Debug.Log("[ViewportDetectionPlugin] Initialized successfully");
+            if (instance == null)
+            {
+                instance = this;
+                DontDestroyOnLoad(gameObject);
+                Debug.Log("[ViewportDetectionPlugin] Initialized successfully");
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
         }
 
-        public override void Enable()
+        private void OnDestroy()
         {
-            Debug.Log("[ViewportDetectionPlugin] Enabled");
-        }
-
-        public override void Disable()
-        {
-            Debug.Log("[ViewportDetectionPlugin] Disabled");
-        }
-
-        public override void Destroy()
-        {
-            instance = null;
-            Debug.Log("[ViewportDetectionPlugin] Destroyed");
+            if (instance == this)
+            {
+                instance = null;
+            }
         }
 
         /// <summary>
         /// Get the browser's user agent string
         /// </summary>
-        [JSCallable]
         public string GetUserAgent()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -54,7 +50,6 @@ namespace Energy8.ViewportManager.Plugins
         /// Get detailed device information including screen size, pixel ratio, etc.
         /// Returns JSON string with device information
         /// </summary>
-        [JSCallable]
         public string GetDeviceInfo()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -78,7 +73,6 @@ namespace Energy8.ViewportManager.Plugins
         /// <summary>
         /// Check if the current device is mobile based on user agent and screen characteristics
         /// </summary>
-        [JSCallable]
         public bool IsMobileDevice()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -91,7 +85,6 @@ namespace Energy8.ViewportManager.Plugins
         /// <summary>
         /// Get current screen orientation (landscape/portrait)
         /// </summary>
-        [JSCallable]
         public string GetScreenOrientation()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
@@ -104,7 +97,6 @@ namespace Energy8.ViewportManager.Plugins
         /// <summary>
         /// Get platform type (webgl, mobile, desktop, etc.)
         /// </summary>
-        [JSCallable]
         public string GetPlatformType()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR

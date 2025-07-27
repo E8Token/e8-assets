@@ -1,0 +1,30 @@
+{
+  "name": "io.energy8.webgl-adaptive-performance",
+  "version": "1.0.0",
+  "displayName": "E8 WebGL Adaptive Performance",
+  "description": "Adaptive graphics performance system that automatically adjusts Unity quality settings based on viewport data and device capabilities for optimal WebGL performance.",
+  "unity": "6000.0",
+  "keywords": [
+    "performance",
+    "adaptive",
+    "graphics",
+    "quality",
+    "webgl",
+    "optimization",
+    "mobile"
+  ],
+  "dependencies": {
+    "io.energy8.viewportmanager": "2.0.0"
+  },
+  "author": {
+    "name": "Energy8",
+    "email": "dlemonvcake.work@gmail.com",
+    "url": "https://energy8.io"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.energy8.io/Energy8/e8-assets.git",
+    "directory": "Packages/io.energy8.webgl-adaptive-performance",
+    "revision": "main"
+  }
+}

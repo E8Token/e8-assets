@@ -7,6 +7,7 @@ namespace Energy8.ViewportManager.Core
     /// </summary>
     public enum ScreenOrientation
     {
+        Any,
         Landscape,
         Portrait
     }
@@ -16,8 +17,10 @@ namespace Energy8.ViewportManager.Core
     /// </summary>
     public enum DeviceType
     {
+        Any,
         Desktop,
-        Mobile
+        Mobile,
+        Tablet
     }
 
     /// <summary>
@@ -25,6 +28,7 @@ namespace Energy8.ViewportManager.Core
     /// </summary>
     public enum Platform
     {
+        Any,
         WebGL,
         Mobile,
         Desktop,
@@ -45,65 +49,28 @@ namespace Energy8.ViewportManager.Core
         public ScreenOrientation orientation;
         public DeviceType deviceType;
         public Platform platform;
-
-        public ViewportContext(ScreenOrientation orientation, DeviceType deviceType, Platform platform)
-        {
-            this.orientation = orientation;
-            this.deviceType = deviceType;
-            this.platform = platform;
-        }
-
-        public override string ToString()
-        {
-            return $"{orientation}+{deviceType}+{platform}";
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is ViewportContext other)
-            {
-                return orientation == other.orientation && 
-                       deviceType == other.deviceType && 
-                       platform == other.platform;
-            }
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(orientation, deviceType, platform);
-        }
-    }
-
-    /// <summary>
-    /// Complete viewport information
-    /// </summary>
-    [Serializable]
-    public struct ViewportInfo
-    {
-        public ScreenOrientation orientation;
-        public DeviceType deviceType;
-        public Platform platform;
         public int screenWidth;
         public int screenHeight;
+        public float devicePixelRatio;
 
-        public ViewportInfo(ScreenOrientation orientation, DeviceType deviceType, Platform platform, int screenWidth, int screenHeight)
+        public ViewportContext(ScreenOrientation orientation, DeviceType deviceType, Platform platform, int screenWidth, int screenHeight, float devicePixelRatio = 1.0f)
         {
             this.orientation = orientation;
             this.deviceType = deviceType;
             this.platform = platform;
             this.screenWidth = screenWidth;
             this.screenHeight = screenHeight;
+            this.devicePixelRatio = devicePixelRatio;
         }
 
         public override string ToString()
         {
-            return $"{deviceType}/{platform}/{orientation} ({screenWidth}x{screenHeight})";
+            return $"{orientation}+{deviceType}+{platform} ({screenWidth}x{screenHeight})";
         }
 
         public override bool Equals(object obj)
         {
-            if (obj is ViewportInfo other)
+            if (obj is ViewportContext other)
             {
                 return orientation == other.orientation && 
                        deviceType == other.deviceType && 
@@ -118,5 +85,20 @@ namespace Energy8.ViewportManager.Core
         {
             return HashCode.Combine(orientation, deviceType, platform, screenWidth, screenHeight);
         }
+    }
+
+    /// <summary>
+    /// Device information from WebGL
+    /// </summary>
+    [Serializable]
+    public struct DeviceInfo
+    {
+        public string userAgent;
+        public int screenWidth;
+        public int screenHeight;
+        public float devicePixelRatio;
+        public bool isMobile;
+        public string platform;
+        public bool touchSupport;
     }
 }

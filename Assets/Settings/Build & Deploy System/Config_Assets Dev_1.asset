@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Config_Assets Dev_1
   m_EditorClassIdentifier: 
   buildProfileGUID: ffd5e6db18510474da72b5cc32a48770
-  buildProfileName: Assets Dev
-  outputPath: Builds/Dev/WebGL/assets_{{{VERSION}}}
+  buildProfileName: Web Dev
+  outputPath: Builds/Web Dev
   alwaysCleanBuild: 0
   customBuildName: 
   deploySettings:

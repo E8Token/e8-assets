@@ -287,10 +287,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 899909612}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6b8c3ec0e3111524686934ed3e6c4426, type: 3}
+  m_Script: {fileID: 11500000, guid: 3b3afa048746d6949916f7171d64e1ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  configurationMatrix: {fileID: 11400000, guid: 9c82909753f240f43bea265942cac1f4, type: 2}
   initializeOnAwake: 1
   dontDestroyOnLoad: 1
   enableContinuousDetection: 1

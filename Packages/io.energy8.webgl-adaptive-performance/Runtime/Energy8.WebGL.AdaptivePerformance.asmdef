@@ -1,0 +1,16 @@
+{
+    "name": "Energy8.WebGL.AdaptivePerformance",
+    "rootNamespace": "Energy8.WebGL.AdaptivePerformance",
+    "references": [
+        "Energy8.ViewportManager"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

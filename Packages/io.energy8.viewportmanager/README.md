@@ -1,16 +1,14 @@
 # ViewportManager Package
 
-Universal viewport management system for Unity that automatically detects device orientation and platform.
-
-**⚠️ CURRENT STATUS: Graphics settings temporarily disabled - only orientation detection and events are active.**
+Universal viewport management system for Unity that automatically detects device orientation, platform, and screen characteristics.
 
 ## Features
 
 - **Platform Detection**: Automatically detects device type, platform, and orientation
 - **Event-Driven Architecture**: React to viewport changes through a clean event system
 - **Cross-Platform Support**: Works on WebGL, mobile, and desktop platforms
-- **Unity Quality Settings Integration**: Ready for Unity's built-in Quality Settings (temporarily disabled)
-- **Minimal Configuration**: Simple platform + orientation detection
+- **Screen Size Monitoring**: Track screen size and aspect ratio changes
+- **Minimal Configuration**: Simple setup with automatic detection
 
 ## Installation
 
@@ -19,51 +17,15 @@ Universal viewport management system for Unity that automatically detects device
 
 ## Quick Start
 
-### 1. Configure Unity Quality Settings
-
-Set up your Unity Quality Settings first:
-
-1. Go to **Edit > Project Settings > Quality**
-2. Configure the quality levels you want to use (0-5):
-   - **Level 0**: Mobile portrait (low power)
-   - **Level 2**: Mobile landscape (balanced)
-   - **Level 3**: Desktop WebGL (good quality)
-   - **Level 4**: Desktop native (high quality)
-
-### 2. Add ViewportManager to Your Scene
+### 1. Add ViewportManager to Your Scene
 
 1. Create an empty GameObject named "ViewportManager"
 2. Add the `ViewportManagerBootstrap` component
-3. Configure the `Configuration Matrix` with your platform mappings
+3. Configure monitoring settings as needed
 
-### 3. Configure Platform Mappings
+### 2. Listen to Viewport Changes
 
-The system maps Platform + Orientation → Unity Quality Level:
-
-```csharp
-// Example mappings in ViewportConfigurationMatrix
-Mobile + Portrait + Android → Unity Quality Level 0
-Mobile + Landscape + Android → Unity Quality Level 2
-Desktop + Landscape + WebGL → Unity Quality Level 3
-Desktop + Landscape + Windows → Unity Quality Level 4
-```
-
-### 4. Test Orientation Detection
-
-For testing orientation changes without graphics settings:
-
-```csharp
-// Add ViewportOrientationTester component to a GameObject
-// It will log orientation changes in real-time
-
-// Manual testing:
-var context = ViewportDetector.DetectContext();
-Debug.Log($"Current: {context.deviceType}, {context.platform}, {context.orientation}");
-```
-
-### 5. Listen to Changes (when graphics settings are re-enabled)
-
-**Простой пример:**
+**Simple Event Listener:**
 ```csharp
 using Energy8.ViewportManager.Core;
 
@@ -71,110 +33,171 @@ public class MyUIController : MonoBehaviour
 {
     private void Start()
     {
-        // Подписываемся на изменения ориентации
-        ViewportManager.OnContextChanged += OnViewportChanged;
+        // Subscribe to orientation changes
+        ViewportManager.OnOrientationChanged += OnOrientationChanged;
+        
+        // Subscribe to screen size changes
+        ViewportManager.OnScreenSizeChanged += OnScreenSizeChanged;
+        
+        // Subscribe to full context changes
+        ViewportManager.OnContextChanged += OnContextChanged;
     }
     
     private void OnDestroy()
     {
-        // Не забываем отписаться!
-        ViewportManager.OnContextChanged -= OnViewportChanged;
+        // Don't forget to unsubscribe!
+        ViewportManager.OnOrientationChanged -= OnOrientationChanged;
+        ViewportManager.OnScreenSizeChanged -= OnScreenSizeChanged;
+        ViewportManager.OnContextChanged -= OnContextChanged;
     }
     
-    private void OnViewportChanged(ViewportContext context)
+    private void OnOrientationChanged(ScreenOrientation orientation)
     {
-        if (context.orientation == ScreenOrientation.Portrait)
+        if (orientation == ScreenOrientation.Portrait)
         {
-            // Переключились в портретный режим
             ShowPortraitLayout();
         }
         else
         {
-            // Переключились в ландшафтный режим  
             ShowLandscapeLayout();
         }
     }
+    
+    private void OnScreenSizeChanged(int width, int height)
+    {
+        Debug.Log($"Screen size changed to {width}x{height}");
+        UpdateUILayout(width, height);
+    }
+    
+    private void OnContextChanged(ViewportContext context)
+    {
+        Debug.Log($"Viewport changed: {context}");
+    }
 }
 ```
 
-**📖 Подробную документацию по событиям см. в [EVENTS_DOCUMENTATION.md](EVENTS_DOCUMENTATION.md)**
-
-## Architecture Overview
-
-### Core Components
-
-- **ViewportManager**: Detects viewport changes and applies Unity Quality Settings
-- **ViewportDetector**: Handles device and platform detection
-- **ViewportConfiguration**: Simple wrapper for Unity Quality Level + optional overrides
-- **ViewportConfigurationMatrix**: Maps platform combinations to quality levels
-
-### Platform Mapping
-
-The system maps these combinations to Unity Quality Levels:
-
-| Device Type | Platform | Orientation | Default Quality Level |
-|-------------|----------|-------------|----------------------|
-| Mobile      | Android  | Portrait    | 0 (Low)              |
-| Mobile      | Android  | Landscape   | 2 (Medium)           |
-| Mobile      | iOS      | Portrait    | 0 (Low)              |
-| Mobile      | iOS      | Landscape   | 2 (Medium)           |
-| Desktop     | WebGL    | Landscape   | 3 (High)             |
-| Desktop     | Windows  | Landscape   | 4 (Very High)        |
-
-### Device Detection
-
-The system automatically detects:
-- **Device Type**: Mobile, Desktop, Console
-- **Platform**: WebGL, iOS, Android, Windows, macOS, Linux
-- **Orientation**: Portrait, Landscape
-- **Screen Resolution**: Width and height
-
-## Advanced Usage
-
-### Custom Overrides
-
-You can add optional overrides to any configuration:
-
+**Using ViewportEventListener Component:**
 ```csharp
-var config = new ViewportConfiguration(3) // Unity Quality Level 3
+using Energy8.ViewportManager.Components;
+using Energy8.ViewportManager.Core;
+
+public class ResponsiveUI : ViewportEventListener
 {
-    customTargetFrameRate = 120,  // Override FPS
-    forceDisableVSync = true      // Force disable VSync
-};
-
-config.ApplyToUnity();
-```
-
-### Responsive Components
-
-Use `ViewportResponsiveComponent` to automatically adjust UI elements based on viewport changes:
-
-```csharp
-public class ResponsiveUI : ViewportResponsiveComponent
-{
-    protected override void OnViewportChanged(ViewportInfo info)
+    [Header("UI Elements")]
+    public GameObject portraitLayout;
+    public GameObject landscapeLayout;
+    
+    protected override void OnOrientationChanged(ScreenOrientation orientation)
     {
-        if (info.orientation == ScreenOrientation.Portrait)
+        base.OnOrientationChanged(orientation);
+        
+        portraitLayout.SetActive(orientation == ScreenOrientation.Portrait);
+        landscapeLayout.SetActive(orientation == ScreenOrientation.Landscape);
+    }
+    
+    protected override void OnViewportContextChanged(ViewportContext context)
+    {
+        base.OnViewportContextChanged(context);
+        
+        // Adjust UI based on device type
+        if (context.deviceType == DeviceType.Mobile)
         {
-            // Adjust UI for portrait mode
+            SetMobileUI();
         }
         else
         {
-            // Adjust UI for landscape mode
+            SetDesktopUI();
         }
     }
 }
 ```
 
-### Debug Information
-
-Get current quality settings info for debugging:
+### 3. Manual Detection
 
 ```csharp
-var qualityInfo = ViewportConfiguration.GetCurrentUnityQualityInfo();
-Debug.Log(qualityInfo);
-// Output: "Unity Quality: Level 3 (High), Shadows: All, AntiAliasing: 4, VSync: 1, TargetFPS: 60"
+// Get current viewport information
+var context = ViewportManager.CurrentContext;
+Debug.Log($"Current: {context.deviceType}, {context.platform}, {context.orientation}");
+
+// Check specific properties
+if (ViewportManager.IsPortrait())
+{
+    Debug.Log("Device is in portrait mode");
+}
+
+if (ViewportManager.IsMobile())
+{
+    Debug.Log("Running on mobile device");
+}
+
+// Get screen information
+var (width, height) = ViewportManager.GetScreenSize();
+float aspectRatio = ViewportManager.GetAspectRatio();
 ```
+
+## API Reference
+
+### ViewportManager
+
+**Properties:**
+- `CurrentContext` - Current viewport context
+- `IsInitialized` - Whether the system is initialized
+- `LastDetectionTime` - Time of last detection
+
+**Events:**
+- `OnContextChanged` - Fired when viewport context changes
+- `OnOrientationChanged` - Fired when screen orientation changes
+- `OnScreenSizeChanged` - Fired when screen size changes
+- `OnInitialized` - Fired when system is initialized
+
+**Methods:**
+- `Initialize()` - Initialize the viewport manager
+- `RefreshContext()` - Force refresh of viewport context
+- `GetOrientation()` - Get current screen orientation
+- `GetDeviceType()` - Get current device type
+- `GetPlatform()` - Get current platform
+- `GetScreenSize()` - Get current screen size
+- `GetAspectRatio()` - Get current aspect ratio
+- `IsPortrait()` - Check if in portrait mode
+- `IsLandscape()` - Check if in landscape mode
+- `IsMobile()` - Check if on mobile device
+- `IsDesktop()` - Check if on desktop device
+- `IsTouchDevice()` - Check if device supports touch
+
+### ViewportContext
+
+```csharp
+public struct ViewportContext
+{
+    public ScreenOrientation orientation;
+    public DeviceType deviceType;
+    public Platform platform;
+    public int screenWidth;
+    public int screenHeight;
+    public float devicePixelRatio;
+}
+```
+
+### Enums
+
+**ScreenOrientation:**
+- `Landscape`
+- `Portrait`
+
+**DeviceType:**
+- `Desktop`
+- `Mobile`
+
+**Platform:**
+- `WebGL`
+- `Android`
+- `iOS`
+- `Windows`
+- `macOS`
+- `Linux`
+- `Mobile`
+- `Desktop`
+- `Console`
 
 ## Platform-Specific Considerations
 
@@ -184,66 +207,47 @@ Debug.Log(qualityInfo);
 - Supports orientation change detection
 
 ### Mobile (iOS/Android)
-- Optimized for battery life and thermal management
-- Automatic quality adjustment based on device capabilities
+- Optimized for battery life
 - Portrait/Landscape orientation handling
+- Touch device detection
 
 ### Desktop
-- Full quality settings available
-- High refresh rate support
 - Multi-monitor awareness
+- High refresh rate support
+- Keyboard/mouse input detection
 
-## API Reference
+## Components
 
-### ViewportManager
+### ViewportManagerBootstrap
+Automatically initializes and monitors the viewport manager.
 
-```csharp
-public class ViewportManager : MonoBehaviour
-{
-    // Events
-    public event System.Action<ViewportInfo> OnViewportChanged;
-    public event System.Action<ViewportConfiguration> OnConfigurationApplied;
-    
-    // Methods
-    public ViewportInfo GetCurrentViewportInfo();
-    public ViewportConfiguration GetCurrentConfiguration();
-    public void RefreshViewport();
-    public void ApplyConfiguration(ViewportConfiguration config);
-}
-```
+### ViewportEventListener
+Base class for components that need to react to viewport changes.
 
-### ViewportConfiguration
+### BasicViewportEventListener
+Simple event listener with Unity Events for visual scripting.
 
-```csharp
-public class ViewportConfiguration
-{
-    public int unityQualityLevel;        // Unity Quality Level (0-5)
-    public int customTargetFrameRate;    // Optional FPS override
-    public bool forceDisableVSync;       // Optional VSync override
-    
-    public void ApplyToUnity();
-    public static string GetCurrentUnityQualityInfo();
-}
-```
+## Best Practices
 
-### ViewportInfo
+1. **Always unsubscribe from events** in `OnDestroy()` to prevent memory leaks
+2. **Use ViewportEventListener** as base class for responsive components
+3. **Enable continuous detection** for dynamic viewport changes
+4. **Test on multiple devices** and orientations
+5. **Consider performance** when using continuous detection
 
-```csharp
-public struct ViewportInfo
-{
-    public DeviceType deviceType;
-    public Platform platform;
-    public ScreenOrientation orientation;
-    public int screenWidth;
-    public int screenHeight;
-}
-```
+## Troubleshooting
 
-## License
+**Events not firing:**
+- Ensure ViewportManagerBootstrap is in the scene
+- Check that continuous detection is enabled
+- Verify event subscriptions are correct
 
-This package is part of the Energy8 ecosystem and follows the same licensing terms as the main project.
+**Incorrect device detection:**
+- Test on actual devices, not just editor
+- Check WebGL plugin is working in browser
+- Verify screen size thresholds for mobile detection
 
-## Additional Documentation
-
-- **[Events Documentation](EVENTS_DOCUMENTATION.md)** - Подробное руководство по работе с событиями ViewportManager
-- **[API Reference](#api-reference)** - Справочник по API
+**Performance issues:**
+- Reduce detection interval in ViewportManagerBootstrap
+- Disable continuous detection if not needed
+- Optimize event handlers

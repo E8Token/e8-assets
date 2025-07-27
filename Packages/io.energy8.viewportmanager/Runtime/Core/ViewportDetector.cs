@@ -11,25 +11,25 @@ namespace Energy8.ViewportManager.Core
         /// <summary>
         /// Detect the current device type (Desktop/Mobile)
         /// </summary>
-        public static DeviceType DetectDeviceType()
+        public static Energy8.ViewportManager.Core.DeviceType DetectDeviceType()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Use WebGL plugin for enhanced detection
             if (ViewportDetectionPlugin.Instance != null)
             {
-                return ViewportDetectionPlugin.Instance.IsMobileDevice() ? DeviceType.Mobile : DeviceType.Desktop;
+                return ViewportDetectionPlugin.Instance.IsMobileDevice() ? Energy8.ViewportManager.Core.DeviceType.Mobile : Energy8.ViewportManager.Core.DeviceType.Desktop;
             }
 #endif
             
             // Fallback detection
             if (Application.isMobilePlatform)
-                return DeviceType.Mobile;
+                return Energy8.ViewportManager.Core.DeviceType.Mobile;
                 
             // Check screen size as additional indicator
             if (Screen.width < 768 || Screen.height < 768)
-                return DeviceType.Mobile;
+                return Energy8.ViewportManager.Core.DeviceType.Mobile;
                 
-            return DeviceType.Desktop;
+            return Energy8.ViewportManager.Core.DeviceType.Desktop;
         }
 
         /// <summary>
@@ -57,14 +57,14 @@ namespace Energy8.ViewportManager.Core
         /// <summary>
         /// Detect the current screen orientation
         /// </summary>
-        public static ScreenOrientation DetectOrientation()
+        public static Energy8.ViewportManager.Core.ScreenOrientation DetectOrientation()
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
             // Use WebGL plugin for enhanced detection
             if (ViewportDetectionPlugin.Instance != null)
             {
                 string orientation = ViewportDetectionPlugin.Instance.GetScreenOrientation();
-                return orientation.ToLower() == "portrait" ? ScreenOrientation.Portrait : ScreenOrientation.Landscape;
+                return orientation.ToLower() == "portrait" ? Energy8.ViewportManager.Core.ScreenOrientation.Portrait : Energy8.ViewportManager.Core.ScreenOrientation.Landscape;
             }
 #endif
             
@@ -72,20 +72,20 @@ namespace Energy8.ViewportManager.Core
             bool isPortrait = Screen.width < Screen.height;
             if (isPortrait)
             {
-                return ScreenOrientation.Portrait;
+                return Energy8.ViewportManager.Core.ScreenOrientation.Portrait;
             }
             
             // For landscape, try to get more specific orientation from Unity
 #if !UNITY_WEBGL || UNITY_EDITOR
             var unityOrientation = Screen.orientation;
             if (unityOrientation == UnityEngine.ScreenOrientation.LandscapeLeft)
-                return ScreenOrientation.Landscape;
+                return Energy8.ViewportManager.Core.ScreenOrientation.Landscape;
             else if (unityOrientation == UnityEngine.ScreenOrientation.LandscapeRight)
-                return ScreenOrientation.Landscape;
+                return Energy8.ViewportManager.Core.ScreenOrientation.Landscape;
 #endif
             
             // Default landscape fallback
-            return ScreenOrientation.Landscape;
+            return Energy8.ViewportManager.Core.ScreenOrientation.Landscape;
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace Energy8.ViewportManager.Core
                 screenWidth = Screen.width,
                 screenHeight = Screen.height,
                 devicePixelRatio = 1.0f,
-                isMobile = DetectDeviceType() == DeviceType.Mobile,
+                isMobile = DetectDeviceType() == Energy8.ViewportManager.Core.DeviceType.Mobile,
                 platform = DetectPlatform().ToString(),
                 touchSupport = Input.touchSupported
             };
@@ -150,38 +150,6 @@ namespace Energy8.ViewportManager.Core
         }
 
         /// <summary>
-        /// Get a Unity Quality Level recommendation based on device characteristics
-        /// </summary>
-        public static int GetRecommendedQualityLevel()
-        {
-            var deviceType = DetectDeviceType();
-            var orientation = DetectOrientation();
-            var platform = DetectPlatform();
-            
-            // Mobile + Portrait = Level 0 (optimized for weak devices)
-            if (deviceType == DeviceType.Mobile && orientation == ScreenOrientation.Portrait)
-                return 0;
-                
-            // Mobile + Landscape (any) = Level 2 (better performance but still mobile)
-            if (deviceType == DeviceType.Mobile && 
-                (orientation == ScreenOrientation.Landscape || 
-                 orientation == ScreenOrientation.Landscape || 
-                 orientation == ScreenOrientation.Landscape))
-                return 2;
-                
-            // Desktop + WebGL = Level 3 (good performance in browsers)
-            if (deviceType == DeviceType.Desktop && platform == Platform.WebGL)
-                return 3;
-                
-            // Desktop + Native = Level 4 (best performance)
-            if (deviceType == DeviceType.Desktop && platform != Platform.WebGL)
-                return 4;
-                
-            // Default fallback
-            return 2;
-        }
-
-        /// <summary>
         /// Detect current viewport context (combined detection)
         /// </summary>
         public static ViewportContext DetectContext()
@@ -189,8 +157,16 @@ namespace Energy8.ViewportManager.Core
             var deviceType = DetectDeviceType();
             var orientation = DetectOrientation();
             var platform = DetectPlatform();
+            var deviceInfo = GetDeviceInfo();
 
-            return new ViewportContext(orientation, deviceType, platform);
+            return new ViewportContext(
+                orientation, 
+                deviceType, 
+                platform, 
+                deviceInfo.screenWidth, 
+                deviceInfo.screenHeight, 
+                deviceInfo.devicePixelRatio
+            );
         }
 
         /// <summary>
@@ -203,18 +179,27 @@ namespace Energy8.ViewportManager.Core
         }
 
         /// <summary>
-        /// Detect current viewport info (full detection)
+        /// Get screen aspect ratio
         /// </summary>
-        public static ViewportInfo DetectViewport()
+        public static float GetAspectRatio()
         {
-            return new ViewportInfo
-            {
-                deviceType = DetectDeviceType(),
-                platform = DetectPlatform(),
-                orientation = DetectOrientation(),
-                screenWidth = Screen.width,
-                screenHeight = Screen.height
-            };
+            return (float)Screen.width / Screen.height;
+        }
+
+        /// <summary>
+        /// Check if screen is in portrait mode
+        /// </summary>
+        public static bool IsPortrait()
+        {
+            return DetectOrientation() == Energy8.ViewportManager.Core.ScreenOrientation.Portrait;
+        }
+
+        /// <summary>
+        /// Check if screen is in landscape mode
+        /// </summary>
+        public static bool IsLandscape()
+        {
+            return DetectOrientation() == Energy8.ViewportManager.Core.ScreenOrientation.Landscape;
         }
     }
 }

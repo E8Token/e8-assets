@@ -1,9 +1,7 @@
 {
     "name": "Energy8.ViewportManager",
     "rootNamespace": "Energy8.ViewportManager",
-    "references": [
-        "Energy8.WebGL.PluginPlatform"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

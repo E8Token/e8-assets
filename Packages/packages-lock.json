@@ -502,6 +502,14 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "io.energy8.webgl-adaptive-performance": {
+      "version": "file:io.energy8.webgl-adaptive-performance",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "io.energy8.viewportmanager": "2.0.0"
+      }
+    },
     "io.energy8.webgl-plugin-platform": {
       "version": "file:io.energy8.webgl-plugin-platform",
       "depth": 0,

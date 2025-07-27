@@ -1,15 +1,16 @@
 {
   "name": "io.energy8.viewportmanager",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "displayName": "E8 Viewport Manager",
-  "description": "Automatic viewport detection and graphics optimization system for Energy8 ecosystem with responsive design capabilities.",
+  "description": "Viewport detection and screen orientation management system for Energy8 ecosystem. Handles device type detection, platform identification, and screen orientation changes.",
   "unity": "6000.0",
   "keywords": [
     "viewport",
-    "responsive",
-    "optimization",
-    "graphics",
-    "mobile"
+    "orientation",
+    "screen",
+    "device",
+    "platform",
+    "responsive"
   ],
   "author": {
     "name": "Energy8",

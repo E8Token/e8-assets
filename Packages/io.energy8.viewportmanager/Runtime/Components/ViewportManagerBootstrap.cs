@@ -1,5 +1,4 @@
 using UnityEngine;
-using Energy8.ViewportManager.Configuration;
 using Energy8.ViewportManager.Core;
 
 namespace Energy8.ViewportManager.Components
@@ -10,7 +9,6 @@ namespace Energy8.ViewportManager.Components
     public class ViewportManagerBootstrap : MonoBehaviour
     {
         [Header("Configuration")]
-        [SerializeField] private ViewportConfigurationMatrix configurationMatrix;
         [SerializeField] private bool initializeOnAwake = true;
         [SerializeField] private bool dontDestroyOnLoad = true;
         
@@ -75,19 +73,8 @@ namespace Energy8.ViewportManager.Components
                 return;
             }
 
-            // Try to load configuration matrix if not assigned
-            if (configurationMatrix == null)
-            {
-                configurationMatrix = Resources.Load<ViewportConfigurationMatrix>("ViewportConfigMatrix");
-                
-                if (configurationMatrix == null && enableDebugLogging)
-                {
-                    Debug.LogWarning("No ViewportConfigurationMatrix found in Resources. Will use fallback configuration.");
-                }
-            }
-
             // Initialize
-            ViewportManager.Initialize(configurationMatrix);
+            ViewportManager.Initialize();
 
             if (enableDebugLogging)
             {
@@ -101,8 +88,11 @@ namespace Energy8.ViewportManager.Components
                 ViewportManager.OnContextChanged += (context) => 
                     Debug.Log($"Context changed: {context}");
                     
-                ViewportManager.OnQualityChanged += (quality) => 
-                    Debug.Log($"Quality changed: {quality}");
+                ViewportManager.OnOrientationChanged += (orientation) => 
+                    Debug.Log($"Orientation changed: {orientation}");
+                    
+                ViewportManager.OnScreenSizeChanged += (width, height) => 
+                    Debug.Log($"Screen size changed: {width}x{height}");
             }
         }
 
@@ -122,15 +112,6 @@ namespace Energy8.ViewportManager.Components
         public void PrintDebugInfo()
         {
             Debug.Log(ViewportManager.GetSystemInfo());
-        }
-
-        /// <summary>
-        /// Set configuration matrix at runtime
-        /// </summary>
-        public void SetConfigurationMatrix(ViewportConfigurationMatrix matrix)
-        {
-            configurationMatrix = matrix;
-            ViewportManager.SetConfigurationMatrix(matrix);
         }
 
         private void OnApplicationFocus(bool hasFocus)

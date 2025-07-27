@@ -1,12 +1,12 @@
 using System;
 using UnityEngine;
 using Energy8.ViewportManager.Core;
-using Energy8.ViewportManager.Configuration;
 
 namespace Energy8.ViewportManager
 {
     /// <summary>
-    /// Main viewport manager - handles automatic detection and configuration switching
+    /// Main viewport manager - handles automatic detection and viewport context management
+    /// Focused on viewport detection, screen orientation, and device information only
     /// </summary>
     public static class ViewportManager
     {
@@ -18,43 +18,33 @@ namespace Energy8.ViewportManager
         public static ViewportContext CurrentContext { get; private set; }
         
         /// <summary>
-        /// Current viewport configuration
-        /// </summary>
-        public static ViewportConfiguration CurrentConfiguration { get; private set; }
-        
-        /// <summary>
-        /// Current Unity quality level (read-only for now)
-        /// </summary>
-        public static int CurrentQualityLevel => QualitySettings.GetQualityLevel();
-        
-        /// <summary>
         /// Is the system initialized?
         /// </summary>
         public static bool IsInitialized { get; private set; }
         
         /// <summary>
-        /// Configuration matrix being used
+        /// Last detection time
         /// </summary>
-        public static ViewportConfigurationMatrix ConfigMatrix { get; private set; }
+        public static float LastDetectionTime { get; private set; }
         
         #endregion
 
         #region Events
         
         /// <summary>
-        /// Fired when viewport context changes (orientation, device, platform)
+        /// Fired when viewport context changes (orientation, device, platform, screen size)
         /// </summary>
         public static event Action<ViewportContext> OnContextChanged;
         
         /// <summary>
-        /// Fired when viewport configuration changes
+        /// Fired when screen orientation changes
         /// </summary>
-        public static event Action<ViewportConfiguration> OnConfigurationChanged;
+        public static event Action<Energy8.ViewportManager.Core.ScreenOrientation> OnOrientationChanged;
         
         /// <summary>
-        /// Fired when Unity quality level changes
+        /// Fired when screen size changes
         /// </summary>
-        public static event Action<int> OnQualityChanged;
+        public static event Action<int, int> OnScreenSizeChanged;
         
         /// <summary>
         /// Fired when system is initialized
@@ -66,9 +56,9 @@ namespace Energy8.ViewportManager
         #region Initialization
         
         /// <summary>
-        /// Initialize viewport manager with configuration matrix
+        /// Initialize viewport manager
         /// </summary>
-        public static void Initialize(ViewportConfigurationMatrix configMatrix = null)
+        public static void Initialize()
         {
             if (IsInitialized)
             {
@@ -76,47 +66,15 @@ namespace Energy8.ViewportManager
                 return;
             }
 
-            // Use provided matrix or try to load default
-            ConfigMatrix = configMatrix ?? LoadDefaultConfigMatrix();
-            
-            if (ConfigMatrix == null)
-            {
-                Debug.LogError("ViewportManager: No configuration matrix provided and no default found. Creating fallback.");
-                ConfigMatrix = CreateFallbackMatrix();
-            }
-
             // Detect initial context
             CurrentContext = ViewportDetector.DetectContext();
-            
-            // Get initial configuration
-            CurrentConfiguration = ConfigMatrix.GetConfiguration(CurrentContext);
-            
-            // Apply configuration
-            ApplyCurrentConfiguration();
+            LastDetectionTime = Time.time;
             
             IsInitialized = true;
             
-            Debug.Log($"ViewportManager initialized: {CurrentContext} -> Unity Quality Level {CurrentConfiguration.unityQualityLevel}");
+            Debug.Log($"ViewportManager initialized: {CurrentContext}");
             
             OnInitialized?.Invoke();
-        }
-
-        /// <summary>
-        /// Load default configuration matrix from Resources
-        /// </summary>
-        private static ViewportConfigurationMatrix LoadDefaultConfigMatrix()
-        {
-            return Resources.Load<ViewportConfigurationMatrix>("ViewportConfigMatrix");
-        }
-
-        /// <summary>
-        /// Create fallback configuration matrix
-        /// </summary>
-        private static ViewportConfigurationMatrix CreateFallbackMatrix()
-        {
-            var matrix = ScriptableObject.CreateInstance<ViewportConfigurationMatrix>();
-            // Default configurations will be initialized automatically in OnEnable
-            return matrix;
         }
         
         #endregion
@@ -128,7 +86,11 @@ namespace Energy8.ViewportManager
         /// </summary>
         public static void RefreshContext()
         {
-            if (!IsInitialized) return;
+            if (!IsInitialized) 
+            {
+                Initialize();
+                return;
+            }
             
             var newContext = ViewportDetector.DetectContext();
             
@@ -136,6 +98,8 @@ namespace Energy8.ViewportManager
             {
                 UpdateContext(newContext);
             }
+            
+            LastDetectionTime = Time.time;
         }
 
         /// <summary>
@@ -144,123 +108,134 @@ namespace Energy8.ViewportManager
         private static void UpdateContext(ViewportContext newContext)
         {
             var previousContext = CurrentContext;
-            var previousQuality = CurrentQualityLevel;
-            
             CurrentContext = newContext;
-            CurrentConfiguration = ConfigMatrix.GetConfiguration(CurrentContext);
             
             Debug.Log($"Viewport context changed: {previousContext} -> {CurrentContext}");
             
-            // Apply new configuration
-            ApplyCurrentConfiguration();
-            
             // Fire events
             OnContextChanged?.Invoke(CurrentContext);
-            OnConfigurationChanged?.Invoke(CurrentConfiguration);
             
-            if (previousQuality != CurrentQualityLevel)
+            // Fire specific events if changed
+            if (previousContext.orientation != CurrentContext.orientation)
             {
-                OnQualityChanged?.Invoke(CurrentQualityLevel);
+                OnOrientationChanged?.Invoke(CurrentContext.orientation);
             }
-        }
-
-        /// <summary>
-        /// Apply current configuration to Unity systems
-        /// </summary>
-        private static void ApplyCurrentConfiguration()
-        {
-            if (CurrentConfiguration == null) return;
             
-            // TEMPORARILY DISABLED - only orientation detection and events
-            Debug.Log($"[ViewportManager] Configuration detected: {CurrentConfiguration} (graphics settings disabled)");
-            
-            // TODO: Re-enable when graphics settings are needed
-            /*
-            try
+            if (previousContext.screenWidth != CurrentContext.screenWidth || 
+                previousContext.screenHeight != CurrentContext.screenHeight)
             {
-                CurrentConfiguration.ApplyToUnity();
+                OnScreenSizeChanged?.Invoke(CurrentContext.screenWidth, CurrentContext.screenHeight);
             }
-            catch (Exception e)
-            {
-                Debug.LogError($"Failed to apply viewport configuration: {e.Message}");
-            }
-            */
         }
         
         #endregion
 
-        #region Manual Control
+        #region Public API
         
         /// <summary>
-        /// Manually set quality profile (overrides automatic detection)
+        /// Get current screen orientation
         /// </summary>
-        public static void SetQualityLevel(int qualityLevel)
+        public static Energy8.ViewportManager.Core.ScreenOrientation GetOrientation()
         {
-            if (!IsInitialized) return;
-            
-            var newConfig = new ViewportConfiguration(qualityLevel);
-            var previousQuality = CurrentQualityLevel;
-            
-            CurrentConfiguration = newConfig;
-            ApplyCurrentConfiguration();
-            
-            Debug.Log($"Quality level manually set to: {qualityLevel}");
-            
-            OnConfigurationChanged?.Invoke(CurrentConfiguration);
-            
-            if (previousQuality != CurrentQualityLevel)
-            {
-                OnQualityChanged?.Invoke(CurrentQualityLevel);
-            }
+            return IsInitialized ? CurrentContext.orientation : ViewportDetector.DetectOrientation();
         }
-
+        
         /// <summary>
-        /// Manually set configuration matrix
+        /// Get current device type
         /// </summary>
-        public static void SetConfigurationMatrix(ViewportConfigurationMatrix matrix)
+        public static Energy8.ViewportManager.Core.DeviceType GetDeviceType()
         {
-            if (matrix == null)
-            {
-                Debug.LogError("Cannot set null configuration matrix");
-                return;
-            }
-            
-            ConfigMatrix = matrix;
-            
+            return IsInitialized ? CurrentContext.deviceType : ViewportDetector.DetectDeviceType();
+        }
+        
+        /// <summary>
+        /// Get current platform
+        /// </summary>
+        public static Platform GetPlatform()
+        {
+            return IsInitialized ? CurrentContext.platform : ViewportDetector.DetectPlatform();
+        }
+        
+        /// <summary>
+        /// Get current screen size
+        /// </summary>
+        public static (int width, int height) GetScreenSize()
+        {
             if (IsInitialized)
             {
-                RefreshContext();
+                return (CurrentContext.screenWidth, CurrentContext.screenHeight);
             }
-            
-            Debug.Log("Configuration matrix updated");
+            return (Screen.width, Screen.height);
+        }
+        
+        /// <summary>
+        /// Get current aspect ratio
+        /// </summary>
+        public static float GetAspectRatio()
+        {
+            var (width, height) = GetScreenSize();
+            return (float)width / height;
+        }
+        
+        /// <summary>
+        /// Check if current orientation is portrait
+        /// </summary>
+        public static bool IsPortrait()
+        {
+            return GetOrientation() == Energy8.ViewportManager.Core.ScreenOrientation.Portrait;
+        }
+        
+        /// <summary>
+        /// Check if current orientation is landscape
+        /// </summary>
+        public static bool IsLandscape()
+        {
+            return GetOrientation() == Energy8.ViewportManager.Core.ScreenOrientation.Landscape;
+        }
+        
+        /// <summary>
+        /// Check if current device is mobile
+        /// </summary>
+        public static bool IsMobile()
+        {
+            return GetDeviceType() == Energy8.ViewportManager.Core.DeviceType.Mobile;
+        }
+        
+        /// <summary>
+        /// Check if current device is desktop
+        /// </summary>
+        public static bool IsDesktop()
+        {
+            return GetDeviceType() == Energy8.ViewportManager.Core.DeviceType.Desktop;
+        }
+        
+        /// <summary>
+        /// Check if device supports touch
+        /// </summary>
+        public static bool IsTouchDevice()
+        {
+            return ViewportDetector.IsTouchDevice();
         }
         
         #endregion
 
-        #region Utility
+        #region Debug & Info
         
         /// <summary>
-        /// Get detailed system information
+        /// Get system information for debugging
         /// </summary>
         public static string GetSystemInfo()
         {
-            return $"ViewportManager Status:\n" +
-                   $"- Initialized: {IsInitialized}\n" +
-                   $"- Current Context: {CurrentContext}\n" +
-                   $"- Current Quality Level: {CurrentQualityLevel}\n" +
-                   $"- Config Matrix: {(ConfigMatrix != null ? "Loaded" : "None")}\n\n" +
-                   ViewportDetector.GetDeviceInfo();
-        }
-
-        /// <summary>
-        /// Reset to automatic detection mode
-        /// </summary>
-        public static void ResetToAutomatic()
-        {
-            if (!IsInitialized) return;
+            if (!IsInitialized)
+            {
+                return "ViewportManager not initialized";
+            }
             
-            RefreshContext();
-            Debug.Log("Reset to automatic viewport detection");
+            return $"ViewportManager System Info:\n" +
+                   $"  Context: {CurrentContext}\n" +
+                   $"  Aspect Ratio: {GetAspectRatio():F2}\n" +
+                   $"  Touch Support: {IsTouchDevice()}\n" +
+                   $"  Last Detection: {LastDetectionTime:F2}s";
         }
         
         #endregion
