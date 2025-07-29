@@ -610,6 +610,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 5274722158775361847, guid: a06aa8532386d6545aa9594dae1f955e, type: 3}
+      propertyPath: orientation
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7034486935173506489, guid: a06aa8532386d6545aa9594dae1f955e, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -756,6 +760,14 @@ PrefabInstance:
     - target: {fileID: 1746855775091212645, guid: b49b2ebf1ac92a64daf0d61dec09a30a, type: 3}
       propertyPath: m_Name
       value: IdentityUI_Portrait
+      objectReference: {fileID: 0}
+    - target: {fileID: 1751730915545675929, guid: b49b2ebf1ac92a64daf0d61dec09a30a, type: 3}
+      propertyPath: orientation
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1751730915545675929, guid: b49b2ebf1ac92a64daf0d61dec09a30a, type: 3}
+      propertyPath: enablePortraitAdaptation
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3124846844255059750, guid: b49b2ebf1ac92a64daf0d61dec09a30a, type: 3}
       propertyPath: m_Pivot.x

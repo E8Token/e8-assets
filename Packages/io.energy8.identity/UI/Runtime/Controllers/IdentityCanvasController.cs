@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using Energy8.Identity.UI.Runtime.Views.Management;
 using Energy8.Identity.UI.Core.Management;
 using Energy8.Identity.UI.Core.Controllers;
-using ScreenOrientation = Energy8.ViewportManager.Core.ScreenOrientation;
+using ScreenOrientation = Energy8.Identity.UI.Runtime.Canvas.CanvasManager.ScreenOrientation;
 
 namespace Energy8.Identity.UI.Runtime.Controllers
 {

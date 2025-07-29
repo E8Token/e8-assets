@@ -1,8 +1,6 @@
 using Energy8.Identity.Configuration.Core;
 using Energy8.Identity.Http.Core;
 using Game.Services;
-using Energy8.Identity.Http.Core;
-using Energy8.Identity.Configuration.Core;
 using Energy8.Identity.Http.Runtime.Clients;
 using UnityEngine;
 

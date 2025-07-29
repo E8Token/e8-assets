@@ -9,8 +9,6 @@ using Energy8.Identity.UI.Core.Management;
 using Energy8.Identity.UI.Core.Controllers;
 using Energy8.Identity.UI.Core.Views;
 using UnityEngine;
-using Energy8.ViewportManager.Core;
-using ScreenOrientation = Energy8.ViewportManager.Core.ScreenOrientation;
 
 namespace Energy8.Identity.UI.Runtime.Canvas
 {
@@ -18,11 +16,19 @@ namespace Energy8.Identity.UI.Runtime.Canvas
     /// Управляет Canvas и ViewManager состоянием.
     /// Отвечает только за UI отображение, не за бизнес-логику.
     /// Синхронизирует ViewManager операции между всеми зарегистрированными IdentityController.
-    /// Точный перенос Canvas Management секции (строки 75-140)
+    /// Использует ручное определение ориентации экрана через Screen.width и Screen.height.
     /// </summary>
     public class CanvasManager : ICanvasManager
     {
+        public enum ScreenOrientation
+        {
+            Portrait,
+            Landscape
+        }
+
         private readonly Dictionary<ScreenOrientation, IdentityCanvasController> controllers = new();
+        private ScreenOrientation currentOrientation;
+        private CancellationTokenSource orientationDetectionCts;
 
         public void RegisterCanvasController(IdentityCanvasController controller)
         {
@@ -36,9 +42,14 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         public CanvasManager()
         {
             Debug.Log("CanvasManager Initialized");
-            ViewportManager.ViewportManager.OnContextChanged += OnViewportContextChanged;
             ScanAndRegisterControllers();
-            UpdateActiveControllerByOrientation(Screen.width < Screen.height ? ScreenOrientation.Portrait : ScreenOrientation.Landscape);
+
+            // Определяем начальную ориентацию
+            currentOrientation = GetCurrentOrientation();
+            UpdateActiveControllerByOrientation(currentOrientation);
+
+            // Запускаем цикл мониторинга ориентации
+            StartOrientationDetection();
         }
 
         /// <summary>
@@ -53,22 +64,77 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             }
         }
 
-        private void OnViewportContextChanged(ViewportContext context)
-        {
-            Debug.Log($"[CanvasManager] OnViewportContextChanged: orientation={context.orientation}");
-            UpdateActiveControllerByOrientation(context.orientation);
-        }
-
+        /// <summary>
+        /// Определяет текущую ориентацию экрана на основе сравнения ширины и высоты
+        /// </summary>
         private ScreenOrientation GetCurrentOrientation()
         {
-            var ctx = ViewportManager.ViewportManager.CurrentContext;
-            return ctx.orientation;
+            return Screen.width < Screen.height ? ScreenOrientation.Portrait : ScreenOrientation.Landscape;
+        }
+
+        /// <summary>
+        /// Запускает асинхронный цикл мониторинга изменений ориентации экрана
+        /// </summary>
+        private void StartOrientationDetection()
+        {
+            orientationDetectionCts = new CancellationTokenSource();
+            OrientationDetectionLoop(orientationDetectionCts.Token).Forget();
+        }
+
+        /// <summary>
+        /// Асинхронный цикл для определения изменений ориентации экрана
+        /// </summary>
+        private async UniTaskVoid OrientationDetectionLoop(CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var newOrientation = GetCurrentOrientation();
+
+                    if (newOrientation != currentOrientation)
+                    {
+                        Debug.Log($"[CanvasManager] Orientation changed: {currentOrientation} -> {newOrientation}");
+                        currentOrientation = newOrientation;
+                        UpdateActiveControllerByOrientation(currentOrientation);
+                    }
+
+                    // Проверяем каждые 100ms
+                    await UniTask.Delay(100, cancellationToken: cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Нормальное завершение при отмене
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[CanvasManager] Error in orientation detection: {ex.Message}");
+                    await UniTask.Delay(1000, cancellationToken: cancellationToken); // Ждем дольше при ошибке
+                }
+            }
+        }
+
+        /// <summary>
+        /// Останавливает мониторинг ориентации
+        /// </summary>
+        public void StopOrientationDetection()
+        {
+            orientationDetectionCts?.Cancel();
+            orientationDetectionCts?.Dispose();
+            orientationDetectionCts = null;
+        }
+
+        /// <summary>
+        /// Освобождает ресурсы при уничтожении объекта
+        /// </summary>
+        public void Dispose()
+        {
+            StopOrientationDetection();
         }
 
         private void UpdateActiveControllerByOrientation(ScreenOrientation orientation)
         {
-            Debug.Log($"[CanvasManager] Переключение CanvasController. Активная ориентация: {orientation}");
-
             // Переключаем активность контроллеров по ориентации
             foreach (var kvp in controllers)
             {
@@ -77,8 +143,6 @@ namespace Energy8.Identity.UI.Runtime.Canvas
                 controller.GetComponent<CanvasGroup>().alpha = isActiveForOrientation ? 1 : 0;
                 controller.GetComponent<CanvasGroup>().interactable = isActiveForOrientation;
                 controller.GetComponent<CanvasGroup>().blocksRaycasts = isActiveForOrientation;
-
-                Debug.Log($"[CanvasManager] Controller {controller.name} ({kvp.Key}): Active={isActiveForOrientation}, State remains={controller.IsOpen}");
             }
 
             // Устанавливаем текущий активный контроллер
@@ -229,7 +293,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             // Создаем список задач для всех ViewManager
             var tasks = new List<UniTask<TResult>>();
             var cancellationTokenSources = new List<CancellationTokenSource>();
-            
+
             foreach (var viewManager in allViewManagers)
             {
                 try
@@ -254,9 +318,9 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             {
                 // Ждем завершения первой задачи и отменяем остальные
                 var (winnerIndex, result) = await UniTask.WhenAny(tasks);
-                
+
                 Debug.Log($"[ViewManagerProxy] Task {winnerIndex} completed first, cancelling others");
-                
+
                 // Отменяем все остальные задачи
                 for (int i = 0; i < cancellationTokenSources.Count; i++)
                 {
@@ -265,7 +329,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
                         cancellationTokenSources[i].Cancel();
                     }
                 }
-                
+
                 return result;
             }
             finally
