@@ -255,26 +255,26 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             {
                 case IdentityState.PreAuthentication:
                     // 1. Проверка обновления
-                    var updateService = serviceContainer.Resolve<IUpdateService>();
-                    var updateFlowManager = serviceContainer.Resolve<IUpdateFlowManager>();
-                    if (updateService != null && updateService.HasUpdate && updateFlowManager != null)
-                    {
-                        updateFlowManager.ShowUpdateFlowAsync(lifetimeCts.Token).ContinueWith(() =>
-                        {
-                            stateManager.TransitionTo(IdentityState.PreAuthentication);
-                        }).Forget();
-                        break;
-                    }
-                    // 2. Проверка аналитики
-                    var analyticsPermissionService = serviceContainer.Resolve<IAnalyticsPermissionService>();
-                    if (analyticsPermissionService != null && analyticsPermissionService.ShouldShowAnalyticsPermissionRequest)
-                    {
-                        analyticsPermissionService.RequestAnalyticsPermissionAsync(lifetimeCts.Token).ContinueWith(_ =>
-                        {
-                            stateManager.TransitionTo(IdentityState.PreAuthentication);
-                        }).Forget();
-                        break;
-                    }
+                    // var updateService = serviceContainer.Resolve<IUpdateService>();
+                    // var updateFlowManager = serviceContainer.Resolve<IUpdateFlowManager>();
+                    // if (updateService != null && updateService.HasUpdate && updateFlowManager != null)
+                    // {
+                    //     updateFlowManager.ShowUpdateFlowAsync(lifetimeCts.Token).ContinueWith(() =>
+                    //     {
+                    //         stateManager.TransitionTo(IdentityState.PreAuthentication);
+                    //     }).Forget();
+                    //     break;
+                    // }
+                    // // 2. Проверка аналитики
+                    // var analyticsPermissionService = serviceContainer.Resolve<IAnalyticsPermissionService>();
+                    // if (analyticsPermissionService != null && analyticsPermissionService.ShouldShowAnalyticsPermissionRequest)
+                    // {
+                    //     analyticsPermissionService.RequestAnalyticsPermissionAsync(lifetimeCts.Token).ContinueWith(_ =>
+                    //     {
+                    //         stateManager.TransitionTo(IdentityState.PreAuthentication);
+                    //     }).Forget();
+                    //     break;
+                    // }
                     // 3. Проверка TG MiniApp среды
                     isTelegramMiniApp = identityService != null && identityService.HasTelegramAutoAuthData;
                     
