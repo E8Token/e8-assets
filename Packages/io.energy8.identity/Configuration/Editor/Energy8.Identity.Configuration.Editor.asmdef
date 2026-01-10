@@ -2,7 +2,9 @@
     "name": "Energy8.Identity.Configuration.Editor",
     "rootNamespace": "Energy8.Identity.Configuration.Editor",
     "references": [
-        "Energy8.Identity.Configuration"
+        "Energy8.Identity.Configuration",
+        "Energy8.EnvironmentConfig.Editor",
+        "Energy8.EnvironmentConfig.Runtime"
     ],
     "includePlatforms": [
         "Editor"

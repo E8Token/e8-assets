@@ -42,7 +42,6 @@ namespace Energy8.Identity.User.Runtime.Services
         {
             try
             {
-                Debug.Log("Updating user name: " + name);
                 await httpClient.PutAsync("user/name", new { Name = name }, ct);
             }
             catch (Exception ex)
@@ -56,7 +55,6 @@ namespace Energy8.Identity.User.Runtime.Services
         {
             try
             {
-                Debug.Log("Email change requested: " + newEmail);
                 var response = await httpClient.PutAsync<EmailVerificationTokenDto>(
                     "user/email",
                     new EmailChangeDto()
@@ -97,7 +95,6 @@ namespace Energy8.Identity.User.Runtime.Services
         {
             try
             {
-                Debug.Log("Account deletion requested");
                 var response = await httpClient.DeleteAsync<EmailVerificationTokenDto>(
                     "user",
                     ct);
@@ -136,7 +133,6 @@ namespace Energy8.Identity.User.Runtime.Services
         {
             try
             {
-                Debug.Log($"Unlinking provider: {provider}");
                 await httpClient.PostAsync<object>(
                     "User/UnlinkProvider",
                     new { Provider = provider },

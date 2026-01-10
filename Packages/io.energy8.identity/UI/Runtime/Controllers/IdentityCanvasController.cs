@@ -173,8 +173,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 initialViewportWidth = containerRectTransform.sizeDelta.x;
                 isViewportInitialized = true;
 
-                Debug.Log($"[CanvasController] Инициализация Portrait адаптации. Базовая ширина Viewport: {initialViewportWidth} для aspect ratio {targetAspectRatio:F3}");
-
                 // Применяем адаптацию для текущего размера экрана
                 AdaptViewportForCurrentScreen();
             }
@@ -226,11 +224,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                 Vector2 anchoredPosition = containerRectTransform.anchoredPosition;
                 anchoredPosition.x += widthDifference;
                 containerRectTransform.anchoredPosition = anchoredPosition;
-
-                Debug.Log($"[CanvasController] Сдвиг открытого окна на {widthDifference:F1}px");
             }
-
-            Debug.Log($"[CanvasController] Адаптация Viewport: экран {currentScreenWidth}x{currentScreenHeight} (AR: {currentAspectRatio:F3}), целевой AR: {targetAspectRatio:F3}, масштаб: {aspectRatioScale:F2}, новая ширина: {newViewportWidth:F1}");
         }
 
         private void Reset()

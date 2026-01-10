@@ -1,0 +1,22 @@
+{
+    "name": "Game",
+    "rootNamespace": "Game",
+    "references": [
+        "Energy8.Identity.Shared",
+        "Energy8.Identity.Http",
+        "Energy8.Identity.Configuration",
+        "Energy8.Identity.Game",
+        "Energy8.Identity.UI_Legacy",
+        "Energy8.EnvironmentConfig.Runtime",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

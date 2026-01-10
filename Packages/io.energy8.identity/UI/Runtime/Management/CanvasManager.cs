@@ -35,13 +35,10 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             if (controller == null) return;
 
             controllers[controller.Orientation] = controller;
-
-            Debug.Log($"[CanvasManager] Зарегистрирован контроллер: {controller.name}, Orientation: {controller.Orientation}");
         }
 
         public CanvasManager()
         {
-            Debug.Log("CanvasManager Initialized");
             ScanAndRegisterControllers();
 
             // Определяем начальную ориентацию
@@ -94,7 +91,6 @@ namespace Energy8.Identity.UI.Runtime.Canvas
 
                     if (newOrientation != currentOrientation)
                     {
-                        Debug.Log($"[CanvasManager] Orientation changed: {currentOrientation} -> {newOrientation}");
                         currentOrientation = newOrientation;
                         UpdateActiveControllerByOrientation(currentOrientation);
                     }
@@ -281,8 +277,6 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             where TParams : ViewParams
             where TResult : ViewResult
         {
-            Debug.Log($"[ViewManagerProxy] Show<{typeof(TView).Name}> - синхронизируем между всеми ViewManager");
-
             var allViewManagers = canvasManager.GetAllViewManagers().ToList();
             if (!allViewManagers.Any())
             {
@@ -318,8 +312,6 @@ namespace Energy8.Identity.UI.Runtime.Canvas
             {
                 // Ждем завершения первой задачи и отменяем остальные
                 var (winnerIndex, result) = await UniTask.WhenAny(tasks);
-
-                Debug.Log($"[ViewManagerProxy] Task {winnerIndex} completed first, cancelling others");
 
                 // Отменяем все остальные задачи
                 for (int i = 0; i < cancellationTokenSources.Count; i++)

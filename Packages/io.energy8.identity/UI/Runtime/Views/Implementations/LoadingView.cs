@@ -19,15 +19,12 @@ namespace Energy8.Identity.UI.Runtime.Views.Implementations
         public override void Initialize(LoadingViewParams @params)
         {
             base.Initialize(@params);
-            Debug.Log("LoadingView: Initializing with task parameters");
-            
+
             // Не запускаем таск сразу, а сохраняем параметры для использования в ProcessAsync
         }
 
         public override async UniTask<LoadingViewResult> ProcessAsync(CancellationToken ct)
         {
-            Debug.Log("LoadingView: Starting to process task in ProcessAsync");
-            
             // Минимальное время отображения loading view (500ms)
             var minDisplayTask = UniTask.Delay(500, cancellationToken: ct);
             
@@ -40,32 +37,22 @@ namespace Energy8.Identity.UI.Runtime.Views.Implementations
                 if (Parameters.GetType() == typeof(ResultLoadingViewParams))
                 {
                     var resultParams = (ResultLoadingViewParams)Parameters;
-                    Debug.Log($"LoadingView: Task status before wait: {resultParams.Task.Status}");
-                    Debug.Log("LoadingView: Waiting for task with result");
-                    
                     taskToWait = resultParams.Task.ContinueWith(r => { result = r; hasResult = true; });
                 }
                 else
                 {
-                    Debug.Log($"LoadingView: Task status before wait: {Parameters.Task.Status}");
-                    Debug.Log("LoadingView: Waiting for task without result");
-                    
                     taskToWait = Parameters.Task;
                 }
                 
                 // Ждем как минимум 500ms И завершения таска
                 await UniTask.WhenAll(minDisplayTask, taskToWait);
-                
-                Debug.Log("LoadingView: Task and minimum display time completed");
-                
+
                 if (hasResult)
                 {
-                    Debug.Log("LoadingView: Returning result");
                     return new LoadingViewResult(result);
                 }
                 else
                 {
-                    Debug.Log("LoadingView: Returning empty result");
                     return new LoadingViewResult();
                 }
             }

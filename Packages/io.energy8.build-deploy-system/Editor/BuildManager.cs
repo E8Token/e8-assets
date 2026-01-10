@@ -88,6 +88,12 @@ namespace Energy8.BuildDeploySystem.Editor
                 processedPath = processedPath.Replace("{{{DATETIME}}}", dateTimeString);
             }
 
+            if (processedPath.Contains("{{{ENVIRONMENT}}}"))
+            {
+                string environment = GetCurrentEnvironmentFromConfig(config);
+                processedPath = processedPath.Replace("{{{ENVIRONMENT}}}", environment);
+            }
+
             return processedPath;
         }
 
@@ -129,6 +135,9 @@ namespace Energy8.BuildDeploySystem.Editor
                 var displayName = config.GetDisplayName();
                 OnBuildStarted?.Invoke(displayName);
                 Debug.Log($"[BuildSystem] Starting build for configuration: {displayName}");
+
+                // Обновляем среду перед сборкой если задана targetEnvironment
+                SetTargetEnvironment(config);
 
                 string processedOutputPath = ProcessOutputPathTemplate(config.OutputPath, config);
                 string fullOutputPath = Path.GetFullPath(processedOutputPath);
@@ -840,6 +849,85 @@ namespace Energy8.BuildDeploySystem.Editor
             File.WriteAllText(Path.Combine(buildSubPath, "data-types.json"), json);
             
             Debug.Log($"[BuildSystem] Generated data-types.json with {dataTypes.Count} data file types");
+        }
+
+        /// <summary>
+        /// Gets the current environment from configuration or from environment.json
+        /// </summary>
+        private static string GetCurrentEnvironmentFromConfig(BuildConfiguration config)
+        {
+            if (config == null)
+                return "Development";
+
+            // Если задана целевая среда в конфигурации, используем её
+            if (!string.IsNullOrEmpty(config.TargetEnvironment))
+                return config.TargetEnvironment;
+
+            // Иначе читаем текущую среду из environment.json
+            return GetCurrentEnvironmentFromJson();
+        }
+
+        /// <summary>
+        /// Reads the current environment from environment.json in StreamingAssets
+        /// </summary>
+        private static string GetCurrentEnvironmentFromJson()
+        {
+            try
+            {
+                string configPath = Path.Combine(Application.streamingAssetsPath, "E8Config/environment.json");
+                if (File.Exists(configPath))
+                {
+                    string jsonContent = File.ReadAllText(configPath);
+                    var environmentConfig = JsonUtility.FromJson<EnvironmentConfigData>(jsonContent);
+                    if (!string.IsNullOrEmpty(environmentConfig.currentEnvironment))
+                        return environmentConfig.currentEnvironment;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[BuildSystem] Failed to read environment config: {ex.Message}");
+            }
+            return "Development";
+        }
+
+        [System.Serializable]
+        private class EnvironmentConfigData
+        {
+            public string currentEnvironment;
+        }
+
+        /// <summary>
+        /// Sets the target environment in environment.json before build
+        /// </summary>
+        private static void SetTargetEnvironment(BuildConfiguration config)
+        {
+            if (config == null)
+                return;
+
+            // Если среда не задана, ничего не делаем
+            if (string.IsNullOrEmpty(config.TargetEnvironment))
+                return;
+
+            try
+            {
+                string e8ConfigPath = Path.Combine(Application.streamingAssetsPath, "E8Config");
+                if (!Directory.Exists(e8ConfigPath))
+                {
+                    Directory.CreateDirectory(e8ConfigPath);
+                    Debug.Log($"[BuildSystem] Created E8Config directory: {e8ConfigPath}");
+                }
+
+                string configPath = Path.Combine(e8ConfigPath, "environment.json");
+                var environmentConfig = new EnvironmentConfigData { currentEnvironment = config.TargetEnvironment };
+                string jsonContent = JsonUtility.ToJson(environmentConfig, true);
+                File.WriteAllText(configPath, jsonContent);
+
+                Debug.Log($"[BuildSystem] Environment switched to: {config.TargetEnvironment}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[BuildSystem] Failed to set target environment: {ex.Message}");
+            }
         }
     }
 }

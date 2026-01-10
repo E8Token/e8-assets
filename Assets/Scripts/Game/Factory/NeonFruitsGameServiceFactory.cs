@@ -2,6 +2,7 @@ using Energy8.Identity.Configuration.Core;
 using Energy8.Identity.Http.Core;
 using Game.Services;
 using Energy8.Identity.Http.Runtime.Clients;
+using Energy8.EnvironmentConfig.Base;
 using UnityEngine;
 
 namespace Game.Factory
@@ -42,7 +43,8 @@ namespace Game.Factory
         {
             try
             {
-                var httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
+                var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+                var httpClient = new UnityHttpClient(config?.AuthServerUrl ?? "http://localhost");
                 return CreateService(httpClient, gameEndpoint);
             }
             catch (System.Exception ex)

@@ -21,17 +21,12 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
         {
             try
             {
-                Debug.Log("Initializing WebGL Analytics Provider");
-
 #if UNITY_WEBGL && !UNITY_EDITOR
                 await FirebaseWebGLAnalyticsPlugin.Instance.Initialize();
                 FirebaseWebGLAnalyticsPlugin.Instance.OnError += HandleError;
-#else
-                Debug.Log("WebGL Analytics Provider is not supported on this platform");
 #endif
 
                 IsInitialized = true;
-                Debug.Log("WebGL Analytics Provider initialized successfully");
             }
             catch (Exception ex)
             {
@@ -52,9 +47,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
 
 #if UNITY_WEBGL && !UNITY_EDITOR
                 FirebaseWebGLAnalyticsPlugin.Instance.LogEventAsync(eventName, parameters);
-                Debug.Log($"Logged event: {eventName}");
-#else
-                Debug.Log($"Skipped logging event on non-WebGL platform: {eventName}");
 #endif
             }
             catch (Exception ex)
@@ -75,9 +67,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
 
 #if UNITY_WEBGL && !UNITY_EDITOR
                 FirebaseWebGLAnalyticsPlugin.Instance.SetUserIdAsync(userId);
-                Debug.Log($"Set user ID: {userId}");
-#else
-                Debug.Log($"Skipped setting user ID on non-WebGL platform: {userId}");
 #endif
             }
             catch (Exception ex)
@@ -98,9 +87,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
 
 #if UNITY_WEBGL && !UNITY_EDITOR
                 FirebaseWebGLAnalyticsPlugin.Instance.SetUserPropertiesAsync(properties);
-                Debug.Log("Set user properties");
-#else
-                Debug.Log("Skipped setting user properties on non-WebGL platform");
 #endif
             }
             catch (Exception ex)
@@ -121,9 +107,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
 
 #if UNITY_WEBGL && !UNITY_EDITOR
                 FirebaseWebGLAnalyticsPlugin.Instance.ResetAsync();
-                Debug.Log("Reset analytics data");
-#else
-                Debug.Log("Skipped resetting analytics data on non-WebGL platform");
 #endif
             }
             catch (Exception ex)

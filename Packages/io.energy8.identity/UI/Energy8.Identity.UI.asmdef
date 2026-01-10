@@ -9,6 +9,7 @@
         "Energy8.Identity.Analytics",
         "Energy8.Identity.Configuration",
         "Energy8.Identity.Http",
+        "Energy8.EnvironmentConfig.Runtime",
 
         "UniTask",
         "Unity.InputSystem",

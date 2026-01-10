@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using UnityEngine;
 using Energy8.Identity.Configuration.Core;
+using Energy8.EnvironmentConfig.Base;
 using Energy8.Identity.Shared.Core.Exceptions;
 using Energy8.Identity.Shared.Core.Contracts.Dto.Auth;
 
@@ -34,13 +35,18 @@ namespace Energy8.Identity.Auth.Runtime.Providers
 
         public async UniTask Initialize(CancellationToken ct)
         {
-            Debug.Log("Initializing Firebase Auth");
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+            var firebaseConfig = config?.FirebaseConfig;
+            if (firebaseConfig == null)
+            {
+                throw new InvalidOperationException("FirebaseConfig is not set in IdentityConfig");
+            }
 
             await FirebaseApp.CheckAndFixDependenciesAsync().AsUniTask().ContinueWith(dependencyStatus =>
             {
                 if (dependencyStatus == DependencyStatus.Available)
                 {
-                    string config = IdentityConfiguration.AuthConfig;
+                    string config = firebaseConfig.text;
                     AppOptions appOptions = AppOptions.LoadFromJsonConfig(config);
                     FirebaseApp app = FirebaseApp.Create(appOptions, "Auth");
                     auth = FirebaseAuth.GetAuth(app);
@@ -48,8 +54,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
             });
 
             auth.StateChanged += AuthStateChanged;
-
-            Debug.Log("Firebase Auth initialized");
         }
 
         public async UniTask<string> GetToken(bool forceRefresh, CancellationToken ct)
@@ -72,9 +76,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
         {
             try
             {
-                Debug.Log("[NativeAuthProvider] Starting SignInWithCustomTokenAsync");
                 var result = await auth.SignInWithCustomTokenAsync(token);
-                Debug.Log($"[NativeAuthProvider] SignInWithCustomTokenAsync completed. User: {result.User?.UserId}");
                 return result;
             }
             catch (Exception ex)
@@ -109,18 +111,14 @@ namespace Energy8.Identity.Auth.Runtime.Providers
 
         private void AuthStateChanged(object sender, EventArgs args)
         {
-            Debug.Log($"[NativeAuthProvider] AuthStateChanged called. CurrentUser: {auth.CurrentUser?.UserId}, IsValid: {auth.CurrentUser?.IsValid()}");
-
             if (auth.CurrentUser != null && auth.CurrentUser.IsValid())
             {
                 IsSignedIn = true;
-                Debug.Log($"[NativeAuthProvider] User signed in, invoking OnSignedIn event for user: {auth.CurrentUser.UserId}");
                 OnSignedIn?.Invoke(auth.CurrentUser);
             }
             else
             {
                 IsSignedIn = false;
-                Debug.Log("[NativeAuthProvider] User signed out, invoking OnSignedOut event");
                 OnSignedOut?.Invoke();
             }
         }

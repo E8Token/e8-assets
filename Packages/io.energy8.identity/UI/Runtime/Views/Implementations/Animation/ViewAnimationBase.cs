@@ -24,7 +24,6 @@ namespace Energy8.Identity.UI.Runtime.Views.Animation
         public virtual void Stop()
         {
             IsPlaying = false;
-            Debug.Log($"Animation {GetType().Name} stopped");
         }
 
         protected float EvaluateProgress(float progress)

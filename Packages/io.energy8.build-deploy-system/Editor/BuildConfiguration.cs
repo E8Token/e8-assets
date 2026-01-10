@@ -11,18 +11,22 @@ namespace Energy8.BuildDeploySystem
 {
     [CreateAssetMenu(fileName = "BuildConfiguration", menuName = "Energy8/Build Configuration")]
     public class BuildConfiguration : ScriptableObject
-    {        [Header("Build Profile Reference")]
+    {
+        [Header("Build Profile Reference")]
         [SerializeField] private string buildProfileGUID;
         [SerializeField] private string buildProfileName;
-        
+
+        [Header("Environment")]
+        [SerializeField] private string targetEnvironment = "";
+
         [Header("Build Settings")]
         [SerializeField] private string outputPath;
         [SerializeField] private bool alwaysCleanBuild = true;
         [SerializeField] private string customBuildName;
-        
+
         [Header("Deploy Settings")]
         [SerializeField] private DeploySettings deploySettings = new DeploySettings();
-        
+
         [Header("Platform Specific Settings")]
         [SerializeField] private WebGLSettings webGLSettings = new WebGLSettings();
         [SerializeField] private AndroidSettings androidSettings = new AndroidSettings();
@@ -31,7 +35,7 @@ namespace Energy8.BuildDeploySystem
 
 #if UNITY_EDITOR
         private BuildProfile cachedBuildProfile;
-        
+
         public BuildProfile BuildProfile
         {
             get
@@ -47,18 +51,18 @@ namespace Energy8.BuildDeploySystem
                 return cachedBuildProfile;
             }
         }
-        
+
         public void SetBuildProfile(BuildProfile profile)
         {
             if (profile != null)
             {
-                var assetPath = AssetDatabase.GetAssetPath(profile);                buildProfileGUID = AssetDatabase.AssetPathToGUID(assetPath);
+                var assetPath = AssetDatabase.GetAssetPath(profile); buildProfileGUID = AssetDatabase.AssetPathToGUID(assetPath);
                 buildProfileName = profile.name;
                 cachedBuildProfile = profile;
-                
+
                 // Автоматически генерируем путь сборки
                 GenerateOutputPath();
-                
+
                 EditorUtility.SetDirty(this);
             }
             else
@@ -68,14 +72,15 @@ namespace Energy8.BuildDeploySystem
                 cachedBuildProfile = null;
                 EditorUtility.SetDirty(this);
             }
-        }        private void GenerateOutputPath()
+        }
+        private void GenerateOutputPath()
         {
             if (BuildProfile != null)
             {
                 outputPath = $"Builds/{buildProfileName}";
             }
         }
-        
+
         public void RefreshBuildProfileReference()
         {
             if (!string.IsNullOrEmpty(buildProfileGUID))
@@ -83,7 +88,7 @@ namespace Energy8.BuildDeploySystem
                 var assetPath = AssetDatabase.GUIDToAssetPath(buildProfileGUID);
                 if (!string.IsNullOrEmpty(assetPath))
                 {
-                    var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(assetPath);                    if (profile != null && profile.name != buildProfileName)
+                    var profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(assetPath); if (profile != null && profile.name != buildProfileName)
                     {
                         buildProfileName = profile.name;
                         // Автоматически обновляем путь сборки
@@ -97,23 +102,36 @@ namespace Energy8.BuildDeploySystem
 
         public string BuildProfileGUID => buildProfileGUID;
         public string BuildProfileName => buildProfileName;
-        
+
+        public string TargetEnvironment
+        {
+            get => targetEnvironment;
+            set
+            {
+                targetEnvironment = value;
+#if UNITY_EDITOR
+                EditorUtility.SetDirty(this);
+#endif
+            }
+        }
+
         public string OutputPath
         {
             get => outputPath;
-            set 
-            { 
+            set
+            {
                 outputPath = value;
 #if UNITY_EDITOR
                 EditorUtility.SetDirty(this);
 #endif
-            }        }
+            }
+        }
 
         public bool AlwaysCleanBuild
         {
             get => alwaysCleanBuild;
-            set 
-            { 
+            set
+            {
                 alwaysCleanBuild = value;
 #if UNITY_EDITOR
                 EditorUtility.SetDirty(this);
@@ -155,7 +173,8 @@ namespace Energy8.BuildDeploySystem
                 EditorUtility.SetDirty(this);
 #endif
             }
-        }        public bool IsValid()
+        }
+        public bool IsValid()
         {
 #if UNITY_EDITOR
             return BuildProfile != null && !string.IsNullOrEmpty(outputPath);
@@ -169,8 +188,8 @@ namespace Energy8.BuildDeploySystem
         /// </summary>
         public string GetDisplayName()
         {
-            return !string.IsNullOrEmpty(buildProfileName) ? 
-                buildProfileName : 
+            return !string.IsNullOrEmpty(buildProfileName) ?
+                buildProfileName :
                 "Unknown Profile";
         }
 
@@ -184,7 +203,8 @@ namespace Energy8.BuildDeploySystem
                 EditorUtility.SetDirty(this);
 #endif
             }
-        }        public string GetMainWebGLTextureFormat()
+        }
+        public string GetMainWebGLTextureFormat()
         {
 #if UNITY_EDITOR
             if (BuildProfile != null)
@@ -194,7 +214,7 @@ namespace Energy8.BuildDeploySystem
                     // Простой fallback - пока не можем надежно читать из Build Profile
                     // Возвращаем формат из текущих настроек редактора
                     Debug.Log($"Getting WebGL texture format for Build Profile: {BuildProfile.name}");
-                    
+
                     // TODO: Implement proper Build Profile texture format reading when Unity API allows it
                     // Пока используем fallback
                 }
@@ -203,7 +223,7 @@ namespace Energy8.BuildDeploySystem
                     Debug.LogWarning($"Failed to get WebGL texture format from profile: {ex.Message}");
                 }
             }
-            
+
             // Fallback к глобальным настройкам если профиль недоступен
             switch (EditorUserBuildSettings.webGLBuildSubtarget)
             {

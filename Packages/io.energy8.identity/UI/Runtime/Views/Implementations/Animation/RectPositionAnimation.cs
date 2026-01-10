@@ -38,7 +38,6 @@ namespace Energy8.Identity.UI.Runtime.Views.Animation
         public override async UniTask Play(CancellationToken ct)
         {
             IsPlaying = true;
-            Debug.Log($"Starting position animation from {from} to {to}");
             float elapsed = 0;
 
             // Если включен режим полной ширины, обновляем ширину объекта
@@ -71,7 +70,6 @@ namespace Energy8.Identity.UI.Runtime.Views.Animation
             if (IsPlaying && !ct.IsCancellationRequested)
             {
                 target.anchoredPosition = to;
-                Debug.Log("Position animation completed");
             }
 
             IsPlaying = false;
@@ -87,12 +85,10 @@ namespace Energy8.Identity.UI.Runtime.Views.Animation
                 float screenWidth = Screen.width;
                 float screenHeight = Screen.height;
                 float desiredWidth = (screenWidth * screenWidth) / screenHeight;
-                
+
                 Vector2 sizeDelta = target.sizeDelta;
                 sizeDelta.x = desiredWidth;
                 target.sizeDelta = sizeDelta;
-                
-                Debug.Log($"Updated width to {desiredWidth} (Screen: {screenWidth}x{screenHeight})");
             }
         }
     }

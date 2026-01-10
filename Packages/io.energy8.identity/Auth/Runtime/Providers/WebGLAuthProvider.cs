@@ -10,6 +10,7 @@ using UnityEngine;
 using Energy8.Identity.Auth.Core.Models;
 using Energy8.Identity.Auth.WebGL.Plugins;
 using Energy8.Identity.Configuration.Core;
+using Energy8.EnvironmentConfig.Base;
 
 namespace Energy8.Identity.Auth.Runtime.Providers
 {
@@ -47,19 +48,23 @@ namespace Energy8.Identity.Auth.Runtime.Providers
 
         public async UniTask Initialize(CancellationToken ct)
         {
-            Debug.Log("Initializing WebGLAuthProvider");
-            
             // Создаем экземпляр TaskCompletionSource перед инициализацией плагина
             telegramAutoAuthTcs = new UniTaskCompletionSource<TelegramUserDto>();
             
-            // Initialize the Firebase plugin
-            await plugin.Initialize(IdentityConfiguration.AuthConfig);
+            // Initialize Firebase plugin
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+            var firebaseConfig = config?.FirebaseWebConfig;
+            if (firebaseConfig == null)
+            {
+                throw new InvalidOperationException("FirebaseConfig is not set in IdentityConfig");
+            }
+            var botId = config?.TelegramBotId;
+            await plugin.Initialize(firebaseConfig.text, botId);
             
             // Проверяем наличие автоаутентификации через Telegram
             try
             {
                 IsAutoAuthenticating = true;
-                Debug.Log("Waiting for auto-authentication with Telegram...");
                 
                 // Ждем данные автоаутентификации или таймаут (увеличено до 5 секунд)
                 UniTask<TelegramUserDto> telegramTask = telegramAutoAuthTcs.Task;
@@ -75,7 +80,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                     try 
                     {
                         autoAuthTelegramUser = await telegramTask;
-                        Debug.Log($"Telegram auto-authentication completed successfully for user: {autoAuthTelegramUser.FirstName} {autoAuthTelegramUser.LastName}");
                     }
                     catch (Exception ex) 
                     {
@@ -103,8 +107,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
         // Добавляем метод для обработки события завершения автоаутентификации
         private void HandleTelegramAutoAuthComplete()
         {
-            Debug.Log("Telegram auto-auth flow completed signal received");
-            
             // Если мы еще не завершили автоаутентификацию и telegramAutoAuthTcs не завершен,
             // попробуем завершить его с null, чтобы хотя бы разблокировать ожидание
             if (IsAutoAuthenticating && !autoAuthInitialized && telegramAutoAuthTcs != null)
@@ -112,11 +114,10 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                 if (autoAuthTelegramUser != null)
                 {
                     telegramAutoAuthTcs.TrySetResult(autoAuthTelegramUser);
-                    Debug.Log("Auto-auth completion signal completed the waiting task with actual data");
                 }
                 else
                 {
-                    Debug.LogWarning("Auto-auth completion signal tried to complete the task, but no user data was available");
+                    Debug.LogWarning("Auto-auth completion signal tried to complete task, but no user data was available");
                 }
             }
         }
@@ -245,8 +246,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
             // возвращаем их без необходимости вызывать Telegram снова
             if (autoAuthTelegramUser != null)
             {
-                Debug.Log($"Using captured Telegram auto-auth data for user: {autoAuthTelegramUser.FirstName} {autoAuthTelegramUser.LastName}");
-                
                 // Очищаем данные после использования
                 var user = autoAuthTelegramUser;
                 autoAuthTelegramUser = null;
@@ -262,7 +261,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                 try
                 {
                     var telegramUser = JsonConvert.DeserializeObject<TelegramUserDto>(telegramUserJson);
-                    Debug.Log($"[TelegramAuth] HandleSuccess JsonConvert SUCCESS - ID={telegramUser.Id}, Name={telegramUser.FirstName} {telegramUser.LastName}, Username={telegramUser.Username}, Hash={telegramUser.Hash}, PhotoUrl={telegramUser.PhotoUrl}");
                     tcs.TrySetResult(telegramUser);
                 }
                 catch (Exception ex)
@@ -319,15 +317,11 @@ namespace Energy8.Identity.Auth.Runtime.Providers
         
         private void HandleTelegramAuth(string telegramUserJson)
         {
-            Debug.Log($"[TelegramAuth] Received data from JavaScript: {telegramUserJson}");
-            Debug.Log($"[TelegramAuth] Data length: {telegramUserJson?.Length ?? 0} characters");
-            
             // Check if Hash and PhotoUrl are present in raw data
             bool hasHashInRaw = !string.IsNullOrEmpty(telegramUserJson) && telegramUserJson.Contains("hash=");
             bool hasPhotoUrlInRaw = !string.IsNullOrEmpty(telegramUserJson) && telegramUserJson.Contains("photo_url=");
-            Debug.Log($"[TelegramAuth] Raw data contains hash: {hasHashInRaw}, photo_url: {hasPhotoUrlInRaw}");
             
-            // Initialize the completion source if needed
+            // Initialize's completion source if needed
             if (telegramAutoAuthTcs == null)
             {
                 telegramAutoAuthTcs = new UniTaskCompletionSource<TelegramUserDto>();
@@ -337,17 +331,12 @@ namespace Energy8.Identity.Auth.Runtime.Providers
             {
                 TelegramUserDto telegramUser = null;
                 
-                // Debug output: Print the raw data
-                Debug.Log($"[TelegramAuth] Raw data: {telegramUserJson}");
-                Debug.Log($"[TelegramAuth] Data length: {telegramUserJson?.Length}, Contains hash: {telegramUserJson?.Contains("hash")}, Contains photo_url: {telegramUserJson?.Contains("photo_url")}");
-                
-                // Parse the query string format from Telegram
+                // Parse's query string format from Telegram
                 if (telegramUserJson.Contains("id=") && telegramUserJson.Contains("hash="))
                 {
                     // This is a query string format from Telegram authentication
-                    Debug.Log("Detected query string format, parsing parameters...");
                     
-                    // Parse the query string
+                    // Parse's query string
                     var parameters = new System.Collections.Generic.Dictionary<string, string>();
                     string[] parts = telegramUserJson.Split('&');
                     
@@ -365,7 +354,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                     // Check if this is WebApp format with 'user' field containing JSON
                     if (parameters.ContainsKey("user") && parameters["user"].StartsWith("{"))
                     {
-                        Debug.Log("Detected WebApp format with user JSON, parsing user data...");
                         
                         try
                         {
@@ -396,8 +384,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                     webAppHash = jObject["hash"]?.ToString() ?? "";
                                 }
                                 
-                                Debug.Log($"[TelegramAuth] WebApp Hash: '{webAppHash}', PhotoUrl: '{webAppPhotoUrl}'");
-                                
                                 // Validate required fields for server
                                 if (string.IsNullOrEmpty(webAppHash))
                                 {
@@ -406,7 +392,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                     return;
                                 }
                                 
-                                // Parse auth_date
+                                // Parse's auth_date
                                 long authDate = 0;
                                 if (parameters.TryGetValue("auth_date", out string authDateStr))
                                 {
@@ -428,7 +414,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                     return;
                                 }
                                 
-                                // Create the TelegramUserDto
+                                // Create's the TelegramUserDto
                                 telegramUser = new TelegramUserDto(
                                     hash: webAppHash,
                                     id: webAppId,
@@ -442,7 +428,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                     queryId: webAppQueryId
                                 );
                                 
-                                Debug.Log($"Successfully created Telegram user from WebApp format: ID={telegramUser.Id}, Name={telegramUser.FirstName} {telegramUser.LastName}, Username={telegramUser.Username}");
                                 telegramAutoAuthTcs.TrySetResult(telegramUser);
                                 return;
                             }
@@ -457,7 +442,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                         }
                     }
                     
-                    // Extract the required fields
+                    // Extract's the required fields
                     if (parameters.TryGetValue("id", out string idStr) && 
                         parameters.TryGetValue("first_name", out string firstName) &&
                         parameters.TryGetValue("hash", out string hash))
@@ -470,7 +455,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                         parameters.TryGetValue("language_code", out string languageCode);
                         parameters.TryGetValue("query_id", out string queryId);
                         
-                        // Parse the allows_write_to_pm parameter if it exists
+                        // Parse's allows_write_to_pm parameter if it exists
                         bool allowsWriteToPm = false;
                         if (parameters.TryGetValue("allows_write_to_pm", out string allowsWriteStr))
                         {
@@ -486,7 +471,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                             // Parsed allows_write_to_pm silently
                         }
                         
-                        // Parse id and auth_date
+                        // Parse's id and auth_date
                         if (long.TryParse(idStr, out long id))
                         {
                             long authDate = 0;
@@ -494,8 +479,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                             {
                                 long.TryParse(authDateStr, out authDate);
                             }
-                            
-                            Debug.Log($"[TelegramAuth] Standard Hash: '{hash}', PhotoUrl: '{photoUrl?.Trim('`', ' ')}'");
                             
                             // Validate required fields for server
                             if (string.IsNullOrEmpty(hash))
@@ -514,7 +497,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                 return;
                             }
                             
-                            // Create the TelegramUserDto
+                            // Create's the TelegramUserDto
                             telegramUser = new TelegramUserDto(
                                 hash: hash,
                                 id: id,
@@ -528,11 +511,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                 queryId: queryId
                             );
                             
-                            // Log final DTO values
-                            Debug.Log($"[TelegramAuth] Created DTO - Hash: '{telegramUser.Hash}', PhotoUrl: '{telegramUser.PhotoUrl}'");
-                            Debug.Log($"[TelegramAuth] DTO Hash IsNullOrEmpty: {string.IsNullOrEmpty(telegramUser.Hash)}, PhotoUrl IsNullOrEmpty: {string.IsNullOrEmpty(telegramUser.PhotoUrl)}");
-                            
-                            Debug.Log($"Successfully created Telegram user from query params: ID={telegramUser.Id}, Name={telegramUser.FirstName} {telegramUser.LastName}, Username={telegramUser.Username}");
                             telegramAutoAuthTcs.TrySetResult(telegramUser);
                             return;
                         }
@@ -558,8 +536,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                 // Try parsing as JSON directly
                 else if (telegramUserJson.StartsWith("{") && telegramUserJson.EndsWith("}"))
                 {
-                    Debug.Log("Attempting to parse as JSON object");
-                    
                     try
                     {
                         // Try direct JSON deserialization using Newtonsoft.Json (supports JsonProperty attributes)
@@ -568,18 +544,13 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                             telegramUser = JsonConvert.DeserializeObject<TelegramUserDto>(telegramUserJson);
                             if (telegramUser != null && telegramUser.Id > 0)
                             {
-                                Debug.Log($"[TelegramAuth] JsonConvert SUCCESS - ID={telegramUser.Id}, Name={telegramUser.FirstName} {telegramUser.LastName}, Username={telegramUser.Username}, Hash={telegramUser.Hash}, PhotoUrl={telegramUser.PhotoUrl}");
                                 telegramAutoAuthTcs.TrySetResult(telegramUser);
                                 return;
-                            }
-                            else
-                            {
-                                Debug.Log($"[TelegramAuth] JsonConvert returned null or invalid user (ID={telegramUser?.Id}). Falling back to manual parsing.");
                             }
                         }
                         catch (Exception jsonEx)
                         {
-                            Debug.Log($"[TelegramAuth] JsonConvert FAILED: {jsonEx.Message}. Falling back to manual parsing.");
+                            Debug.LogError($"[TelegramAuth] JsonConvert FAILED: {jsonEx.Message}. Falling back to manual parsing.");
                         }
                         
                         // Fallback: Try manual parsing using JObject
@@ -607,8 +578,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                     authDate = authDateToken.ToObject<long>();
                                 }
                                 
-                                Debug.Log($"[TelegramAuth] JSON Hash: '{hash}', PhotoUrl: '{photoUrl}'");
-                                
                                 // Validate required fields for server
                                 if (string.IsNullOrEmpty(hash))
                                 {
@@ -617,7 +586,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                     return;
                                 }
                                 
-                                // Create the TelegramUserDto
+                                // Create's the TelegramUserDto
                                 telegramUser = new TelegramUserDto(
                                     hash: hash,
                                     id: id,
@@ -630,11 +599,6 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                                     allowsWriteToPm: jObject["allows_write_to_pm"]?.ToObject<bool>() ?? false
                                 );
                                 
-                                // Log final DTO values from JSON
-                                Debug.Log($"[TelegramAuth] Created DTO from JSON - Hash: '{telegramUser.Hash}', PhotoUrl: '{telegramUser.PhotoUrl}'");
-                                Debug.Log($"[TelegramAuth] JSON DTO Hash IsNullOrEmpty: {string.IsNullOrEmpty(telegramUser.Hash)}, PhotoUrl IsNullOrEmpty: {string.IsNullOrEmpty(telegramUser.PhotoUrl)}");
-                                
-                                Debug.Log($"Successfully created Telegram user from JObject: ID={telegramUser.Id}, Name={telegramUser.FirstName} {telegramUser.LastName}, Username={telegramUser.Username}");
                                 telegramAutoAuthTcs.TrySetResult(telegramUser);
                                 return;
                             }
@@ -646,9 +610,9 @@ namespace Energy8.Identity.Auth.Runtime.Providers
                     }
                 }
                 
-                // If we couldn't parse the data with any method
-                Debug.LogError($"Failed to parse Telegram user data with any method. Raw data: {telegramUserJson}");
-                telegramAutoAuthTcs.TrySetException(new Exception("Could not parse Telegram authentication data"));
+                // If we couldn't parse's data with any method
+                Debug.LogError($"Failed to parse's Telegram user data with any method. Raw data: {telegramUserJson}");
+                telegramAutoAuthTcs.TrySetException(new Exception("Could not parse's Telegram authentication data"));
             }
             catch (Exception ex)
             {

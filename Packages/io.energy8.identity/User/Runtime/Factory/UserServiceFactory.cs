@@ -3,6 +3,7 @@ using Energy8.Identity.Configuration.Core;
 using Energy8.Identity.Http.Core;
 using Energy8.Identity.Http.Runtime.Clients;
 using Energy8.Identity.User.Core.Services;
+using Energy8.EnvironmentConfig.Base;
 using UnityEngine;
 
 namespace Energy8.Identity.User.Runtime.Factory
@@ -20,27 +21,16 @@ namespace Energy8.Identity.User.Runtime.Factory
         /// <returns>User service instance</returns>
         public static IUserService CreateService(IHttpClient httpClient, IAuthProvider authProvider)
         {
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+            
             if (httpClient == null)
             {
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.LogError("HttpClient is null in UserServiceFactory");
-                }
                 throw new System.ArgumentNullException(nameof(httpClient));
             }
-            
+
             if (authProvider == null)
             {
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.LogError("AuthProvider is null in UserServiceFactory");
-                }
                 throw new System.ArgumentNullException(nameof(authProvider));
-            }
-            
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log("Creating UserService instance with dependencies");
             }
             
             return new Runtime.Services.UserService(httpClient, authProvider);
@@ -52,15 +42,12 @@ namespace Energy8.Identity.User.Runtime.Factory
         /// <returns>User service with default dependencies</returns>
         public static IUserService CreateDefaultService()
         {
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log("Creating UserService with default dependencies");
-            }
-            
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+
             // TODO: Use HttpClientFactory.CreateDefaultClient() when Runtime namespace is available
-            var httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
+            var httpClient = new UnityHttpClient(config?.AuthServerUrl ?? "http://localhost");
             var authProvider = Auth.Runtime.Factory.AuthProviderFactory.CreateProvider(httpClient);
-            
+
             return CreateService(httpClient, authProvider);
         }
     }

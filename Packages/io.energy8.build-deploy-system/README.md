@@ -10,15 +10,67 @@
 
 - `{{{VERSION}}}` - Версия проекта (например: `1.2.3`)
 - `{{{PLATFORM}}}` - Целевая платформа (`Windows`, `WebGL`, `Android`, `iOS`, `macOS`, `Linux`)  
+- `{{{ENVIRONMENT}}}` - Текущая среда (Development, Debug, Production и т.д.)
 - `{{{DATE}}}` - Текущая дата (`yyyy-MM-dd`)
 - `{{{DATETIME}}}` - Дата и время (`yyyy-MM-dd_HH-mm`)
 
 **Примеры:**
 ```
-Builds/{{{PLATFORM}}}/{{{VERSION}}}          →  Builds/WebGL/1.2.3
-Releases/{{{DATE}}}_{{{PLATFORM}}}_v{{{VERSION}}}  →  Releases/2025-06-22_Windows_v1.2.3
-Output/{{{PLATFORM}}}/Build_{{{DATETIME}}}   →  Output/Android/Build_2025-06-22_14-30
+Builds/{{{PLATFORM}}}/{{{VERSION}}}                →  Builds/WebGL/1.2.3
+Builds/{{{PLATFORM}}}/{{{ENVIRONMENT}}}/{{{VERSION}}}  →  Builds/WebGL/Production/1.2.3
+Releases/{{{DATE}}}_{{{PLATFORM}}}_v{{{VERSION}}}      →  Releases/2025-06-22_Windows_v1.2.3
+Output/{{{PLATFORM}}}/Build_{{{DATETIME}}}       →  Output/Android/Build_2025-06-22_14-30
 ```
+
+## 🌍 Управление средами (Environment Management)
+
+Система интегрирована с пакетом **io.energy8.environment-config** для управления конфигурациями сред при сборке.
+
+### Настройка среды в конфигурации сборки
+
+В каждой конфигурации сборки можно задать целевую среду:
+- **Поле "Target Environment"**: Укажите название среды (Development, Debug, Production и т.д.)
+- **Если поле пустое**: Будет использоваться текущая среда из `environment.json`
+
+### Автоматическое переключение среды
+
+Перед началом сборки система автоматически:
+1. Проверяет заданную `Target Environment` в конфигурации
+2. Если среда задана - обновляет `environment.json` в `StreamingAssets/E8Config/`
+3. Логирует изменение среды: `"[BuildSystem] Environment switched to: Production"`
+
+### Доступные среды
+
+Если установлен пакет **io.energy8.environment-config**, в UI отображаются:
+- Список всех доступных сред из `E8EnvironmentSettings`
+- Цветовая маркировка каждой среды
+- Кнопка для быстрого переключения на среду
+
+### Примеры использования
+
+**Пример 1: Сборка для конкретной среды**
+```
+Output Path: Builds/{{{PLATFORM}}}/{{{ENVIRONMENT}}}/{{{VERSION}}}
+Target Environment: Production
+Результат: Builds/WebGL/Production/1.2.3
+```
+
+**Пример 2: Использование текущей среды**
+```
+Output Path: Builds/{{{PLATFORM}}}/{{{VERSION}}}
+Target Environment: (пусто)
+Результат: Builds/WebGL/1.2.3 (используется текущая среда из environment.json)
+```
+
+### Интеграция с Environment Config
+
+Для полноценной работы управления средами:
+1. Установите пакет **io.energy8.environment-config**
+2. Настройте среды через `E8 Tools → Environment Switcher`
+3. В Build Deploy System выберите нужную среду в каждой конфигурации
+4. Система автоматически переключит среду перед сборкой
+
+> 💡 **Совет**: Создайте отдельные конфигурации сборки для каждой среды (Development, Debug, Production) для удобного переключения.
 
 ## ✨ Новое в v2.1
 

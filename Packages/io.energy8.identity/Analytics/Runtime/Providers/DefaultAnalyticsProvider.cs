@@ -19,7 +19,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
         public UniTask Initialize(CancellationToken ct)
         {
             IsInitialized = true;
-            Debug.Log("[Analytics] Default Analytics Provider initialized (console logging only)");
             return UniTask.CompletedTask;
         }
 
@@ -27,67 +26,37 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
         {
             if (!IsInitialized)
             {
-                Debug.LogWarning("[Analytics] Cannot log event: Provider not initialized");
                 return;
             }
-
-            var paramStr = "";
-            if (parameters != null && parameters.Count > 0)
-            {
-                var paramPairs = new List<string>();
-                foreach (var param in parameters)
-                {
-                    paramPairs.Add($"{param.Key}={param.Value ?? "null"}");
-                }
-                paramStr = $" | Parameters: {string.Join(", ", paramPairs)}";
-            }
-
-            Debug.Log($"[Analytics] Event: {eventName}{paramStr}");
         }
 
         public void SetUserId(string userId)
         {
             if (!IsInitialized)
             {
-                Debug.LogWarning("[Analytics] Cannot set user ID: Provider not initialized");
                 return;
             }
-
-            Debug.Log($"[Analytics] User ID set: {userId ?? "null"}");
         }
 
         public void SetUserProperties(Dictionary<string, object> properties)
         {
             if (!IsInitialized)
             {
-                Debug.LogWarning("[Analytics] Cannot set user properties: Provider not initialized");
                 return;
             }
 
             if (properties == null || properties.Count == 0)
             {
-                Debug.Log("[Analytics] User properties cleared");
                 return;
             }
-
-            var propPairs = new List<string>();
-            foreach (var prop in properties)
-            {
-                propPairs.Add($"{prop.Key}={prop.Value ?? "null"}");
-            }
-
-            Debug.Log($"[Analytics] User properties set: {string.Join(", ", propPairs)}");
         }
 
         public void ResetAnalyticsData()
         {
             if (!IsInitialized)
             {
-                Debug.LogWarning("[Analytics] Cannot reset: Provider not initialized");
                 return;
             }
-
-            Debug.Log("[Analytics] Analytics data reset requested");
         }
     }
 }

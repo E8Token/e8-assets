@@ -33,7 +33,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
         private readonly ICanvasManager canvasManager;
         private readonly IStateManager stateManager;
         private readonly IErrorHandler errorHandler;
-        private readonly bool debugLogging;
         
         // Дополнительный интерфейс для расширенной функциональности
         private readonly object customGameService;
@@ -47,7 +46,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             ICanvasManager canvasManager,
             IStateManager stateManager,
             IErrorHandler errorHandler,
-            bool debugLogging,
             object customGameService = null)
         {
             this.userService = userService;
@@ -56,7 +54,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             this.canvasManager = canvasManager;
             this.stateManager = stateManager;
             this.errorHandler = errorHandler;
-            this.debugLogging = debugLogging;
             this.customGameService = customGameService;
         }
         
@@ -68,12 +65,8 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
         /// </summary>
         public async UniTask StartUserFlowAsync(CancellationToken ct)
         {
-            if (debugLogging)
-                Debug.Log("[UserFlowManager] Starting user flow");
-                
             if (isShowingUserFlow)
             {
-                Debug.LogWarning("[UserFlowManager] ShowUserFlow already running, skipping duplicate call");
                 return;
             }
             
@@ -81,7 +74,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             
             // Переход в состояние пользовательского потока
             stateManager.TransitionTo(IdentityState.UserFlowActive);
-            Debug.Log("[UserFlowManager] Transitioned to UserFlowActive state");
             
             try
             {
@@ -94,19 +86,15 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                         // Проверки состояния (из строк 587-595)
                         if (!ValidateUserFlowState(ct))
                         {
-                            Debug.Log("[UserFlowManager] ValidateUserFlowState failed, exiting");
                             return;
                         }
                         
                         var viewManager = GetViewManager();
                         if (viewManager == null)
                         {
-                            Debug.LogWarning("[UserFlowManager] ViewManager is null, waiting and continuing");
                             await WaitAndContinue(ct);
                             continue;
                         }
-                        
-                        Debug.Log("[UserFlowManager] ViewManager found, getting user data");
 
                         // Получение пользователя (строки 597-601)
                         Func<CancellationToken, UniTask<UserDto>> getUser = (ct) => userService
@@ -115,10 +103,8 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                         try
                         {
                             var user = await getUser.WithErrorHandler(errorHandler.ShowErrorAsync, ct);
-                            Debug.Log($"[UserFlowManager] User data retrieved: {user.Name}");
 
                             // Показ UserView с игровыми данными
-                            Debug.Log("[UserFlowManager] Showing UserView");
                             var userViewParams = new UserViewParams(user.Name);
                                 
                             var result = await viewManager
@@ -138,8 +124,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                     }
                     catch (OperationCanceledException)
                     {
-                        if (debugLogging)
-                            Debug.Log("ShowUserFlow cancelled");
                         return;
                     }
                     catch (SignOutRequiredException)
@@ -192,8 +176,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                     var viewManager = GetViewManager();
                     if (viewManager == null)
                     {
-                        if (debugLogging)
-                            Debug.LogWarning("No ViewManager available for settings");
                         return;
                     }
 
@@ -224,8 +206,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                 }
                 catch (OperationCanceledException)
                 {
-                    if (debugLogging)
-                        Debug.Log("ShowSettings cancelled");
                     return;
                 }
                 catch (SignOutRequiredException)
@@ -426,8 +406,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             }
             catch (Exception ex)
             {
-                if (debugLogging)
-                    Debug.LogError($"[UserFlowManager] Failed to get game user: {ex.Message}");
                 throw;
             }
         }
@@ -443,8 +421,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             }
             catch (Exception ex)
             {
-                if (debugLogging)
-                    Debug.LogError($"[UserFlowManager] Failed to create game session: {ex.Message}");
                 throw;
             }
         }
@@ -483,17 +459,12 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                 
                 // Здесь можно показать кастомное View для игровой статистики
                 // Пока используем простое уведомление через Debug
-                if (debugLogging)
-                    Debug.Log($"[UserFlowManager] Game Stats - Balance: {gameUser.Balance}");
-                
                 // TODO: Создать GameStatsView и показать его
                 // await viewManager.Show<GameStatsView, GameStatsViewParams, GameStatsViewResult>(
                 //     new GameStatsViewParams(gameUser), ct);
             }
             catch (Exception ex)
             {
-                if (debugLogging)
-                    Debug.LogError($"[UserFlowManager] Failed to show game stats: {ex.Message}");
                 throw;
             }
         }
@@ -574,8 +545,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
         
         private async UniTask WaitAndContinue(CancellationToken ct)
         {
-            if (debugLogging)
-                Debug.LogWarning("No ViewManager available, waiting...");
             await UniTask.Delay(1000, cancellationToken: ct);
         }
         

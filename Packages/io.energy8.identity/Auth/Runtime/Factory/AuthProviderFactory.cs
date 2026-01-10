@@ -1,6 +1,7 @@
 using Energy8.Identity.Auth.Core.Providers;
 using Energy8.Identity.Auth.Runtime.Providers;
 using Energy8.Identity.Configuration.Core;
+using Energy8.EnvironmentConfig.Base;
 using Energy8.Identity.Http.Core;
 using Energy8.Identity.Http.Runtime.Clients;
 using UnityEngine;
@@ -19,24 +20,16 @@ namespace Energy8.Identity.Auth.Runtime.Factory
         /// <returns>Platform-specific auth provider</returns>
         public static IAuthProvider CreateProvider(IHttpClient httpClient = null)
         {
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log("Creating WebGL Auth Provider");
-            }
             return new WebGLAuthProvider();
 #else
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log("Creating Native Auth Provider");
-            }
-            
             if (httpClient == null)
             {
-                Debug.LogWarning("HttpClient is null for NativeAuthProvider, creating default");
-                httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
+                httpClient = new UnityHttpClient(config?.AuthServerUrl ?? "http://localhost");
             }
-            
+
             return new NativeAuthProvider(httpClient);
 #endif
         }

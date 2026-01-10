@@ -31,7 +31,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         [Header("Configuration")]
         [SerializeField] private bool isLite = false;
-        [SerializeField] private bool debugLogging = false;
 
         // Менеджеры (инжектируются через DI)
         private ICanvasManager canvasManager;
@@ -94,9 +93,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             // Подписываемся на событие остановки воспроизведения в редакторе
             UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 #endif
-
-            if (debugLogging)
-                Debug.Log("IdentityOrchestrator initialized as singleton");
         }
 
         void Start()
@@ -106,9 +102,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
         private void OnDestroy()
         {
-            if (debugLogging)
-                Debug.Log("IdentityOrchestrator OnDestroy started");
-
             // СНАЧАЛА отменяем все асинхронные операции
             if (lifetimeCts != null && !lifetimeCts.IsCancellationRequested)
             {
@@ -117,15 +110,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
 #if UNITY_EDITOR
             // Отписываемся от событий редактора
-            try
-            {
-                UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-            }
-            catch (System.Exception ex)
-            {
-                if (debugLogging)
-                    Debug.LogWarning($"Error unsubscribing from editor events: {ex.Message}");
-            }
+            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
 #endif
 
             // Отписываемся от событий
@@ -142,29 +127,19 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             {
                 lifetimeCts?.Dispose();
             }
-            catch (System.Exception ex)
+            catch
             {
-                if (debugLogging)
-                    Debug.LogWarning($"Error disposing cancellation token: {ex.Message}");
             }
-            finally
-            {
-                lifetimeCts = null;
-            }
+            lifetimeCts = null;
 
             // Очищаем WithLoading
             try
             {
                 WithLoadingExtensions.CleanupLoading();
             }
-            catch (System.Exception ex)
+            catch
             {
-                if (debugLogging)
-                    Debug.LogWarning($"Error cleaning up WithLoading: {ex.Message}");
             }
-
-            if (debugLogging)
-                Debug.Log("IdentityOrchestrator OnDestroy completed");
         }
 
 #if UNITY_EDITOR
@@ -172,9 +147,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         {
             if (state == UnityEditor.PlayModeStateChange.ExitingPlayMode)
             {
-                if (debugLogging)
-                    Debug.Log("Editor exiting play mode, forcing cleanup");
-
                 ForceCleanup();
             }
         }
@@ -204,10 +176,8 @@ namespace Energy8.Identity.UI.Runtime.Controllers
 
                 WithLoadingExtensions.CleanupLoading();
             }
-            catch (System.Exception ex)
+            catch
             {
-                if (debugLogging)
-                    Debug.LogWarning($"Error during force cleanup: {ex.Message}");
             }
         }
 #endif
@@ -219,7 +189,7 @@ namespace Energy8.Identity.UI.Runtime.Controllers
         private void InitializeServiceContainer()
         {
             serviceContainer = new IdentityServiceContainer();
-            serviceContainer.ConfigureServices(debugLogging, isLite);
+            serviceContainer.ConfigureServices(isLite);
         }
 
         private void InjectDependencies()
@@ -309,7 +279,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
                     // UserFlowManager сам управляет UI, здесь ничего не делаем
                     break;
                 case IdentityState.Error:
-                    Debug.LogError("[IdentityOrchestrator] State machine entered Error state!");
                     break;
             }
         }
@@ -329,7 +298,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[IdentityOrchestrator] Telegram authentication failed: {ex.Message}");
                 // В случае ошибки переходим в состояние Error
                 stateManager.TransitionTo(IdentityState.Error);
             }
@@ -377,17 +345,6 @@ namespace Energy8.Identity.UI.Runtime.Controllers
             authProvider?.SignOut();
         }
 
-        [ContextMenu("Debug State")]
-        private void DebugState()
-        {
-            Debug.Log($"IdentityOrchestrator State:\n" +
-                      $"IsOpen: {IsOpen}\n" +
-                      $"IsLite: {isLite}\n" +
-                      $"IsTelegramMiniApp: {isTelegramMiniApp}\n" +
-                      $"Canvas Controller: {(CurrentCanvasController != null ? CurrentCanvasController.name : "null")}\n" +
-                      $"Current State: {stateManager?.CurrentState}\n" +
-                      $"Is Signed In: {identityService?.IsSignedIn ?? false}");
-        }
 #endif
 
         #endregion

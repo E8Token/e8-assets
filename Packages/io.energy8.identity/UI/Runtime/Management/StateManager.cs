@@ -23,7 +23,6 @@ namespace Energy8.Identity.UI.Runtime.State
     {
         private readonly IIdentityService identityService;
         private readonly IAnalyticsPermissionService analyticsPermissionService;
-        private readonly bool debugLogging;
 
         public IdentityState CurrentState { get; private set; } = IdentityState.Uninitialized;
         public event Action<IdentityState, IdentityState> StateChanged;
@@ -43,11 +42,10 @@ namespace Energy8.Identity.UI.Runtime.State
             [IdentityState.Error] = new() { IdentityState.Uninitialized, IdentityState.Initializing }
         };
 
-        public StateManager(IIdentityService identityService, IAnalyticsPermissionService analyticsPermissionService, bool debugLogging)
+        public StateManager(IIdentityService identityService, IAnalyticsPermissionService analyticsPermissionService)
         {
             this.identityService = identityService;
             this.analyticsPermissionService = analyticsPermissionService;
-            this.debugLogging = debugLogging;
 
             identityService.OnSignedIn += OnUserSignedIn;
             identityService.OnSignedOut += OnUserSignedOut;
@@ -64,8 +62,6 @@ namespace Energy8.Identity.UI.Runtime.State
                 // Проверяем разрешение на аналитику при старте
                 if (analyticsPermissionService.ShouldShowAnalyticsPermissionRequest)
                 {
-                    if (debugLogging)
-                        Debug.Log("Analytics permission not requested yet, showing analytics permission dialog");
                     await analyticsPermissionService.RequestAnalyticsPermissionAsync(default);
                 }
                 // Инициализируем сервис аутентификации
@@ -74,8 +70,6 @@ namespace Energy8.Identity.UI.Runtime.State
             }
             catch (Exception ex)
             {
-                if (debugLogging)
-                    Debug.LogError($"Error during initial flow: {ex.Message}");
                 TransitionTo(IdentityState.Error);
             }
         }
@@ -95,16 +89,11 @@ namespace Energy8.Identity.UI.Runtime.State
             if (!CanTransitionTo(newState))
             {
                 var errorMsg = $"Invalid state transition from {CurrentState} to {newState}";
-                if (debugLogging)
-                    Debug.LogError(errorMsg);
                 throw new InvalidOperationException(errorMsg);
             }
 
             var oldState = CurrentState;
             CurrentState = newState;
-
-            if (debugLogging)
-                Debug.Log($"State transition: {oldState} → {newState}");
 
             StateChanged?.Invoke(oldState, newState);
         }
@@ -115,15 +104,9 @@ namespace Energy8.Identity.UI.Runtime.State
 
         private void OnUserSignedIn(FirebaseUser user)
         {
-            // Точный перенос из OnUserSignedIn (строки 148-162)
-            if (debugLogging)
-                Debug.Log($"[StateManager] User signed in event received for user: {user?.UserId}, current state: {CurrentState}");
-
             // Если уже в состоянии UserFlowActive, не переходить обратно в SignedIn
             if (CurrentState == IdentityState.UserFlowActive)
             {
-                if (debugLogging)
-                    Debug.Log($"[StateManager] Already in UserFlowActive, ignoring SignedIn event");
                 return;
             }
 
@@ -132,28 +115,14 @@ namespace Energy8.Identity.UI.Runtime.State
             {
                 TransitionTo(IdentityState.SignedIn);
             }
-            else
-            {
-                if (debugLogging)
-                    Debug.LogWarning($"[StateManager] Cannot transition to SignedIn from current state: {CurrentState}");
-            }
         }
 
         private void OnUserSignedOut()
         {
-            // Точный перенос из OnUserSignedOut (строки 164-177)
-            if (debugLogging)
-                Debug.Log($"[StateManager] User signed out event received from current state: {CurrentState}, transitioning to SignedOut state");
-
             if (CanTransitionTo(IdentityState.SignedOut))
             {
                 TransitionTo(IdentityState.SignedOut);
                 // Здесь всегда открываем Identity (например, вызываем UI Coordinator или событие для показа окна)
-            }
-            else
-            {
-                if (debugLogging)
-                    Debug.LogWarning($"[StateManager] Cannot transition to SignedOut from current state: {CurrentState}");
             }
         }
 

@@ -1,5 +1,9 @@
 # WebGL Plugin Platform
 
+> **⚠️ STATUS: UNDER DEVELOPMENT**
+>
+> This package is currently in active development and is not yet used in production plugins. APIs and features are subject to change.
+
 Platform for developing WebGL plugins that improve communication between Unity and browser.
 
 ## Package Structure

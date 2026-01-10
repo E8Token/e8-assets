@@ -1,4 +1,5 @@
 using Energy8.Identity.Configuration.Core;
+using Energy8.EnvironmentConfig.Base;
 using Energy8.Identity.Game.Core.Services;
 using Energy8.Identity.Game.Runtime.Services;
 using Energy8.Identity.Http.Core;
@@ -27,29 +28,18 @@ namespace Energy8.Identity.Game.Runtime.Factory
             where TGameUserDto : GameUserDto
             where TGameSessionDto : GameSessionDto
         {
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+
             if (httpClient == null)
             {
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.LogError("HttpClient is null in GameServiceFactory");
-                }
                 throw new System.ArgumentNullException(nameof(httpClient));
             }
-            
+
             if (string.IsNullOrWhiteSpace(gameEndpoint))
             {
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.LogWarning("GameEndpoint is null or empty, using default 'game'");
-                }
                 gameEndpoint = "game";
             }
-            
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log($"Creating typed GameService<{typeof(TGameUserDto).Name}, {typeof(TGameSessionDto).Name}> with endpoint: {gameEndpoint}");
-            }
-            
+
             return new GameService<TGameUserDto, TGameSessionDto>(httpClient, gameEndpoint);
         }
         
@@ -74,12 +64,9 @@ namespace Energy8.Identity.Game.Runtime.Factory
             where TGameUserDto : GameUserDto
             where TGameSessionDto : GameSessionDto
         {
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log($"Creating default typed GameService<{typeof(TGameUserDto).Name}, {typeof(TGameSessionDto).Name}>");
-            }
-            
-            var httpClient = new UnityHttpClient(IdentityConfiguration.SelectedIP);
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+
+            var httpClient = new UnityHttpClient(config?.AuthServerUrl ?? "http://localhost");
             return CreateService<TGameUserDto, TGameSessionDto>(httpClient);
         }
         
@@ -104,11 +91,6 @@ namespace Energy8.Identity.Game.Runtime.Factory
             where TGameUserDto : GameUserDto
             where TGameSessionDto : GameSessionDto
         {
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log($"Creating test typed GameService<{typeof(TGameUserDto).Name}, {typeof(TGameSessionDto).Name}> with endpoint: {gameEndpoint}");
-            }
-            
             var mockHttpClient = new UnityHttpClient("http://localhost:3000");
             return CreateService<TGameUserDto, TGameSessionDto>(mockHttpClient, gameEndpoint);
         }

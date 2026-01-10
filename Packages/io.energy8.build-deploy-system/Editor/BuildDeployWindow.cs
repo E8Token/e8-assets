@@ -13,7 +13,7 @@ namespace Energy8.BuildDeploySystem.Editor
         private BuildConfiguration selectedConfiguration;
         private readonly Dictionary<string, bool> configurationFoldouts = new();
 
-        [MenuItem("Energy8/Build Deploy System")]
+        [MenuItem("E8 Tools/Build Deploy System")]
         public static void ShowWindow()
         {
             var window = GetWindow<BuildDeployWindow>("Build Deploy System");
@@ -200,6 +200,8 @@ namespace Energy8.BuildDeploySystem.Editor
             if (configurationFoldouts[configKey])
             {
                 EditorGUI.indentLevel++;
+
+                DrawEnvironmentSection(config);
 
                 EditorGUI.BeginDisabledGroup(true);
                 EditorGUILayout.ObjectField("Build Profile", config.BuildProfile, typeof(UnityEditor.Build.Profile.BuildProfile), false);
@@ -398,6 +400,84 @@ namespace Energy8.BuildDeploySystem.Editor
 
             return "🎯";
         }
+
+        private void DrawEnvironmentSection(BuildConfiguration config)
+        {
+            EditorGUILayout.Space(5);
+            EditorGUILayout.LabelField("Environment", EditorStyles.boldLabel);
+
+            // Получаем список доступных сред
+            var availableEnvironments = GetAvailableEnvironments();
+            
+            var options = new List<string> { "(Use Current)" };
+            options.AddRange(availableEnvironments);
+
+            int selectedIndex = 0;
+            if (!string.IsNullOrEmpty(config.TargetEnvironment))
+            {
+                selectedIndex = options.IndexOf(config.TargetEnvironment);
+                if (selectedIndex == -1)
+                {
+                    options.Add(config.TargetEnvironment);
+                    selectedIndex = options.Count - 1;
+                }
+            }
+
+            var newIndex = EditorGUILayout.Popup("Target Environment:", selectedIndex, options.ToArray());
+            
+            if (newIndex != selectedIndex)
+            {
+                config.TargetEnvironment = newIndex == 0 ? "" : options[newIndex];
+            }
+
+            EditorGUILayout.HelpBox(
+                newIndex == 0 
+                    ? "Current environment from environment.json will be used" 
+                    : $"Will switch to: {options[newIndex]} before build", 
+                MessageType.Info);
+        }
+
+        private string[] GetAvailableEnvironments()
+        {
+            var environmentsType = System.Type.GetType("Energy8.EnvironmentConfig.Editor.Settings.EnvironmentSettings,Energy8.EnvironmentConfig.Editor");
+            if (environmentsType == null)
+                return Array.Empty<string>();
+
+            try
+            {
+                var settingsMethod = environmentsType.GetMethod("FindSettings", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (settingsMethod == null)
+                    return Array.Empty<string>();
+
+                var settings = settingsMethod.Invoke(null, null);
+                if (settings == null)
+                    return Array.Empty<string>();
+
+                var environmentsField = settings.GetType().GetField("environments");
+                if (environmentsField == null)
+                    return Array.Empty<string>();
+
+                var environments = environmentsField.GetValue(settings) as System.Array;
+                if (environments == null || environments.Length == 0)
+                    return Array.Empty<string>();
+
+                var names = new List<string>();
+                foreach (var env in environments)
+                {
+                    var envName = env.GetType().GetField("name")?.GetValue(env) as string;
+                    if (!string.IsNullOrEmpty(envName))
+                        names.Add(envName);
+                }
+
+                return names.ToArray();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[BuildDeployWindow] Failed to load environments: {ex.Message}");
+                return Array.Empty<string>();
+            }
+        }
+
         private void DrawPlatformSpecificSettings(BuildConfiguration config)
         {
             if (config.BuildProfile == null) return;

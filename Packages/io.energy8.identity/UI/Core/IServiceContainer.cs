@@ -28,6 +28,6 @@ namespace Energy8.Identity.UI.Core
         /// <summary>
         /// Конфигурация всех сервисов
         /// </summary>
-        void ConfigureServices(bool debugLogging, bool isLite);
+        void ConfigureServices(bool isLite);
     }
 }

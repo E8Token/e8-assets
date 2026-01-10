@@ -77,10 +77,8 @@ namespace Energy8.Identity.Auth.WebGL.Plugins
             instance = this;
         }
 
-        public async Task Initialize(string config, long botId = 7891020167)
+        public async Task Initialize(string config, long botId)
         {
-            Debug.Log("Initialize Firebase WebGL");
-
             InitializeAuth(
                 config,
                 gameObject.name,

@@ -54,8 +54,6 @@ namespace Energy8.Identity.Analytics.WebGL
 
         public async Task Initialize()
         {
-            Debug.Log("Initializing Firebase WebGL Analytics");
-
             InitializeAnalytics(
                 gameObject.name,
                 nameof(HandleError)

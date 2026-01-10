@@ -24,9 +24,7 @@ namespace Energy8.Identity.Http.Runtime.Factory
                 Debug.LogError("BaseUrl is null or empty in HttpClientFactory");
                 throw new System.ArgumentException("BaseUrl cannot be null or empty", nameof(baseUrl));
             }
-            
-            Debug.Log($"Creating HTTP client with base URL: {baseUrl}");
-            
+
             return new UnityHttpClient(baseUrl);
         }
         
@@ -37,9 +35,7 @@ namespace Energy8.Identity.Http.Runtime.Factory
         public static IHttpClient CreateDefaultClient()
         {
             const string defaultUrl = "http://localhost";
-            
-            Debug.Log($"Creating default HTTP client with URL: {defaultUrl}");
-            
+
             return CreateClient(defaultUrl);
         }
         
@@ -50,12 +46,7 @@ namespace Energy8.Identity.Http.Runtime.Factory
         public static IHttpClient CreateTestClient()
         {
             const string testUrl = "http://localhost:3000";
-            
-            if (IdentityConfiguration.EnableDebugLogging)
-            {
-                Debug.Log($"Creating test HTTP client with URL: {testUrl}");
-            }
-            
+
             return CreateClient(testUrl);
         }
         
@@ -68,17 +59,12 @@ namespace Energy8.Identity.Http.Runtime.Factory
         public static IHttpClient CreateAuthenticatedClient(string baseUrl, string authToken)
         {
             var client = CreateClient(baseUrl);
-            
+
             if (!string.IsNullOrEmpty(authToken))
             {
                 client.SetAuthToken(authToken);
-                
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.Log("HTTP client configured with authentication token");
-                }
             }
-            
+
             return client;
         }
     }

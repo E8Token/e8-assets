@@ -66,7 +66,6 @@ namespace Energy8.Identity.UI.Runtime.Services
         {
             try
             {
-                Debug.Log("Initializing Identity Service");
                 await authProvider.Initialize(ct);
 
                 // Initialize Analytics Service
@@ -75,7 +74,6 @@ namespace Energy8.Identity.UI.Runtime.Services
                     try
                     {
                         await analyticsService.Initialize(ct);
-                        Debug.Log("Analytics Service initialized");
                     }
                     catch (Exception ex)
                     {
@@ -84,23 +82,16 @@ namespace Energy8.Identity.UI.Runtime.Services
                 }
 
                 IsInitialized = true;
-                Debug.Log("Identity Service initialized");
                 if (HasTelegramAutoAuthData && !IsSignedIn)
                 {
-                    Debug.Log("Found Telegram auto-auth data, attempting auto sign-in");
                     try
                     {
                         await SignInWithTelegramAsync(false, ct);
-                        Debug.Log("Auto sign-in with Telegram completed successfully");
                     }
                     catch (Exception ex)
                     {
                         Debug.LogError($"Auto sign-in with Telegram failed: {ex.Message}");
                     }
-                }
-                else
-                {
-                    Debug.Log($"Auto-auth conditions not met: HasTelegramData={HasTelegramAutoAuthData}, IsSignedIn={IsSignedIn}");
                 }
             }
             catch (Exception ex)
@@ -112,7 +103,6 @@ namespace Energy8.Identity.UI.Runtime.Services
 
         public UniTask<AuthResult> SignInWithGoogle(bool linkProvider, CancellationToken ct)
         {
-            Debug.Log($"Starting Google sign in. Link: {linkProvider}");
             return authProvider.SignInWithGoogle(linkProvider, ct);
         }
 
@@ -122,8 +112,6 @@ namespace Energy8.Identity.UI.Runtime.Services
         {
             try
             {
-                Debug.Log("Signing out");
-
                 // Log sign-out event to analytics
                 if (analyticsService != null && analyticsService.IsInitialized)
                 {
@@ -206,7 +194,6 @@ namespace Energy8.Identity.UI.Runtime.Services
 
         public UniTask<AuthResult> SignInWithApple(bool linkProvider, CancellationToken ct)
         {
-            Debug.Log($"Starting Apple sign in. Link: {linkProvider}");
             return authProvider.SignInWithApple(linkProvider, ct);
         }
 
@@ -214,7 +201,6 @@ namespace Energy8.Identity.UI.Runtime.Services
         {
             try
             {
-                Debug.Log($"Starting Telegram sign in. Link: {linkProvider}");
                 var user = await authProvider.SignInWithTelegram(ct);
 
                 if (user == null)
@@ -222,8 +208,6 @@ namespace Energy8.Identity.UI.Runtime.Services
                     Debug.LogError("Telegram sign-in failed: user data is null");
                     throw new Energy8Exception("Sign in failed", "Unable to retrieve Telegram user data");
                 }
-
-                Debug.Log($"Got Telegram user: ID={user.Id}, Name={user.FirstName} {user.LastName}, Username={user.Username}");
 
                 AuthTelegramSignInDto telegramUserDto = linkProvider ?
                      new AuthTelegramLinkDto(user, CurrentUser.UserId) :

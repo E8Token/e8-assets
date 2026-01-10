@@ -6,6 +6,7 @@ using Energy8.Identity.Analytics.Core.Providers;
 using Energy8.Identity.Analytics.Core.Services;
 using Energy8.Identity.Analytics.Runtime.Factory;
 using Energy8.Identity.Configuration.Core;
+using Energy8.EnvironmentConfig.Base;
 using UnityEngine;
 
 namespace Energy8.Identity.Analytics.Runtime.Services
@@ -38,10 +39,8 @@ namespace Energy8.Identity.Analytics.Runtime.Services
         {
             try
             {
-                Debug.Log("Initializing Analytics Service");
                 await analyticsProvider.Initialize(ct);
                 IsInitialized = true;
-                Debug.Log("Analytics Service initialized successfully");
             }
             catch (Exception ex)
             {
@@ -52,22 +51,17 @@ namespace Energy8.Identity.Analytics.Runtime.Services
 
         public void LogEvent(string eventName, Dictionary<string, object> parameters = null)
         {
-            if (!IdentityConfiguration.EnableAnalytics) return;
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+            if (config == null || !config.EnableAnalytics) return;
 
             try
             {
                 if (!IsInitialized)
                 {
-                    Debug.LogWarning("Cannot log event: Analytics Service is not initialized");
                     return;
                 }
 
                 analyticsProvider.LogEvent(eventName, parameters);
-                
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.Log($"Analytics event logged: {eventName}");
-                }
             }
             catch (Exception ex)
             {
@@ -77,22 +71,17 @@ namespace Energy8.Identity.Analytics.Runtime.Services
 
         public void SetUserId(string userId)
         {
-            if (!IdentityConfiguration.EnableAnalytics) return;
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+            if (config == null || !config.EnableAnalytics) return;
 
             try
             {
                 if (!IsInitialized)
                 {
-                    Debug.LogWarning("Cannot set user ID: Analytics Service is not initialized");
                     return;
                 }
 
                 analyticsProvider.SetUserId(userId);
-                
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.Log($"Analytics user ID set: {userId}");
-                }
             }
             catch (Exception ex)
             {
@@ -102,22 +91,17 @@ namespace Energy8.Identity.Analytics.Runtime.Services
 
         public void SetUserProperties(Dictionary<string, object> properties)
         {
-            if (!IdentityConfiguration.EnableAnalytics) return;
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+            if (config == null || !config.EnableAnalytics) return;
 
             try
             {
                 if (!IsInitialized)
                 {
-                    Debug.LogWarning("Cannot set user properties: Analytics Service is not initialized");
                     return;
                 }
 
                 analyticsProvider.SetUserProperties(properties);
-                
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.Log("Analytics user properties set");
-                }
             }
             catch (Exception ex)
             {
@@ -127,22 +111,17 @@ namespace Energy8.Identity.Analytics.Runtime.Services
 
         public void ResetAnalyticsData()
         {
-            if (!IdentityConfiguration.EnableAnalytics) return;
+            var config = ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity");
+            if (config == null || !config.EnableAnalytics) return;
 
             try
             {
                 if (!IsInitialized)
                 {
-                    Debug.LogWarning("Cannot reset analytics data: Analytics Service is not initialized");
                     return;
                 }
 
                 analyticsProvider.ResetAnalyticsData();
-                
-                if (IdentityConfiguration.EnableDebugLogging)
-                {
-                    Debug.Log("Analytics data reset");
-                }
             }
             catch (Exception ex)
             {

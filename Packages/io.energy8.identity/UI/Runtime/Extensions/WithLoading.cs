@@ -31,10 +31,8 @@ namespace Energy8.Identity.UI.Runtime.Extensions
             if (_viewManager == null)
                 throw new InvalidOperationException("ViewManager not initialized. Call InitializeLoading first");
 
-            Debug.Log("WithLoading: Starting task with loading view");
             var result = (T)(await _viewManager.Show<LoadingView, LoadingViewParams, LoadingViewResult>(
                 new ResultLoadingViewParams(task.AsObjectTask()), ct)).Result;
-            Debug.Log("WithLoading: Task completed and loading view closed");
             return result;
         }
 
@@ -45,10 +43,8 @@ namespace Energy8.Identity.UI.Runtime.Extensions
             if (_viewManager == null)
                 throw new InvalidOperationException("ViewManager not initialized. Call InitializeLoading first");
 
-            Debug.Log("WithLoading: Starting task with loading view (no result)");
             await _viewManager.Show<LoadingView, LoadingViewParams, LoadingViewResult>(
                 new LoadingViewParams(task), ct);
-            Debug.Log("WithLoading: Task completed and loading view closed (no result)");
         }
     }
 }

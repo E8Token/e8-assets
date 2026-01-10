@@ -17,12 +17,10 @@ namespace Energy8.Identity.UI.Runtime.Error
     public class ErrorHandler : IErrorHandler
     {
         private readonly ICanvasManager canvasManager;
-        private readonly bool debugLogging;
         
-        public ErrorHandler(ICanvasManager canvasManager, bool debugLogging)
+        public ErrorHandler(ICanvasManager canvasManager)
         {
             this.canvasManager = canvasManager;
-            this.debugLogging = debugLogging;
         }
         
         /// <summary>

@@ -22,8 +22,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
         {
             try
             {
-                Debug.Log("Initializing Firebase Native Analytics Provider");
-
 #if !UNITY_WEBGL || UNITY_EDITOR
                 // Ensure Firebase is initialized
                 var dependencyStatus = await FirebaseApp.CheckAndFixDependenciesAsync();
@@ -31,15 +29,12 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
                 {
                     FirebaseAnalytics.SetAnalyticsCollectionEnabled(true);
                     IsInitialized = true;
-                    Debug.Log("Firebase Native Analytics Provider initialized successfully");
                 }
                 else
                 {
                     Debug.LogError($"Firebase dependencies not available: {dependencyStatus}");
                     throw new Exception($"Firebase initialization failed: {dependencyStatus}");
                 }
-#else
-                Debug.LogWarning("Firebase Native Analytics not supported on WebGL");
 #endif
             }
             catch (Exception ex)
@@ -75,7 +70,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
                     }
                     FirebaseAnalytics.LogEvent(eventName, firebaseParams);
                 }
-                Debug.Log($"Logged event: {eventName}");
             }
             catch (Exception ex)
             {
@@ -96,7 +90,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
             try
             {
                 FirebaseAnalytics.SetUserId(userId);
-                Debug.Log($"Set user ID: {userId}");
             }
             catch (Exception ex)
             {
@@ -123,7 +116,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
                         FirebaseAnalytics.SetUserProperty(property.Key, property.Value?.ToString() ?? "");
                     }
                 }
-                Debug.Log("Set user properties");
             }
             catch (Exception ex)
             {
@@ -144,7 +136,6 @@ namespace Energy8.Identity.Analytics.Runtime.Providers
             try
             {
                 FirebaseAnalytics.ResetAnalyticsData();
-                Debug.Log("Reset analytics data");
             }
             catch (Exception ex)
             {

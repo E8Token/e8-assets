@@ -11,7 +11,6 @@ namespace Energy8.Identity.UI.Runtime.Management
     {
         [Header("Configuration")]
         [SerializeField] private bool isLite = false;
-        [SerializeField] private bool debugLogging = false;
         [SerializeField] private bool autoInitialize = true;
 
         private void Awake()
@@ -30,8 +29,6 @@ namespace Energy8.Identity.UI.Runtime.Management
             // Проверяем, есть ли уже экземпляр
             if (IdentityOrchestrator.Instance != null)
             {
-                if (debugLogging)
-                    Debug.Log("IdentityOrchestrator already exists, skipping initialization");
                 return;
             }
 
@@ -50,16 +47,6 @@ namespace Energy8.Identity.UI.Runtime.Management
             {
                 isLiteField.SetValue(identityController, isLite);
             }
-            
-            var debugLoggingField = identityType.GetField("debugLogging", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (debugLoggingField != null)
-            {
-                debugLoggingField.SetValue(identityController, debugLogging);
-            }
-
-            if (debugLogging)
-                Debug.Log($"IdentityOrchestrator initialized: IsLite={isLite}, DebugLogging={debugLogging}");
         }
 
         /// <summary>
@@ -69,9 +56,6 @@ namespace Energy8.Identity.UI.Runtime.Management
         {
             if (IdentityOrchestrator.Instance != null)
             {
-                if (debugLogging)
-                    Debug.Log("Destroying IdentityOrchestrator instance");
-                    
                 Destroy(IdentityOrchestrator.Instance.gameObject);
             }
         }
@@ -104,11 +88,6 @@ namespace Energy8.Identity.UI.Runtime.Management
             DestroyIdentityOrchestrator();
         }
 
-        [ContextMenu("Debug Info")]
-        private void EditorDebugInfo()
-        {
-            Debug.Log(GetIdentityOrchestratorInfo());
-        }
 #endif
     }
 }

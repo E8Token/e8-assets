@@ -34,7 +34,7 @@ namespace Energy8.Identity.UI.Core.Compoents
         [SerializeField] List<SpriteAnimationClip> animationClips = new List<SpriteAnimationClip>();
         [SerializeField][Range(1f, 10f)] float maxTransitionSpeed = 3f;
         [SerializeField][HideInInspector] Image image;
-        [SerializeField] bool enableLogs = true;
+        [SerializeField] bool enableLogs = false;
 
         private CancellationTokenSource cts;
         private string currentClipName;
@@ -56,7 +56,6 @@ namespace Energy8.Identity.UI.Core.Compoents
         {
             if (playOnStart)
             {
-                Log("Playing idle animation on start");
                 PlayIdleAnimation();
             }
         }
@@ -68,11 +67,9 @@ namespace Energy8.Identity.UI.Core.Compoents
 
         public void PlayIdleAnimation()
         {
-            Debug.Log(animationClips[0].type);
             var idleClip = animationClips.FirstOrDefault(clip => clip.type == AnimationType.Idle);
             if (idleClip != null)
             {
-                Log($"Playing idle animation: {idleClip.name}");
                 PlayAnimation(idleClip.name);
             }
             else
@@ -83,7 +80,6 @@ namespace Energy8.Identity.UI.Core.Compoents
 
         public void PlayAnimation(string clipName)
         {
-            Log($"Request to play animation: {clipName}");
             var clip = animationClips.FirstOrDefault(c => c.name == clipName);
             if (clip == null)
             {
@@ -94,19 +90,17 @@ namespace Energy8.Identity.UI.Core.Compoents
             // Check if we're already playing this animation
             if (currentClipName == clipName)
             {
-                Log($"Already playing animation '{clipName}', ignoring request");
                 return;
             }
 
             // If we already have an animation running, queue this one
             if (currentClipName != null && cts != null && !cts.IsCancellationRequested)
             {
-                Log($"Queueing animation '{clipName}' after current animation '{currentClipName}'");
                 queuedClipName = clipName;
                 return;
             }
 
-            // Actually start the animation from scratch
+            // Actually start animation from scratch
             StartNewAnimation(clipName);
         }
 
@@ -118,17 +112,15 @@ namespace Energy8.Identity.UI.Core.Compoents
             var clip = animationClips.FirstOrDefault(c => c.name == clipName);
             if (clip == null) return; // Already checked in PlayAnimation, but double-check
 
-            // Set up the new animation
+            // Set up new animation
             currentClipName = clipName;
             queuedClipName = null;
 
-            Log($"Starting animation: {clipName} (Type: {clip.type})");
             cts = new CancellationTokenSource();
             _ = AnimateClipAsync(clip, cts.Token).AttachExternalCancellation(this.GetCancellationTokenOnDestroy());
 
             if (clip.type == AnimationType.Idle)
             {
-                Log("Starting random animation check for idle animation");
                 _ = CheckRandomAnimationsAsync(cts.Token);
             }
         }
@@ -137,7 +129,6 @@ namespace Energy8.Identity.UI.Core.Compoents
         {
             if (cts != null && !cts.IsCancellationRequested)
             {
-                Log($"Stopping animation: {currentClipName}");
                 cts.Cancel();
                 cts.Dispose();
                 cts = null;
@@ -162,40 +153,35 @@ namespace Energy8.Identity.UI.Core.Compoents
             string nextAnimation = null;
             bool isIdleAnimation = clip.type == AnimationType.Idle;
 
-            Log($"Starting animation playback: {clip.name} with {totalFrames} frames at speed {currentSpeed}");
-
             while (!token.IsCancellationRequested)
             {
                 // Check if we need to transition to a queued animation
                 if (queuedClipName != null && !transitionRequested)
                 {
-                    // Store the queued name to avoid it changing during transition
+                    // Store queued name to avoid it changing during transition
                     nextAnimation = queuedClipName;
                     transitionRequested = true;
 
-                    // If we can play in reverse and we've played less than half of the animation
+                    // If we can play in reverse and we've played less than half of animation
                     if (clip.canPlayInReverse && frameIndex < totalFrames / 2 && frameIndex > 0)
                     {
                         isReverse = true;
                         currentSpeed = maxTransitionSpeed;
-                        Log($"Reversing animation {clip.name} at frame {frameIndex}/{totalFrames} with speed {currentSpeed}");
                     }
                     else
                     {
                         // Speed up to finish quickly
                         currentSpeed = maxTransitionSpeed;
-                        Log($"Speeding up animation {clip.name} to {currentSpeed} to transition faster");
 
                         // If this is an idle animation, prepare to transition at end of frame
                         if (isIdleAnimation && frameIndex >= totalFrames - 1)
                         {
-                            Log($"Idle animation {clip.name} at end of cycle, will transition to {nextAnimation}");
-                            break; // Exit the loop to handle the transition outside
+                            break; // Exit loop to handle transition outside
                         }
                     }
                 }
 
-                // Set the current sprite
+                // Set's current sprite
                 if (image != null)
                 {
                     image.sprite = clip.sprites[frameIndex];
@@ -207,8 +193,7 @@ namespace Energy8.Identity.UI.Core.Compoents
                     frameIndex--;
                     if (frameIndex < 0)
                     {
-                        Log($"Reverse animation {clip.name} complete, will transition to {nextAnimation}");
-                        break; // Exit the loop to handle the transition outside
+                        break; // Exit loop to handle's transition outside
                     }
                 }
                 else
@@ -222,7 +207,7 @@ namespace Energy8.Identity.UI.Core.Compoents
                             // If there's a manually queued animation, play that first
                             if (transitionRequested)
                             {
-                                Log($"Animation {clip.name} complete, will transition to queued animation {nextAnimation}");
+                                // Will transition to queued animation
                             }
                             else
                             {
@@ -230,7 +215,7 @@ namespace Energy8.Identity.UI.Core.Compoents
                                 nextAnimation = animationClips.FirstOrDefault(c => c.type == AnimationType.Idle)?.name;
                                 if (nextAnimation != null)
                                 {
-                                    Log($"Animation {clip.name} complete, returning to idle animation {nextAnimation}");
+                                    // Will return to idle
                                 }
                                 else
                                 {
@@ -238,17 +223,15 @@ namespace Energy8.Identity.UI.Core.Compoents
                                     return;
                                 }
                             }
-                            break; // Exit loop to handle transition
+                            break; // Exit's loop to handle transition
                         }
 
                         // Only idle animations loop
                         if (transitionRequested)
                         {
-                            Log($"Idle animation {clip.name} complete, will transition to {nextAnimation} instead of looping");
-                            break; // Exit the loop to handle the transition outside
+                            break; // Exit loop to handle transition outside
                         }
 
-                        Log($"Idle animation {clip.name} reached end, looping after timeout {clip.timeOut}s");
                         await UniTask.Delay((int)(clip.timeOut * 1000), cancellationToken: token);
                         frameIndex = 0;
                     }
@@ -258,34 +241,26 @@ namespace Energy8.Identity.UI.Core.Compoents
                 await UniTask.Delay((int)(1000f / clip.frameRate / currentSpeed), cancellationToken: token);
             }
 
-            // Handle transition to next animation outside the animation loop
+            // Handle transition to next animation outside's animation loop
             if (!token.IsCancellationRequested && nextAnimation != null)
             {
-                Log($"Animation {clip.name} finished, transitioning to {nextAnimation}");
                 // Use StartNewAnimation instead of PlayAnimation to avoid recursion issues
                 StartNewAnimation(nextAnimation);
-            }
-            else if (token.IsCancellationRequested)
-            {
-                Log($"Animation {clip.name} cancelled");
             }
             else if (!isIdleAnimation)
             {
                 // As a fallback for non-idle animations without a next animation set
-                Log($"Non-idle animation {clip.name} finished with no transition target, returning to idle");
                 PlayIdleAnimation();
             }
         }
 
         private async UniTask CheckRandomAnimationsAsync(CancellationToken token)
         {
-            Log("Starting random animation check cycle");
             while (!token.IsCancellationRequested)
             {
                 // Only check if we're currently playing idle animation and no queued animation
                 if (currentClipName != null && queuedClipName == null)
                 {
-                    Log(currentClipName);
                     var currentClip = animationClips.FirstOrDefault(c => c.name == currentClipName);
                     if (currentClip != null && currentClip.type == AnimationType.Idle)
                     {
@@ -296,7 +271,6 @@ namespace Energy8.Identity.UI.Core.Compoents
                             float randomValue = Random.value;
                             if (randomValue < randomClip.randomProbability)
                             {
-                                Log($"Random animation triggered: {randomClip.name} (probability: {randomClip.randomProbability}, roll: {randomValue})");
                                 PlayAnimation(randomClip.name);
                                 break;
                             }

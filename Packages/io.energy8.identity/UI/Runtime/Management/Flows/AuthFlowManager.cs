@@ -31,7 +31,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
         private readonly ICanvasManager canvasManager;
         private readonly IStateManager stateManager;
         private readonly IErrorHandler errorHandler;
-        private readonly bool debugLogging;
         
         private bool isShowingAuthFlow = false; // Перенос флага из строки 56
         
@@ -39,14 +38,12 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             IIdentityService identityService,
             ICanvasManager canvasManager,
             IStateManager stateManager,
-            IErrorHandler errorHandler,
-            bool debugLogging)
+            IErrorHandler errorHandler)
         {
             this.identityService = identityService;
             this.canvasManager = canvasManager;
             this.stateManager = stateManager;
             this.errorHandler = errorHandler;
-            this.debugLogging = debugLogging;
         }
         
         #region Main Auth Flow (точный перенос из строк 457-574)
@@ -57,12 +54,8 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
         /// </summary>
         public async UniTask StartAuthFlowAsync(CancellationToken ct)
         {
-            if (debugLogging)
-                Debug.Log("[AuthFlowManager] Starting auth flow");
-                
             if (isShowingAuthFlow)
             {
-                Debug.LogWarning("[AuthFlowManager] ShowAuthFlow already running, skipping duplicate call");
                 return;
             }
             
@@ -102,8 +95,6 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                     }
                     catch (OperationCanceledException)
                     {
-                        if (debugLogging)
-                            Debug.Log("ShowAuthFlow cancelled");
                         return;
                     }
                     catch (SignOutRequiredException)
@@ -154,12 +145,8 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             // Упрощенная версия без WithErrorHandler пока не исправим все зависимости
             try
             {
-                Debug.Log($"[AuthFlowManager] Starting email flow for: {email}");
-                
                 // Запуск email flow с Loading
                 await ShowLoadingAsync(identityService.StartEmailFlow(email, ct), ct);
-                
-                Debug.Log($"[AuthFlowManager] Email flow started, now showing code input");
 
                 // Подтверждение кода
                 string code = null;
@@ -167,16 +154,11 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
 
                 while (code == null)
                 {
-                    Debug.Log($"[AuthFlowManager] Showing CodeView");
-                    
                     var codeResult = await GetViewManager().Show<CodeView, CodeViewParams, CodeViewResult>(
                         new CodeViewParams(), ct);
 
-                    Debug.Log($"[AuthFlowManager] CodeView result: {codeResult.Code}");
-
                     if (codeResult.Code == "RESEND")
                     {
-                        Debug.Log($"[AuthFlowManager] Resending email flow");
                         await ShowLoadingAsync(identityService.StartEmailFlow(emailForCode, ct), ct);
                         continue;
                     }
@@ -184,13 +166,10 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
                     code = codeResult.Code;
                 }
 
-                Debug.Log($"[AuthFlowManager] Confirming email code");
                 await ShowLoadingAsync(identityService.ConfirmEmailCode(code, ct), ct);
-                Debug.Log($"[AuthFlowManager] Email auth completed successfully");
             }
             catch (Energy8Exception e8Exception)
             {
-                Debug.LogError($"[AuthFlowManager] Email auth failed: {e8Exception.Message}");
                 await errorHandler.ShowErrorAsync(e8Exception, ct);
             }
         }
@@ -266,17 +245,12 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
         /// </summary>
         private async UniTask<T> ShowLoadingAsync<T>(UniTask<T> task, CancellationToken ct)
         {
-            Debug.Log($"[AuthFlowManager] ShowLoadingAsync<T> called");
-            
             var viewManager = GetViewManager();
             if (viewManager == null)
             {
-                Debug.LogWarning($"[AuthFlowManager] ViewManager is null, executing task without loading");
                 return await task;
             }
 
-            Debug.Log($"[AuthFlowManager] Creating LoadingView");
-            
             // Создаем CancellationTokenSource для управления LoadingView
             using var loadingCts = new CancellationTokenSource();
             
@@ -284,24 +258,15 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             var loadingParams = new LoadingViewParams(UniTask.CompletedTask);
             viewManager.Show<LoadingView, LoadingViewParams, LoadingViewResult>(loadingParams, loadingCts.Token).Forget();
             
-            Debug.Log($"[AuthFlowManager] LoadingView started, executing main task");
-            
             try
             {
                 // Выполняем основную задачу
                 var result = await task;
-                Debug.Log($"[AuthFlowManager] Main task completed successfully");
                 return result;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[AuthFlowManager] Main task failed: {ex.Message}");
-                throw;
             }
             finally
             {
                 // Закрываем LoadingView отменой токена (в любом случае)
-                Debug.Log($"[AuthFlowManager] Closing LoadingView");
                 loadingCts.Cancel();
             }
         }
@@ -311,18 +276,13 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
         /// </summary>
         private async UniTask ShowLoadingAsync(UniTask task, CancellationToken ct)
         {
-            Debug.Log($"[AuthFlowManager] ShowLoadingAsync (no result) called");
-            
             var viewManager = GetViewManager();
             if (viewManager == null)
             {
-                Debug.LogWarning($"[AuthFlowManager] ViewManager is null, executing task without loading");
                 await task;
                 return;
             }
 
-            Debug.Log($"[AuthFlowManager] Creating LoadingView (no result)");
-            
             // Создаем CancellationTokenSource для управления LoadingView
             using var loadingCts = new CancellationTokenSource();
             
@@ -330,31 +290,20 @@ namespace Energy8.Identity.UI.Runtime.Management.Flows
             var loadingParams = new LoadingViewParams(UniTask.CompletedTask);
             viewManager.Show<LoadingView, LoadingViewParams, LoadingViewResult>(loadingParams, loadingCts.Token).Forget();
             
-            Debug.Log($"[AuthFlowManager] LoadingView started, executing main task (no result)");
-            
             try
             {
                 // Выполняем основную задачу
                 await task;
-                Debug.Log($"[AuthFlowManager] Main task completed successfully (no result)");
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[AuthFlowManager] Main task failed (no result): {ex.Message}");
-                throw;
             }
             finally
             {
                 // Закрываем LoadingView отменой токена (в любом случае)
-                Debug.Log($"[AuthFlowManager] Closing LoadingView (no result)");
                 loadingCts.Cancel();
             }
         }
         
         private async UniTask WaitAndContinue(CancellationToken ct)
         {
-            if (debugLogging)
-                Debug.LogWarning("No ViewManager available, waiting...");
             await UniTask.Delay(1000, cancellationToken: ct);
         }
         

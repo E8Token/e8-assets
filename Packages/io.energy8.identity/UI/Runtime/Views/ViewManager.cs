@@ -24,7 +24,6 @@ namespace Energy8.Identity.UI.Runtime.Views.Management
         {
             factory = new ViewFactory(prefabs);
             presenter = new ViewPresenter(factory, viewRoot, scrollView);
-            Debug.Log("View system initialized");
         }
 
         public async UniTask<TResult> Show<TView, TParams, TResult>(
@@ -34,22 +33,18 @@ namespace Energy8.Identity.UI.Runtime.Views.Management
           where TParams : ViewParams
           where TResult : ViewResult
         {
-            Debug.Log($"[ViewManager] Show<{typeof(TView).Name}> called with params: {@params?.GetType().Name}");
             try
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct, lifetimeCts.Token);
                 var result = await presenter.ShowView<TView, TParams, TResult>(@params, cts.Token);
-                Debug.Log($"[ViewManager] Show<{typeof(TView).Name}> completed with result: {result}");
                 return result;
             }
             catch (OperationCanceledException)
             {
-                Debug.LogWarning($"[ViewManager] Show<{typeof(TView).Name}> cancelled");
                 throw;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ViewManager] Show<{typeof(TView).Name}> failed: {ex.Message}");
                 throw;
             }
         }

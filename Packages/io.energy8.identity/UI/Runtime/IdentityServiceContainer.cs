@@ -9,6 +9,7 @@ using Energy8.Identity.Analytics.Core.Services;
 using Energy8.Identity.Analytics.Runtime.Services;
 using Energy8.Identity.Analytics.Runtime.Factory;
 using Energy8.Identity.Configuration.Core;
+using Energy8.EnvironmentConfig.Base;
 using Energy8.Identity.UI.Runtime.Services;
 using Energy8.Identity.UI.Runtime.Canvas;
 using Energy8.Identity.UI.Runtime.State;
@@ -35,15 +36,15 @@ namespace Energy8.Identity.UI.Runtime.DI
         /// Конфигурация всех сервисов системы
         /// Точный перенос инициализации из Awake (строки 204-215)
         /// </summary>
-        public void ConfigureServices(bool debugLogging, bool isLite)
+        public void ConfigureServices(bool isLite)
         {
-            ConfigureServices(debugLogging, isLite, null);
+            ConfigureServices(isLite, null);
         }
 
         /// <summary>
         /// Конфигурация всех сервисов системы с возможностью передать кастомный игровой сервис
         /// </summary>
-        public void ConfigureServices(bool debugLogging, bool isLite, IGameService customGameService)
+        public void ConfigureServices(bool isLite, IGameService customGameService)
         {
             // 1. MonoBehaviour и базовые сервисы
             RegisterSingleton<IViewManager>(() => {
@@ -52,7 +53,7 @@ namespace Energy8.Identity.UI.Runtime.DI
                     throw new InvalidOperationException("ViewManager (MonoBehaviour) not found in scene. Please ensure a ViewManager exists in the scene before DI initialization.");
                 return vm;
             });
-            RegisterSingleton<IHttpClient>(() => new UnityHttpClient(IdentityConfiguration.SelectedIP));
+            RegisterSingleton<IHttpClient>(() => new UnityHttpClient(ModuleConfigManager<IdentityConfig>.GetCurrentConfig("Identity")?.AuthServerUrl ?? "http://localhost"));
             RegisterSingleton<IAuthProvider>(() => AuthProviderFactory.CreateProvider(Resolve<IHttpClient>()));
             RegisterSingleton<IUserService>(() => new Energy8.Identity.User.Runtime.Services.UserService(
                 Resolve<IHttpClient>(), Resolve<IAuthProvider>()));
@@ -69,21 +70,20 @@ namespace Energy8.Identity.UI.Runtime.DI
 
             // 2. UI Managers
             RegisterSingleton<ICanvasManager>(() => new CanvasManager());
-            RegisterSingleton<IStateManager>(() => new StateManager(Resolve<IIdentityService>(), null, debugLogging));
-            RegisterSingleton<IErrorHandler>(() => new ErrorHandler(Resolve<ICanvasManager>(), debugLogging));
+            RegisterSingleton<IStateManager>(() => new StateManager(Resolve<IIdentityService>(), null));
+            RegisterSingleton<IErrorHandler>(() => new ErrorHandler(Resolve<ICanvasManager>()));
 
             // 3. Flow Managers (после всех базовых)
             RegisterSingleton<IAnalyticsFlowManager>(() => new AnalyticsFlowManager(Resolve<IViewManager>(), Resolve<IStateManager>()));
             RegisterSingleton<IUpdateFlowManager>(() => new UpdateFlowManager(Resolve<IViewManager>(), Resolve<IStateManager>()));
-            RegisterSingleton<IAnalyticsPermissionService>(() => new AnalyticsPermissionService(Resolve<ICanvasManager>(), debugLogging, Resolve<IAnalyticsFlowManager>()));
+            RegisterSingleton<IAnalyticsPermissionService>(() => new AnalyticsPermissionService(Resolve<ICanvasManager>(), Resolve<IAnalyticsFlowManager>()));
 
             // 4. Остальные Flow Managers
             RegisterSingleton<IAuthFlowManager>(() => new AuthFlowManager(
                 Resolve<IIdentityService>(),
                 Resolve<ICanvasManager>(),
                 Resolve<IStateManager>(),
-                Resolve<IErrorHandler>(),
-                debugLogging));
+                Resolve<IErrorHandler>()));
             RegisterSingleton<IUserFlowManager>(() => new UserFlowManager(
                 Resolve<IUserService>(),
                 Resolve<IIdentityService>(),
@@ -91,7 +91,6 @@ namespace Energy8.Identity.UI.Runtime.DI
                 Resolve<ICanvasManager>(),
                 Resolve<IStateManager>(),
                 Resolve<IErrorHandler>(),
-                debugLogging,
                 customGameService));  // Передаем кастомный сервис если есть
             RegisterSingleton<IUpdateService>(() => new UpdateService(false)); // false — по умолчанию обновления нет
         }

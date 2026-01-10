@@ -4,14 +4,16 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 
 using Newtonsoft.Json;
+using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections.Generic;
-using UnityEngine;
+
 using Energy8.Identity.Shared.Core.Contracts.Dto.Common;
 using Energy8.Identity.Shared.Core.Contracts.Dto.Errors;
 using Energy8.Identity.Shared.Core.Exceptions;
 
 using Energy8.Identity.Http.Core;
+using Energy8.Identity.Http.Core.Models;
 
 namespace Energy8.Identity.Http.Runtime.Clients
 {
@@ -20,6 +22,8 @@ namespace Energy8.Identity.Http.Runtime.Clients
         private readonly string baseUrl;
         private string authToken;
         private bool tokenLoggingEnabled = false;
+        private int retryCount = 3;
+        private int timeoutSeconds = 30;
 
         public string BaseUrl => baseUrl;
 
@@ -31,25 +35,16 @@ namespace Energy8.Identity.Http.Runtime.Clients
         public void SetAuthToken(string token)
         {
             authToken = token;
-            if (tokenLoggingEnabled)
-            {
-                Debug.Log($"[HttpClient] Auth token set: {(string.IsNullOrEmpty(token) ? "null" : $"{token.Substring(0, Math.Min(20, token.Length))}...")}");
-            }
         }
 
         public void ClearAuthToken()
         {
             authToken = null;
-            if (tokenLoggingEnabled)
-            {
-                Debug.Log("[HttpClient] Auth token cleared");
-            }
         }
-        
+
         public void EnableTokenLogging(bool enabled)
         {
             tokenLoggingEnabled = enabled;
-            Debug.Log($"[HttpClient] Token logging {(enabled ? "enabled" : "disabled")}");
         }
 
         private Energy8Exception CreateException(HttpStatusCode statusCode, ErrorDto error)
@@ -64,185 +59,248 @@ namespace Energy8.Identity.Http.Runtime.Clients
                 HttpStatusCode.InternalServerError => new ServerException(error),
                 HttpStatusCode.BadGateway => new ServerException(error),
                 HttpStatusCode.ServiceUnavailable => new ServerException(error),
+                HttpStatusCode.GatewayTimeout => new ServerException(error),
+                HttpStatusCode.RequestTimeout => new Energy8Exception("Request Timeout", "The request timed out.", canRetry: true),
                 _ => new Energy8Exception("Unknown Error", "Error didn't handled by E8 Identity.",
                     true, true, true)
             };
         }
 
-        private async UniTask<T> SendRequest<T>(string endpoint, string method, object data, CancellationToken ct)
+        /// <summary>
+        /// Проверяет, является ли ошибка временной и warrants retry
+        /// </summary>
+        private bool ShouldRetry(HttpStatusCode statusCode, Exception ex)
         {
-            var url = $"{baseUrl}/api/v1/{endpoint}";
-            using var request = new UnityWebRequest(url, method);
-
-            if (!string.IsNullOrEmpty(authToken))
+            if (statusCode == HttpStatusCode.ServiceUnavailable || 
+                statusCode == HttpStatusCode.BadGateway || 
+                statusCode == HttpStatusCode.GatewayTimeout ||
+                statusCode == 0) // Connection error
             {
-                request.SetRequestHeader("Authorization", $"Bearer {authToken}");
-                if (tokenLoggingEnabled)
-                {
-                    Debug.Log($"[HttpClient] Request to {method} {url} with token: {authToken.Substring(0, Math.Min(20, authToken.Length))}...");
-                }
-            }
-            else if (tokenLoggingEnabled)
-            {
-                Debug.Log($"[HttpClient] Request to {method} {url} without auth token");
+                return true;
             }
 
-            if (data != null)
+            if (ex is WebException || ex is TimeoutException)
             {
-                var formData = new WWWForm();
-                if (data is DtoBase model)
-                {
-                    foreach (var pair in model.ToDictionary())
-                    {
-                        if (pair.Value != null)
-                            formData.AddField(pair.Key, pair.Value.ToString());
-                    }
-                }
-                else
-                {
-                    var dictionary = data as IDictionary<string, object>
-                        ?? JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonConvert.SerializeObject(data));
-                    foreach (var pair in dictionary)
-                    {
-                        if (pair.Value != null)
-                            formData.AddField(pair.Key, pair.Value.ToString());
-                    }
-                }
-
-                request.uploadHandler = new UploadHandlerRaw(formData.data);
-                foreach (var header in formData.headers)
-                {
-                    request.SetRequestHeader(header.Key, header.Value);
-                }
+                return true;
             }
 
-            request.downloadHandler = new DownloadHandlerBuffer();
+            return false;
+        }
 
+        /// <summary>
+        /// Выполняет экспоненциальный backoff для retry
+        /// </summary>
+        private async UniTask DelayWithBackoff(int attempt, CancellationToken ct)
+        {
+            var delayMs = (long)Math.Pow(2, attempt) * 1000; // 1s, 2s, 4s, 8s...
+            var maxDelayMs = 5000; // Максимум 5 секунд
+            delayMs = Math.Min(delayMs, maxDelayMs);
+            
             try
             {
-                await request.SendWebRequest();
-
-                var responseText = request.downloadHandler.text;
-                var response = JsonConvert.DeserializeObject<ApiResponse<T>>(responseText);
-
-                if (request.result != UnityWebRequest.Result.Success || !response.Success)
-                {
-                    Debug.LogError($"Request failed [{request.responseCode}]: " + request.error);
-                    var error = response?.Error ?? ValiadateErrorResponse((HttpStatusCode)request.responseCode);
-                    throw CreateException((HttpStatusCode)request.responseCode, error);
-                }
-
-                return response.Data;
+                await UniTask.Delay((int)delayMs, cancellationToken: ct);
             }
-            catch (Exception ex) when (ex is not ApiException)
+            catch (OperationCanceledException)
             {
-                Debug.LogError("Request error: " + ex.Message);
-                var error = ValiadateErrorResponse((HttpStatusCode)request.responseCode);
-                throw CreateException((HttpStatusCode)request.responseCode, error);
+                // Игнорируем отмену при задержке между retry
             }
         }
 
-        private async UniTask SendRequest(string endpoint, string method, object data, CancellationToken ct)
+        /// <summary>
+        /// Универсальный метод отправки запроса с retry и timeout
+        /// </summary>
+        private async UniTask<TResponse> SendRequestCore<TResponse>(
+            string endpoint, 
+            string method, 
+            object data, 
+            CancellationToken ct,
+            bool expectResponse = true)
         {
-            var url = $"{baseUrl}/api/v1/{endpoint}";
-            using var request = new UnityWebRequest(url, method);
+            var url = $"{baseUrl}/{endpoint}";
+            HttpStatusCode statusCode = HttpStatusCode.OK;
+            Exception lastException = null;
+            ApiResponse<TResponse> lastResponse = null;
 
-            if (!string.IsNullOrEmpty(authToken))
+            // Retry loop
+            for (int attempt = 0; attempt <= retryCount; attempt++)
             {
-                request.SetRequestHeader("Authorization", $"Bearer {authToken}");
-                if (tokenLoggingEnabled)
+                using var request = new UnityWebRequest(url, method);
+                
+                var log = new HttpRequestLog
                 {
-                    Debug.Log($"[HttpClient] Request to {method} {url} with token: {authToken.Substring(0, Math.Min(20, authToken.Length))}...");
+                    Method = method,
+                    Url = url,
+                    Attempt = attempt + 1,
+                    TotalAttempts = retryCount + 1
+                };
+
+                if (!string.IsNullOrEmpty(authToken))
+                {
+                    request.SetRequestHeader("Authorization", $"Bearer {authToken}");
+                    log.Headers["Authorization"] = tokenLoggingEnabled ? $"Bearer {authToken}" : "***";
                 }
-            }
-            else if (tokenLoggingEnabled)
-            {
-                Debug.Log($"[HttpClient] Request to {method} {url} without auth token");
-            }
 
-            if (data != null)
-            {
-                var formData = new WWWForm();
-                if (data is DtoBase model)
+                object requestData = null;
+                if (data != null)
                 {
-                    foreach (var pair in model.ToDictionary())
+                    var formData = new WWWForm();
+                    if (data is DtoBase model)
                     {
-                        if (pair.Value != null)
-                            formData.AddField(pair.Key, pair.Value.ToString());
+                        requestData = model.ToDictionary();
+                        foreach (var pair in model.ToDictionary())
+                        {
+                            if (pair.Value != null)
+                                formData.AddField(pair.Key, pair.Value.ToString());
+                        }
+                    }
+                    else
+                    {
+                        requestData = data;
+                        var dictionary = data as IDictionary<string, object>
+                            ?? JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonConvert.SerializeObject(data));
+                        foreach (var pair in dictionary)
+                        {
+                            if (pair.Value != null)
+                                formData.AddField(pair.Key, pair.Value.ToString());
+                        }
+                    }
+
+                    request.uploadHandler = new UploadHandlerRaw(formData.data);
+                    foreach (var header in formData.headers)
+                    {
+                        request.SetRequestHeader(header.Key, header.Value);
+                        log.Headers[header.Key] = header.Value;
                     }
                 }
-                else
+                
+                log.RequestData = requestData;
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.timeout = timeoutSeconds;
+
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+                try
                 {
-                    var dictionary = data as IDictionary<string, object>
-                        ?? JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonConvert.SerializeObject(data));
-                    foreach (var pair in dictionary)
+                    await request.SendWebRequest();
+
+                    stopwatch.Stop();
+                    log.Duration = stopwatch.ElapsedMilliseconds;
+                    log.ResponseCode = request.responseCode;
+                    log.ResponseBody = request.downloadHandler.text;
+
+                    statusCode = (HttpStatusCode)request.responseCode;
+
+                    if (expectResponse)
                     {
-                        if (pair.Value != null)
-                            formData.AddField(pair.Key, pair.Value.ToString());
+                        var responseText = request.downloadHandler.text;
+                        lastResponse = JsonConvert.DeserializeObject<ApiResponse<TResponse>>(responseText);
+
+                        if (request.result != UnityWebRequest.Result.Success || 
+                            (lastResponse != null && !lastResponse.Success))
+                        {
+                            log.Success = false;
+                            log.ErrorMessage = request.error;
+                            
+                            Debug.Log("[Identity HTTP] " + JsonConvert.SerializeObject(log, Formatting.Indented));
+                            
+                            var error = lastResponse?.Error ?? ValiadateErrorResponse(statusCode);
+                            
+                            if (attempt < retryCount && ShouldRetry(statusCode, null))
+                            {
+                                lastException = CreateException(statusCode, error);
+                                await DelayWithBackoff(attempt, ct);
+                                continue;
+                            }
+                            
+                            throw CreateException(statusCode, error);
+                        }
                     }
-                }
+                    else
+                    {
+                        if (request.result != UnityWebRequest.Result.Success)
+                        {
+                            log.Success = false;
+                            log.ErrorMessage = request.error;
+                            
+                            Debug.Log("[Identity HTTP] " + JsonConvert.SerializeObject(log, Formatting.Indented));
+                            
+                            var error = ValiadateErrorResponse(statusCode);
+                            
+                            if (attempt < retryCount && ShouldRetry(statusCode, null))
+                            {
+                                lastException = CreateException(statusCode, error);
+                                await DelayWithBackoff(attempt, ct);
+                                continue;
+                            }
+                            
+                            throw CreateException(statusCode, error);
+                        }
+                    }
 
-                request.uploadHandler = new UploadHandlerRaw(formData.data);
-                foreach (var header in formData.headers)
+                    log.Success = true;
+                    Debug.Log("[Identity HTTP] " + JsonConvert.SerializeObject(log, Formatting.Indented));
+                    
+                    return expectResponse ? lastResponse.Data : default;
+                }
+                catch (Exception ex) when (ex is not ApiException)
                 {
-                    request.SetRequestHeader(header.Key, header.Value);
+                    stopwatch.Stop();
+                    log.Duration = stopwatch.ElapsedMilliseconds;
+                    log.ResponseCode = request.responseCode;
+                    log.Success = false;
+                    log.ErrorMessage = ex.Message;
+                    log.ResponseBody = request.downloadHandler?.text;
+                    
+                    Debug.Log("[Identity HTTP] " + JsonConvert.SerializeObject(log, Formatting.Indented));
+                    
+                    lastException = ex;
+                    var error = ValiadateErrorResponse(statusCode);
+                    
+                    if (attempt < retryCount && ShouldRetry(statusCode, ex))
+                    {
+                        await DelayWithBackoff(attempt, ct);
+                        continue;
+                    }
+                    
+                    throw CreateException(statusCode, error);
                 }
             }
 
-            request.downloadHandler = new DownloadHandlerBuffer();
-
-            try
-            {
-                await request.SendWebRequest();
-
-                if (request.result != UnityWebRequest.Result.Success)
-                {
-                    Debug.LogError($"Request failed [{request.responseCode}]: " + request.error);
-                    var error = ValiadateErrorResponse((HttpStatusCode)request.responseCode);
-                    throw CreateException((HttpStatusCode)request.responseCode, error);
-                }
-
-            }
-            catch (Exception ex) when (ex is not ApiException)
-            {
-                Debug.LogError("Request error: " + ex.Message);
-                var error = ValiadateErrorResponse((HttpStatusCode)request.responseCode);
-                throw CreateException((HttpStatusCode)request.responseCode, error);
-            }
+            // Если мы здесь, значит все попытки исчерпаны
+            throw lastException ?? new Energy8Exception("Request failed after retries", "", canRetry: true);
         }
 
         public async UniTask<T> GetAsync<T>(string endpoint, CancellationToken ct)
         {
-            var response = await SendRequest<T>(endpoint, "GET", null, ct);
-            return response;
+            return await SendRequestCore<T>(endpoint, "GET", null, ct);
         }
 
         public async UniTask<T> PostAsync<T>(string endpoint, object data, CancellationToken ct)
         {
-            var response = await SendRequest<T>(endpoint, "POST", data, ct);
-            return response;
+            return await SendRequestCore<T>(endpoint, "POST", data, ct);
         }
 
         public async UniTask<T> PutAsync<T>(string endpoint, object data, CancellationToken ct)
         {
-            var response = await SendRequest<T>(endpoint, "PUT", data, ct);
-            return response;
+            return await SendRequestCore<T>(endpoint, "PUT", data, ct);
         }
 
         public async UniTask<T> DeleteAsync<T>(string endpoint, CancellationToken ct)
         {
-            var response = await SendRequest<T>(endpoint, "DELETE", null, ct);
-            return response;
+            return await SendRequestCore<T>(endpoint, "DELETE", null, ct);
         }
 
         public UniTask PostAsync(string endpoint, object data, CancellationToken ct) =>
-            SendRequest(endpoint, "POST", data, ct);
+            SendRequestCore<object>(endpoint, "POST", data, ct, expectResponse: false);
 
         public UniTask PutAsync(string endpoint, object data, CancellationToken ct) =>
-            SendRequest(endpoint, "PUT", data, ct);
+            SendRequestCore<object>(endpoint, "PUT", data, ct, expectResponse: false);
 
         public UniTask DeleteAsync(string endpoint, CancellationToken ct) =>
-            SendRequest(endpoint, "DELETE", null, ct);
+            SendRequestCore<object>(endpoint, "DELETE", null, ct, expectResponse: false);
+
+        public UniTask DeleteAsync(string endpoint, object data, CancellationToken ct) =>
+            SendRequestCore<object>(endpoint, "DELETE", data, ct, expectResponse: false);
 
         static public ErrorDto ValiadateErrorResponse(HttpStatusCode code)
         {
@@ -264,6 +322,11 @@ namespace Energy8.Identity.Http.Runtime.Clients
                         "It is possible that technical work is underway on the server.\n\n" +
                         "<b><u>Try again or wait, please.</u></b>");
                     return validateErrorMessage;
+                case HttpStatusCode.GatewayTimeout:
+                    validateErrorMessage = new("Server Error", "<b>Error on the <u>server</u> side!</b>\n" +
+                        "The server took too long to respond.\n\n" +
+                        "<b><u>Try again or wait, please.</u></b>");
+                    return validateErrorMessage;
                 case HttpStatusCode.InternalServerError:
                     validateErrorMessage = new("Server Error", "<b>Error on the <u>server</u> side!</b>\n" +
                         "It is possible that technical work is underway on the server.\n\n" +
@@ -283,8 +346,5 @@ namespace Energy8.Identity.Http.Runtime.Clients
             }
             return validateErrorMessage;
         }
-
-        public UniTask DeleteAsync(string endpoint, object data, CancellationToken ct) =>
-            SendRequest(endpoint, "DELETE", data, ct);
     }
 }

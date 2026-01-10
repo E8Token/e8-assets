@@ -54,7 +54,6 @@ namespace Energy8.Identity.Game.Runtime.Services
         {
             try
             {
-                Debug.Log($"Creating game session for {Game}");
                 var endpoint = $"{Game}/session";
                 var sessionDto = await httpClient.PostAsync<TGameSessionDto>(endpoint, new { }, ct);
                 return sessionDto;

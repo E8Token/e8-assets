@@ -4,7 +4,6 @@ using Cysharp.Threading.Tasks;
 using Game.Dto;
 using Game.Factory;
 using Game.Services;
-using Energy8.Identity.UI.Runtime.Controllers;
 using Energy8.Identity.Http.Core;
 using UnityEngine;
 
@@ -44,18 +43,9 @@ namespace Game.Controllers
             {
                 cancellationTokenSource = new CancellationTokenSource();
                 
-                // Получаем HttpClient из Identity системы для переиспользования
-                if (IdentityOrchestrator.Instance != null)
-                {
-                    var httpClient = IdentityOrchestrator.Instance.ServiceContainer.Resolve<IHttpClient>();
-                    gameService = NeonFruitsGameServiceFactory.CreateService(httpClient, gameEndpoint);
-                }
-                else
-                {
-                    // Fallback: создаем новый HttpClient если Identity система не инициализирована
-                    Debug.LogWarning("[NeonFruitsGameController] IdentityOrchestrator not found, creating new HttpClient");
-                    gameService = NeonFruitsGameServiceFactory.CreateService(gameEndpoint);
-                }
+                // Создаем новый HttpClient (Identity система пока не интегрирована)
+                Debug.Log("[NeonFruitsGameController] Creating new HttpClient");
+                gameService = NeonFruitsGameServiceFactory.CreateService(gameEndpoint);
                 
                 if (enableDebugLogging)
                     Debug.Log("[NeonFruitsGameController] Game service initialized");

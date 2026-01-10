@@ -20,10 +20,8 @@ namespace Energy8.Identity.UI.Runtime.Views.Implementations
 
         public override void Initialize(AnalyticsViewParams @params)
         {
-            Debug.Log("AnalyticsView: Initializing analytics permission dialog");
-            base.Initialize(@params);            
+            base.Initialize(@params);
             BindEvents();
-            Debug.Log("AnalyticsView: Analytics permission dialog initialized and ready for user input");
         }
 
         private void BindEvents()
@@ -41,14 +39,11 @@ namespace Energy8.Identity.UI.Runtime.Views.Implementations
 
         private void OnButtonClick(bool allowed)
         {
-            Debug.Log($"AnalyticsView: User selected analytics permission: {(allowed ? "ALLOWED" : "DENIED")}");
             completionSource?.TrySetResult(new AnalyticsViewResult(allowed));
-            Debug.Log("AnalyticsView: Closing analytics permission dialog");
         }
 
         protected override void OnDestroy()
         {
-            Debug.Log("AnalyticsView: Destroying analytics permission dialog");
             UnbindEvents();
             base.OnDestroy();
         }

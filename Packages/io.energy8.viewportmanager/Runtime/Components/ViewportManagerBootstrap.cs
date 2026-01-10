@@ -18,7 +18,6 @@ namespace Energy8.ViewportManager.Components
         
         [Header("Debug")]
         [SerializeField] private bool enableDebugLogging = false;
-        [SerializeField] private KeyCode debugInfoKey = KeyCode.F12;
 
         private float lastDetectionTime;
 
@@ -50,12 +49,6 @@ namespace Energy8.ViewportManager.Components
             {
                 ViewportManager.RefreshContext();
                 lastDetectionTime = Time.time;
-            }
-
-            // Debug info shortcut
-            if (enableDebugLogging && IsDebugKeyPressed())
-            {
-                Debug.Log(ViewportManager.GetSystemInfo());
             }
         }
 
@@ -139,36 +132,5 @@ namespace Energy8.ViewportManager.Components
             detectionInterval = Mathf.Max(0.1f, detectionInterval);
         }
         #endif
-
-        /// <summary>
-        /// Safely checks if debug key is pressed, compatible with both input systems
-        /// </summary>
-        private bool IsDebugKeyPressed()
-        {
-            // Check if we're using the new Input System
-#if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
-            // New Input System is enabled and Legacy Input is disabled
-            // For now, skip debug key functionality
-            // In future, implement Input System support here
-            return false;
-#else
-            try
-            {
-                // Try using legacy input system
-                return Input.GetKeyDown(debugInfoKey);
-            }
-            catch (System.InvalidOperationException)
-            {
-                // Legacy input is disabled, Input System is active
-                // For now, skip debug key functionality
-                return false;
-            }
-            catch (System.Exception)
-            {
-                // Any other input system error, silently fail
-                return false;
-            }
-#endif
-        }
     }
 }

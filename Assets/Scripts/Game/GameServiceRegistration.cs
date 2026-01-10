@@ -1,6 +1,5 @@
 using Game.Factory;
 using Game.Services;
-using Energy8.Identity.UI.Core;
 using Energy8.Identity.Http.Core;
 using UnityEngine;
 
@@ -13,43 +12,30 @@ namespace Game
     {
         /// <summary>
         /// Регистрирует NeonFruitsGameService в DI контейнере
+        /// ВАЖНО: Требуется внешняя реализация IServiceContainer
         /// </summary>
         /// <param name="container">DI контейнер</param>
         /// <param name="gameEndpoint">Эндпоинт игрового API</param>
-        public static void RegisterGameService(IServiceContainer container, string gameEndpoint = "neon-fruits")
+        public static void RegisterGameService(object container, string gameEndpoint = "neon-fruits")
         {
-            try
-            {
-                // Регистрируем сервис в DI контейнере с фабрикой
-                container.RegisterSingleton<INeonFruitsGameService>(() => 
-                {
-                    var httpClient = container.Resolve<IHttpClient>();
-                    return NeonFruitsGameServiceFactory.CreateService(httpClient, gameEndpoint);
-                });
-                
-                Debug.Log($"[GameServiceRegistration] NeonFruitsGameService registered with endpoint: {gameEndpoint}");
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[GameServiceRegistration] Failed to register game service: {ex.Message}");
-                throw;
-            }
+            Debug.Log($"[GameServiceRegistration] Manual registration required. Endpoint: {gameEndpoint}");
+            // TODO: Реализовать регистрацию когда DI контейнер будет доступен
         }
         
         /// <summary>
-        /// Получает зарегистрированный игровой сервис из DI контейнера
+        /// Создает экземпляр игрового сервиса напрямую
         /// </summary>
-        /// <param name="container">DI контейнер</param>
+        /// <param name="gameEndpoint">Эндпоинт игрового API</param>
         /// <returns>Экземпляр INeonFruitsGameService</returns>
-        public static INeonFruitsGameService GetGameService(IServiceContainer container)
+        public static INeonFruitsGameService CreateGameService(string gameEndpoint = "neon-fruits")
         {
             try
             {
-                return container.Resolve<INeonFruitsGameService>();
+                return NeonFruitsGameServiceFactory.CreateService(gameEndpoint);
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[GameServiceRegistration] Failed to resolve game service: {ex.Message}");
+                Debug.LogError($"[GameServiceRegistration] Failed to create game service: {ex.Message}");
                 throw;
             }
         }

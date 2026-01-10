@@ -1,5 +1,9 @@
 # E8 WebGL Adaptive Performance
 
+> **⚠️ STATUS: UNDER DEVELOPMENT**
+>
+> This package is currently in active development and is not yet used in production. APIs and features are subject to change.
+
 Adaptive graphics performance system that automatically adjusts Unity quality settings based on viewport data and device capabilities for optimal WebGL performance.
 
 ## Features
