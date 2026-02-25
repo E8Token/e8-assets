@@ -10,7 +10,8 @@
         "Energy8.Identity.Configuration",
         "Energy8.Identity.Http",
         "Energy8.EnvironmentConfig.Runtime",
-
+        "Energy8.ViewportManager",
+        "Energy8.ViewportManager.Core",
         "UniTask",
         "Unity.InputSystem",
         "Unity.Localization",

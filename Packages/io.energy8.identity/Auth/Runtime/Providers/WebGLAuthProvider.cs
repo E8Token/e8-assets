@@ -58,8 +58,7 @@ namespace Energy8.Identity.Auth.Runtime.Providers
             {
                 throw new InvalidOperationException("FirebaseConfig is not set in IdentityConfig");
             }
-            var botId = config?.TelegramBotId;
-            await plugin.Initialize(firebaseConfig.text, botId);
+            await plugin.Initialize(firebaseConfig.text, (long)(config?.TelegramBotId ?? 0));
             
             // Проверяем наличие автоаутентификации через Telegram
             try

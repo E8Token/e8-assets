@@ -2,6 +2,7 @@
   <Project Path="Energy8.ViewportManager.csproj" />
   <Project Path="Energy8.Identity.UI_Legacy.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="Energy8.Identity.Http.csproj" />
   <Project Path="Energy8.Identity.Shared.csproj" />
   <Project Path="Energy8.Identity.Game.csproj" />
   <Project Path="Energy8.Identity.Analytics.csproj" />
@@ -10,7 +11,6 @@
   <Project Path="Energy8.EnvironmentConfig.Editor.csproj" />
   <Project Path="Energy8.EnvironmentConfig.Runtime.csproj" />
   <Project Path="Game.csproj" />
-  <Project Path="Energy8.Identity.Http.csproj" />
   <Project Path="Energy8.Identity.Configuration.csproj" />
   <Project Path="Energy8.WebGL.AdaptivePerformance.csproj" />
   <Project Path="Energy8.WebGL.PluginPlatform.csproj" />

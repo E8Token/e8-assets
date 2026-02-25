@@ -151,6 +151,7 @@ namespace Energy8.BuildDeploySystem.Editor
 
             EditorGUILayout.EndVertical();
         }
+
         private void DrawConfigurationItem(BuildConfiguration config)
         {
             if (config == null) return;
@@ -176,8 +177,8 @@ namespace Energy8.BuildDeploySystem.Editor
                 configurationFoldouts[configKey] = false;
             }
 
-            var platformIcon = GetPlatformIcon(config);
-            var foldoutLabel = $"{platformIcon} {config.BuildProfileName}";
+            var platformEmoji = GetPlatformEmoji(config);
+            var foldoutLabel = $"{platformEmoji} {config.BuildProfileName}";
 
             configurationFoldouts[configKey] = EditorGUILayout.Foldout(
                 configurationFoldouts[configKey],
@@ -214,7 +215,7 @@ namespace Energy8.BuildDeploySystem.Editor
                     config.OutputPath = newOutputPath;
                 }
 
-                if (GUILayout.Button("📁", GUILayout.Width(30)))
+                if (GUILayout.Button("Browse", GUILayout.Width(50)))
                 {
                     string path = EditorUtility.OpenFolderPanel("Select Output Directory", config.OutputPath, "");
                     if (!string.IsNullOrEmpty(path))
@@ -225,26 +226,18 @@ namespace Energy8.BuildDeploySystem.Editor
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUILayout.LabelField(
-                    "💡 Available placeholders: {{{VERSION}}},{{{PLATFORM}}}, {{{DATE}}}, {{{DATETIME}}}", EditorStyles.miniLabel);
+                    "Available placeholders: {{{VERSION}}},{{{PLATFORM}}}, {{{DATE}}}, {{{DATETIME}}}", EditorStyles.miniLabel);
 
                 if (string.IsNullOrEmpty(config.OutputPath))
                 {
-                    EditorGUILayout.LabelField("📋 Example: Builds/{{{PLATFORM}}}/{{{VERSION}}}", EditorStyles.miniLabel);
+                    EditorGUILayout.LabelField("Example: Builds/{{{PLATFORM}}}/{{{VERSION}}}", EditorStyles.miniLabel);
                 }
                 if (!string.IsNullOrEmpty(config.OutputPath) &&
                            config.OutputPath.Contains("{{{") &&
                            config.OutputPath.Contains("}}}"))
                 {
                     var processedPath = BuildManager.ProcessOutputPathTemplate(config.OutputPath, config);
-                    EditorGUILayout.LabelField($"➤ Resolved: {processedPath}", EditorStyles.miniLabel);
-                }
-
-                EditorGUILayout.Space(5);
-                EditorGUILayout.LabelField("🔧 Build Options", EditorStyles.boldLabel);
-                var alwaysCleanBuild = EditorGUILayout.Toggle("Always Clean Build", config.AlwaysCleanBuild);
-                if (alwaysCleanBuild != config.AlwaysCleanBuild)
-                {
-                    config.AlwaysCleanBuild = alwaysCleanBuild;
+                    EditorGUILayout.LabelField($"Resolved: {processedPath}", EditorStyles.miniLabel);
                 }
 
                 DrawPlatformSpecificSettings(config);
@@ -253,16 +246,12 @@ namespace Energy8.BuildDeploySystem.Editor
                 {
                     if (config.BuildProfile == null)
                     {
-                        EditorGUILayout.HelpBox("❌ Build Profile not found or has been deleted", MessageType.Error);
+                        EditorGUILayout.HelpBox("Build Profile not found or has been deleted", MessageType.Error);
                     }
                     else if (string.IsNullOrEmpty(config.OutputPath))
                     {
-                        EditorGUILayout.HelpBox("❌ Output path not specified", MessageType.Error);
+                        EditorGUILayout.HelpBox("Output path not specified", MessageType.Error);
                     }
-                }
-                else if (isSelected)
-                {
-                    EditorGUILayout.HelpBox("✅ Configuration is ready for build", MessageType.Info);
                 }
 
                 DrawDeploySettings(config);
@@ -282,29 +271,47 @@ namespace Energy8.BuildDeploySystem.Editor
             {
                 EditorGUILayout.LabelField($"Selected: {selectedConfiguration.GetDisplayName()}", EditorStyles.helpBox);
 
+                // Always show 4 buttons
                 EditorGUILayout.BeginHorizontal();
 
-                if (!selectedConfiguration.AlwaysCleanBuild)
+                if (GUILayout.Button("🧹 Clean", GUILayout.Height(35)))
                 {
-                    if (GUILayout.Button("🧹 Clean Build", GUILayout.Height(35)))
-                    {
-                        BuildManager.BuildConfiguration(selectedConfiguration,
-                            selectedConfiguration.DeploySettings.AlwaysDeploy,
-                            true);
-                    }
+                    BuildManager.BuildConfiguration(selectedConfiguration,
+                        false,
+                        true);
                 }
 
                 if (GUILayout.Button("🔨 Build", GUILayout.Height(35)))
                 {
                     BuildManager.BuildConfiguration(selectedConfiguration,
-                        selectedConfiguration.DeploySettings.AlwaysDeploy,
-                        selectedConfiguration.AlwaysCleanBuild);
+                        false,
+                        false);
                 }
 
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUILayout.Space(5);
-                DrawDeployButtons();
+
+                if (selectedConfiguration.DeploySettings.EnableDeploy)
+                {
+                    EditorGUILayout.BeginHorizontal();
+
+                    if (GUILayout.Button("🧹🚀 Deploy", GUILayout.Height(35)))
+                    {
+                        BuildManager.BuildConfiguration(selectedConfiguration, true, true);
+                    }
+
+                    if (GUILayout.Button("🔨🚀 Deploy", GUILayout.Height(35)))
+                    {
+                        BuildManager.BuildConfiguration(selectedConfiguration, true, false);
+                    }
+
+                    EditorGUILayout.EndHorizontal();
+                }
+                else
+                {
+                    EditorGUILayout.HelpBox("Deploy is disabled. Enable it in the configuration deploy settings.", MessageType.Warning);
+                }
             }
             else
             {
@@ -316,35 +323,7 @@ namespace Energy8.BuildDeploySystem.Editor
 
         private void DrawDeployButtons()
         {
-            if (selectedConfiguration == null) return;
-            if (!selectedConfiguration.DeploySettings.EnableDeploy) return;
-
-            var deploySettings = selectedConfiguration.DeploySettings;
-
-            if (deploySettings.AlwaysDeploy)
-            {
-                EditorGUILayout.HelpBox("✅ Auto Deploy is enabled - every successful build will be automatically deployed", MessageType.Info);
-            }
-            else if (deploySettings.EnableDeploy)
-            {
-                EditorGUILayout.BeginHorizontal();
-
-                if (!selectedConfiguration.AlwaysCleanBuild)
-                {
-                    if (GUILayout.Button("🧹🔨🚀 Clean Build & Deploy", GUILayout.Height(35)))
-                    {
-                        BuildManager.BuildConfiguration(selectedConfiguration, true, true);
-                    }
-                }
-
-
-                if (GUILayout.Button("🔨🚀 Build & Deploy", GUILayout.Height(30)))
-                {
-                    BuildManager.BuildConfiguration(selectedConfiguration, true, false);
-                }
-
-                EditorGUILayout.EndHorizontal();
-            }
+            // Removed - now handled in DrawBuildSection
         }
 
         private void RefreshConfigurations()
@@ -379,7 +358,7 @@ namespace Energy8.BuildDeploySystem.Editor
             }
         }
 
-        private string GetPlatformIcon(BuildConfiguration config)
+        private string GetPlatformEmoji(BuildConfiguration config)
         {
             if (config.BuildProfile == null) return "🎯";
 
@@ -514,10 +493,12 @@ namespace Energy8.BuildDeploySystem.Editor
                 );
             }
         }
+
         private void DrawWebGLSettings(BuildConfiguration config)
         {
-            var settings = config.WebGLSettings; EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("🌐 WebGL Multi-Format Build", EditorStyles.boldLabel);
+            var settings = config.WebGLSettings;
+            EditorGUILayout.BeginVertical("box");
+            EditorGUILayout.LabelField("WebGL Multi-Format Build", EditorStyles.boldLabel);
 
             EditorGUILayout.LabelField("Texture Formats to Build", EditorStyles.boldLabel);
 
@@ -560,20 +541,6 @@ namespace Energy8.BuildDeploySystem.Editor
                 }
             }
 
-            EditorGUILayout.Space(5);
-            if (settings.HasMultipleFormats() || settings.CompressionAlgorithms.Count > 0)
-            {
-                var additionalFormats = settings.GetTextureFormatsToBuild();
-                var compressionNames = settings.GetCompressionAlgorithmNames();
-                EditorGUILayout.HelpBox(
-                    "Multi-Format Build Enabled!\n" +
-                    $"Selected formats: {string.Join(", ", additionalFormats)}\n" +
-                    $"Compression: {string.Join(", ", compressionNames)}\n" +
-                    "Data files will be named: [appname].[format].[compression].data",
-                    MessageType.Info
-                );
-            }
-
             EditorGUILayout.EndVertical();
         }
 
@@ -582,7 +549,7 @@ namespace Energy8.BuildDeploySystem.Editor
             var settings = config.AndroidSettings;
 
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("🤖 Android Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Android Settings", EditorStyles.boldLabel);
 
             var newBuildAAB = EditorGUILayout.Toggle("Build AAB", settings.BuildAAB);
             if (newBuildAAB != settings.BuildAAB)
@@ -639,7 +606,7 @@ namespace Energy8.BuildDeploySystem.Editor
             var settings = config.IOSSettings;
 
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("📱 iOS Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("iOS Settings", EditorStyles.boldLabel);
 
             var newTeamId = EditorGUILayout.TextField("Development Team ID", settings.DevelopmentTeamId);
             if (newTeamId != settings.DevelopmentTeamId)
@@ -683,22 +650,24 @@ namespace Energy8.BuildDeploySystem.Editor
 
             EditorGUILayout.EndVertical();
         }
+
         private void DrawStandaloneSettings(BuildConfiguration config)
         {
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("💻 Standalone Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Standalone Settings", EditorStyles.boldLabel);
 
             EditorGUILayout.HelpBox("Standalone settings will be available in a future update.", MessageType.Info);
 
             EditorGUILayout.EndVertical();
         }
+
         private void DrawDeploySettings(BuildConfiguration config)
         {
             var settings = config.DeploySettings;
 
             EditorGUILayout.Space(5);
             EditorGUILayout.BeginVertical("box");
-            EditorGUILayout.LabelField("🚀 Deploy Settings", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Deploy Settings", EditorStyles.boldLabel);
 
             var newEnableDeploy = EditorGUILayout.Toggle("Enable Deploy", settings.EnableDeploy);
             if (newEnableDeploy != settings.EnableDeploy)
@@ -709,13 +678,6 @@ namespace Energy8.BuildDeploySystem.Editor
 
             if (settings.EnableDeploy)
             {
-                var newAlwaysDeploy = EditorGUILayout.Toggle("Always Deploy", settings.AlwaysDeploy);
-                if (newAlwaysDeploy != settings.AlwaysDeploy)
-                {
-                    settings.AlwaysDeploy = newAlwaysDeploy;
-                    config.DeploySettings = settings;
-                }
-
                 EditorGUILayout.Space(5);
 
                 var newDeployMethod = (DeployMethod)EditorGUILayout.EnumPopup("Deploy Method", settings.Method);
@@ -734,7 +696,7 @@ namespace Energy8.BuildDeploySystem.Editor
                         settings.LocalCopyTargetPath = newLocalPath;
                         config.DeploySettings = settings;
                     }
-                    if (GUILayout.Button("📁", GUILayout.Width(30)))
+                    if (GUILayout.Button("Browse", GUILayout.Width(50)))
                     {
                         string path = EditorUtility.OpenFolderPanel("Select Local Deploy Directory", settings.LocalCopyTargetPath, "");
                         if (!string.IsNullOrEmpty(path))
@@ -805,7 +767,7 @@ namespace Energy8.BuildDeploySystem.Editor
                             config.DeploySettings = settings;
                         }
 
-                        if (GUILayout.Button("📁", GUILayout.Width(30)))
+                        if (GUILayout.Button("Browse", GUILayout.Width(50)))
                         {
                             string path = EditorUtility.OpenFilePanel("Select Private Key", "", "");
                             if (!string.IsNullOrEmpty(path))
@@ -823,46 +785,6 @@ namespace Energy8.BuildDeploySystem.Editor
                             config.DeploySettings = settings;
                         }
                     }
-                }
-
-                EditorGUILayout.Space(5);
-
-                EditorGUILayout.LabelField("🗂️ Deploy Options", EditorStyles.boldLabel);
-
-                // Основные опции очистки и архивирования
-                var newDeleteExisting = EditorGUILayout.Toggle("Delete Existing Files", settings.DeleteExistingFiles);
-                if (newDeleteExisting != settings.DeleteExistingFiles)
-                {
-                    settings.DeleteExistingFiles = newDeleteExisting;
-                    config.DeploySettings = settings;
-                }
-
-                var newCreateBackup = EditorGUILayout.Toggle("Create Backup Before Deploy", settings.CreateBackup);
-                if (newCreateBackup != settings.CreateBackup)
-                {
-                    settings.CreateBackup = newCreateBackup;
-                    config.DeploySettings = settings;
-                }
-
-                EditorGUILayout.Space(3);
-                EditorGUILayout.LabelField("📦 Archive Options", EditorStyles.boldLabel);
-                
-                var newDeployZipOnly = EditorGUILayout.Toggle("Deploy as ZIP Archive", settings.DeployZipOnly);
-                if (newDeployZipOnly != settings.DeployZipOnly)
-                {
-                    settings.DeployZipOnly = newDeployZipOnly;
-                    config.DeploySettings = settings;
-                }
-
-                EditorGUILayout.Space(3);
-
-                if (!settings.IsValid())
-                {
-                    EditorGUILayout.HelpBox("❌ Deploy settings are incomplete. Please check server host, username and authentication settings.", MessageType.Error);
-                }
-                else
-                {
-                    EditorGUILayout.HelpBox("✅ Deploy settings are valid", MessageType.Info);
                 }
             }
 

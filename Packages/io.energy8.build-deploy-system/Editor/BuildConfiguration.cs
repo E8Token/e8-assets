@@ -75,7 +75,8 @@ namespace Energy8.BuildDeploySystem
         }
         private void GenerateOutputPath()
         {
-            if (BuildProfile != null)
+            // Не перезаписываем путь, если он уже установлен
+            if (BuildProfile != null && string.IsNullOrEmpty(outputPath))
             {
                 outputPath = $"Builds/{buildProfileName}";
             }

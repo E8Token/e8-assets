@@ -16,7 +16,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
     /// Управляет Canvas и ViewManager состоянием.
     /// Отвечает только за UI отображение, не за бизнес-логику.
     /// Синхронизирует ViewManager операции между всеми зарегистрированными IdentityController.
-    /// Использует ручное определение ориентации экрана через Screen.width и Screen.height.
+    /// Использует ViewportManager для автоматического определения ориентации экрана и реакции на изменения.
     /// </summary>
     public class CanvasManager : ICanvasManager
     {
@@ -28,7 +28,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
 
         private readonly Dictionary<ScreenOrientation, IdentityCanvasController> controllers = new();
         private ScreenOrientation currentOrientation;
-        private CancellationTokenSource orientationDetectionCts;
+        private bool isViewportSubscribed = false;
 
         public void RegisterCanvasController(IdentityCanvasController controller)
         {
@@ -41,12 +41,18 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         {
             ScanAndRegisterControllers();
 
+            // Инициализируем ViewportManager если он не инициализирован
+            if (!ViewportManager.ViewportManager.IsInitialized)
+            {
+                ViewportManager.ViewportManager.Initialize();
+            }
+
             // Определяем начальную ориентацию
-            currentOrientation = GetCurrentOrientation();
+            currentOrientation = GetOrientationFromViewportManager();
             UpdateActiveControllerByOrientation(currentOrientation);
 
-            // Запускаем цикл мониторинга ориентации
-            StartOrientationDetection();
+            // Подписываемся на события ViewportManager
+            SubscribeToViewportEvents();
         }
 
         /// <summary>
@@ -62,63 +68,70 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         }
 
         /// <summary>
-        /// Определяет текущую ориентацию экрана на основе сравнения ширины и высоты
+        /// Получает ориентацию из ViewportManager
         /// </summary>
-        private ScreenOrientation GetCurrentOrientation()
+        private ScreenOrientation GetOrientationFromViewportManager()
         {
-            return Screen.width < Screen.height ? ScreenOrientation.Portrait : ScreenOrientation.Landscape;
+            var viewportOrientation = ViewportManager.ViewportManager.GetOrientation();
+            return ConvertToIdentityOrientation(viewportOrientation);
         }
 
         /// <summary>
-        /// Запускает асинхронный цикл мониторинга изменений ориентации экрана
+        /// Подписывается на события ViewportManager
         /// </summary>
-        private void StartOrientationDetection()
+        private void SubscribeToViewportEvents()
         {
-            orientationDetectionCts = new CancellationTokenSource();
-            OrientationDetectionLoop(orientationDetectionCts.Token).Forget();
-        }
-
-        /// <summary>
-        /// Асинхронный цикл для определения изменений ориентации экрана
-        /// </summary>
-        private async UniTaskVoid OrientationDetectionLoop(CancellationToken cancellationToken)
-        {
-            while (!cancellationToken.IsCancellationRequested)
+            if (!isViewportSubscribed)
             {
-                try
-                {
-                    var newOrientation = GetCurrentOrientation();
-
-                    if (newOrientation != currentOrientation)
-                    {
-                        currentOrientation = newOrientation;
-                        UpdateActiveControllerByOrientation(currentOrientation);
-                    }
-
-                    // Проверяем каждые 100ms
-                    await UniTask.Delay(100, cancellationToken: cancellationToken);
-                }
-                catch (OperationCanceledException)
-                {
-                    // Нормальное завершение при отмене
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"[CanvasManager] Error in orientation detection: {ex.Message}");
-                    await UniTask.Delay(1000, cancellationToken: cancellationToken); // Ждем дольше при ошибке
-                }
+                ViewportManager.ViewportManager.OnOrientationChanged += HandleOrientationChanged;
+                ViewportManager.ViewportManager.OnScreenSizeChanged += HandleScreenSizeChanged;
+                isViewportSubscribed = true;
             }
         }
 
         /// <summary>
-        /// Останавливает мониторинг ориентации
+        /// Отписывается от событий ViewportManager
         /// </summary>
-        public void StopOrientationDetection()
+        private void UnsubscribeFromViewportEvents()
         {
-            orientationDetectionCts?.Cancel();
-            orientationDetectionCts?.Dispose();
-            orientationDetectionCts = null;
+            if (isViewportSubscribed)
+            {
+                ViewportManager.ViewportManager.OnOrientationChanged -= HandleOrientationChanged;
+                ViewportManager.ViewportManager.OnScreenSizeChanged -= HandleScreenSizeChanged;
+                isViewportSubscribed = false;
+            }
+        }
+
+        /// <summary>
+        /// Обработчик изменения ориентации из ViewportManager
+        /// </summary>
+        private void HandleOrientationChanged(ViewportManager.Core.ScreenOrientation viewportOrientation)
+        {
+            var identityOrientation = ConvertToIdentityOrientation(viewportOrientation);
+            if (identityOrientation != currentOrientation)
+            {
+                currentOrientation = identityOrientation;
+                UpdateActiveControllerByOrientation(currentOrientation);
+            }
+        }
+
+        /// <summary>
+        /// Обработчик изменения размера экрана из ViewportManager
+        /// </summary>
+        private void HandleScreenSizeChanged(int width, int height)
+        {
+            // CanvasController самостоятельно обрабатывает адаптацию размера экрана
+            // Этот обработчик оставлен для будущего расширения
+        }
+
+        /// <summary>
+        /// Конвертирует ориентацию ViewportManager в ориентацию Identity
+        /// </summary>
+        private ScreenOrientation ConvertToIdentityOrientation(ViewportManager.Core.ScreenOrientation viewportOrientation)
+        {
+            return viewportOrientation == ViewportManager.Core.ScreenOrientation.Portrait
+                ? ScreenOrientation.Portrait
+                : ScreenOrientation.Landscape;
         }
 
         /// <summary>
@@ -126,7 +139,7 @@ namespace Energy8.Identity.UI.Runtime.Canvas
         /// </summary>
         public void Dispose()
         {
-            StopOrientationDetection();
+            UnsubscribeFromViewportEvents();
         }
 
         private void UpdateActiveControllerByOrientation(ScreenOrientation orientation)

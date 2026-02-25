@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 15003, guid: 0000000000000000e000000000000000, type: 0}
-  m_Name: Web Development
+  m_Name: Identity Web Development
   m_EditorClassIdentifier: 
   m_AssetVersion: 1
   m_BuildTarget: 20
@@ -38,7 +38,7 @@ MonoBehaviour:
     - line: '|   useOnDemandResources: 0'
     - line: '|   accelerometerFrequency: 60'
     - line: '|   companyName: Energy8'
-    - line: '|   productName: Assets'
+    - line: '|   productName: Identity'
     - line: '|   defaultCursor: {instanceID: 0}'
     - line: '|   cursorHotspot: {x: 0, y: 0}'
     - line: '|   m_SplashScreenBackgroundColor: {r: 1, g: 1, b: 1, a: 1}'
@@ -83,7 +83,7 @@ MonoBehaviour:
     - line: '|   mipStripping: 0'
     - line: '|   numberOfMipsStripped: 0'
     - line: '|   numberOfMipsStrippedPerMipmapLimitGroup: {}'
-    - line: '|   m_StackTraceTypes: 010000000100000001000000000000000100000001000000'
+    - line: '|   m_StackTraceTypes: 010000000100000001000000010000000100000001000000'
     - line: '|   iosShowActivityIndicatorOnLoading: -1'
     - line: '|   androidShowActivityIndicatorOnLoading: -1'
     - line: '|   iosUseCustomAppBackgroundBehavior: 0'
@@ -840,7 +840,7 @@ MonoBehaviour:
     - line: '|   webGLNameFilesAsHashes: 0'
     - line: '|   webGLShowDiagnostics: 0'
     - line: '|   webGLDataCaching: 0'
-    - line: '|   webGLDebugSymbols: 1'
+    - line: '|   webGLDebugSymbols: 2'
     - line: '|   webGLEmscriptenArgs: '
     - line: '|   webGLModulesDirectory: '
     - line: '|   webGLTemplate: PROJECT:Energy8'

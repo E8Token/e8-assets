@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEditor;
 using Renci.SshNet;
 using Renci.SshNet.Sftp;
 using FluentFTP;
@@ -55,12 +56,15 @@ namespace Energy8.BuildDeploySystem.Editor
                 return false;
             }
         }
+
         private static async Task<bool> DeployViaFTP(DeploySettings settings, string buildPath)
         {
             Debug.Log($"[DeployManager] Starting FTP deploy to {settings.ServerHost}:{settings.ServerPort}");
 
             try
             {
+                EditorUtility.DisplayProgressBar("Deploying via FTP", "Connecting to server...", 0f);
+
                 ValidateDeployPath(buildPath);
                 var filesToDeploy = GetFilesToDeploy(settings, buildPath);
 
@@ -68,43 +72,36 @@ namespace Energy8.BuildDeploySystem.Editor
                 using var ftpClient = DeployConnectionFactory.CreateFtpClient(settings);
 
                 // Подключаемся
+                EditorUtility.DisplayProgressBar("Deploying via FTP", "Connecting to server...", 0.1f);
                 await ftpClient.Connect();
                 Debug.Log($"[DeployManager] Connected to FTP server: {settings.ServerHost} (Encryption: {ftpClient.Config.EncryptionMode})");
 
                 // 1. Создаем удаленную директорию если не существует
+                EditorUtility.DisplayProgressBar("Deploying via FTP", "Creating remote directory...", 0.2f);
                 if (!await ftpClient.DirectoryExists(settings.RemotePath))
                 {
                     await ftpClient.CreateDirectory(settings.RemotePath);
                     Debug.Log($"[DeployManager] Created remote directory: {settings.RemotePath}");
                 }
 
-                // 2. Создаем бекап если нужно (только для FTP - без SSH команд)
-                if (settings.CreateBackup)
+                // 2. Удаляем существующие файлы
+                EditorUtility.DisplayProgressBar("Deploying via FTP", "Deleting existing files...", 0.3f);
+                try
                 {
-                    Debug.LogWarning("[DeployManager] Backup for FTP deploy is not fully supported. Consider using SFTP for backup functionality.");
-                }
-
-                // 3. Удаляем существующие файлы если нужно
-                if (settings.DeleteExistingFiles)
-                {
-                    Debug.Log("[DeployManager] 🗑️ Deleting existing files via FTP...");
-                    try
+                    var existingFiles = await ftpClient.GetListing(settings.RemotePath);
+                    foreach (var item in existingFiles)
                     {
-                        var existingFiles = await ftpClient.GetListing(settings.RemotePath);
-                        foreach (var item in existingFiles)
+                        if (item.Type == FluentFTP.FtpObjectType.File)
                         {
-                            if (item.Type == FluentFTP.FtpObjectType.File)
-                            {
-                                await ftpClient.DeleteFile(item.FullName);
-                                Debug.Log($"[DeployManager] Deleted: {item.Name}");
-                            }
+                            await ftpClient.DeleteFile(item.FullName);
+                            Debug.Log($"[DeployManager] Deleted: {item.Name}");
                         }
-                        Debug.Log("[DeployManager] ✅ Existing files deleted");
                     }
-                    catch (Exception ex)
-                    {
-                        Debug.LogWarning($"[DeployManager] Could not delete some existing files: {ex.Message}");
-                    }
+                    Debug.Log("[DeployManager] Existing files deleted");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[DeployManager] Could not delete some existing files: {ex.Message}");
                 }
 
                 // 4. Загружаем файлы с progress tracking
@@ -127,13 +124,13 @@ namespace Energy8.BuildDeploySystem.Editor
 
                     // Загружаем файл с callback для прогресса
                     var fileInfo = new FileInfo(filePath);
+                    
+                    float fileProgress = 0f;
                     var progress = new Progress<FtpProgress>(p =>
                     {
-                        if (p.Progress % 20 == 0) // Логируем каждые 20%
-                        {
-                            var overallProgress = (uploadedBytes + (long)(fileInfo.Length * p.Progress / 100.0)) * 100 / totalBytes;
-                            Debug.Log($"[DeployManager] Upload progress: {overallProgress}% ({relativePath}: {p.Progress}%)");
-                        }
+                        fileProgress = (float)(p.Progress / 100f);
+                        float overallProgress = 0.4f + ((float)(uploadedBytes + (long)(fileInfo.Length * p.Progress / 100.0)) * 100f / (float)totalBytes) * 0.6f / 100f;
+                        EditorUtility.DisplayProgressBar("Deploying via FTP", $"Uploading: {relativePath} ({p.Progress}%)", overallProgress);
                     });
 
                     var result = await ftpClient.UploadFile(filePath, remotePath, FtpRemoteExists.Overwrite, false, progress: progress);
@@ -142,41 +139,47 @@ namespace Energy8.BuildDeploySystem.Editor
                     {
                         uploadedCount++;
                         uploadedBytes += fileInfo.Length;
-                        Debug.Log($"[DeployManager] ✅ Uploaded ({uploadedCount}/{totalFiles}): {relativePath} ({fileInfo.Length / 1024} KB)");
+                        Debug.Log($"[DeployManager] Uploaded ({uploadedCount}/{totalFiles}): {relativePath} ({fileInfo.Length / 1024} KB)");
                     }
                     else
                     {
-                        Debug.LogWarning($"[DeployManager] ❌ Failed to upload: {relativePath} (Status: {result})");
+                        Debug.LogWarning($"[DeployManager] Failed to upload: {relativePath} (Status: {result})");
                     }
 
                     await Task.Yield();
                 }
 
                 await ftpClient.Disconnect();
-                Debug.Log($"[DeployManager] 🎉 FTP deployment completed! Files: {uploadedCount}/{totalFiles}, Size: {uploadedBytes / 1024} KB");
+                EditorUtility.ClearProgressBar();
+                Debug.Log($"[DeployManager] FTP deployment completed! Files: {uploadedCount}/{totalFiles}, Size: {uploadedBytes / 1024} KB");
                 return uploadedCount == totalFiles;
             }
             catch (Exception ex)
             {
+                EditorUtility.ClearProgressBar();
                 Debug.LogError($"[DeployManager] FTP deploy failed: {ex.Message}");
                 return false;
             }
         }
+
         private static async Task<bool> DeployViaSFTP(DeploySettings settings, string buildPath)
         {
             Debug.Log($"[DeployManager] Starting SFTP deploy to {settings.ServerHost}:{settings.ServerPort}");
 
             try
             {
+                EditorUtility.DisplayProgressBar("Deploying via SFTP", "Connecting to server...", 0f);
+
                 ValidateDeployPath(buildPath);
                 var filesToDeploy = GetFilesToDeploy(settings, buildPath);
 
-                // Создаем архив если много файлов или включен режим ZIP
+                // Создаем архив если много файлов
                 string tempArchivePath = null;
-                bool useArchive = settings.DeployZipOnly || filesToDeploy.Length > 50;
+                bool useArchive = filesToDeploy.Length > 50;
 
                 if (useArchive)
                 {
+                    EditorUtility.DisplayProgressBar("Deploying via SFTP", "Creating archive...", 0.1f);
                     tempArchivePath = await CreateZipArchive(buildPath);
                     filesToDeploy = new[] { tempArchivePath };
                     Debug.Log($"[DeployManager] Using archive mode: {Path.GetFileName(tempArchivePath)}");
@@ -191,6 +194,7 @@ namespace Energy8.BuildDeploySystem.Editor
                     using var sftpClient = new SftpClient(connectionInfo);
 
                     // Подключаемся
+                    EditorUtility.DisplayProgressBar("Deploying via SFTP", "Connecting to server...", 0.2f);
                     await Task.Run(() =>
                     {
                         sshClient.Connect();
@@ -203,6 +207,7 @@ namespace Energy8.BuildDeploySystem.Editor
                     sftpClient.CreateDirectoryRecursive(settings.RemotePath);
 
                     // 1. Создаем бекап если нужно
+                    EditorUtility.DisplayProgressBar("Deploying via SFTP", "Creating backup...", 0.3f);
                     if (!await CreateBackupIfNeeded(settings, settings.RemotePath, sshClient))
                     {
                         Debug.LogError("[DeployManager] Backup creation failed, aborting deploy");
@@ -210,6 +215,7 @@ namespace Energy8.BuildDeploySystem.Editor
                     }
 
                     // 2. Удаляем существующие файлы если нужно
+                    EditorUtility.DisplayProgressBar("Deploying via SFTP", "Deleting existing files...", 0.4f);
                     if (!await DeleteExistingFilesIfNeeded(settings, settings.RemotePath, sshClient))
                     {
                         Debug.LogError("[DeployManager] Failed to delete existing files, aborting deploy");
@@ -227,6 +233,9 @@ namespace Energy8.BuildDeploySystem.Editor
                         var fileName = Path.GetFileName(filePath);
                         var fileInfo = new FileInfo(filePath);
 
+                        float overallProgress = 0.5f + ((float)(uploadedBytes * 100.0 / (double)totalBytes) * 0.4f / 100f);
+                        EditorUtility.DisplayProgressBar("Deploying via SFTP", $"Uploading: {fileName} ({uploadedCount + 1}/{totalFiles})", overallProgress);
+
                         string remotePath;
                         if (useArchive)
                         {
@@ -243,10 +252,11 @@ namespace Energy8.BuildDeploySystem.Editor
 
                         uploadedCount++;
                         uploadedBytes += fileInfo.Length;
-                        Debug.Log($"[DeployManager] ✅ Uploaded ({uploadedCount}/{totalFiles}): {fileName} ({fileInfo.Length / 1024} KB)");
+                        Debug.Log($"[DeployManager] Uploaded ({uploadedCount}/{totalFiles}): {fileName} ({fileInfo.Length / 1024} KB)");
 
                         if (useArchive && filePath == tempArchivePath)
                         {
+                            EditorUtility.DisplayProgressBar("Deploying via SFTP", "Extracting archive on server...", 0.9f);
                             await ExtractArchiveOnServer(sshClient, settings.RemotePath, fileName);
                         }
 
@@ -256,7 +266,8 @@ namespace Energy8.BuildDeploySystem.Editor
                     sftpClient.Disconnect();
                     sshClient.Disconnect();
 
-                    Debug.Log($"[DeployManager] 🎉 SFTP deployment completed! Files: {uploadedCount}/{totalFiles}, Size: {uploadedBytes / 1024} KB");
+                    EditorUtility.ClearProgressBar();
+                    Debug.Log($"[DeployManager] SFTP deployment completed! Files: {uploadedCount}/{totalFiles}, Size: {uploadedBytes / 1024} KB");
                     return uploadedCount == totalFiles;
                 }
                 finally
@@ -267,10 +278,12 @@ namespace Energy8.BuildDeploySystem.Editor
                         File.Delete(tempArchivePath);
                         Debug.Log($"[DeployManager] Cleaned up temporary archive: {Path.GetFileName(tempArchivePath)}");
                     }
+                    EditorUtility.ClearProgressBar();
                 }
             }
             catch (Exception ex)
             {
+                EditorUtility.ClearProgressBar();
                 Debug.LogError($"[DeployManager] SFTP deploy failed: {ex.Message}");
                 return false;
             }
@@ -303,9 +316,6 @@ namespace Energy8.BuildDeploySystem.Editor
         /// </summary>
         private static async Task<bool> CreateBackupIfNeeded(DeploySettings settings, string targetPath, SshClient sshClient = null)
         {
-            if (!settings.CreateBackup)
-                return true;
-
             try
             {
                 if (settings.Method == DeployMethod.LocalCopy)
@@ -346,28 +356,79 @@ namespace Energy8.BuildDeploySystem.Editor
                 DirectoryCopy(targetPath, backupPath, true);
             });
 
-            Debug.Log($"[DeployManager] ✅ Local backup created successfully: {backupPath}");
+            Debug.Log($"[DeployManager] Local backup created successfully: {backupPath}");
             return true;
         }
 
         /// <summary>
-        /// Создает удаленный бекап через SSH команды
+        /// Создает бекап (максимум 1 бекап) и заменяет целевую директорию временной
+        /// </summary>
+        private static async Task<bool> CreateBackupAndSwapLocal(string targetPath, string tempPath)
+        {
+            string parentDir = Path.GetDirectoryName(targetPath);
+            string targetDirName = Path.GetFileName(targetPath);
+
+            try
+            {
+                // 1. Находим и удаляем старый бекап если есть
+                string backupPattern = $"{targetPath}_backup_*";
+                var existingBackups = Directory.GetDirectories(parentDir, $"{targetDirName}_backup_*");
+                
+                foreach (var oldBackup in existingBackups)
+                {
+                    Debug.Log($"[DeployManager] Deleting old backup: {oldBackup}");
+                    await Task.Run(() => Directory.Delete(oldBackup, true));
+                }
+
+                // 2. Создаем бекап если целевая директория существует
+                if (Directory.Exists(targetPath))
+                {
+                    string newBackupPath = $"{targetPath}_backup_{DateTime.Now:yyyyMMdd_HHmmss}";
+                    Debug.Log($"[DeployManager] Creating backup: {newBackupPath}");
+                    await Task.Run(() => Directory.Move(targetPath, newBackupPath));
+                }
+
+                // 3. Переименовываем временную директорию в целевую
+                Debug.Log($"[DeployManager] Renaming temp to target: {tempPath} -> {targetPath}");
+                await Task.Run(() => Directory.Move(tempPath, targetPath));
+
+                Debug.Log($"[DeployManager] Backup and swap completed successfully");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[DeployManager] CreateBackupAndSwapLocal failed: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Создает удаленный бекап через SSH команды (максимум 1 бекап)
         /// </summary>
         private static async Task<bool> CreateRemoteBackup(SshClient sshClient, string remotePath)
         {
             try
             {
                 string backupPath = $"{remotePath}_backup_{DateTime.Now:yyyyMMdd_HHmmss}";
+                
+                // Сначала удаляем старые бекапы по паттерну
+                string cleanupCommand = $"for dir in $(ls -d \"{remotePath}_backup_\"* 2>/dev/null); do rm -rf \"$dir\" && echo \"Deleted old backup: $dir\"; done";
+                
+                Debug.Log($"[DeployManager] Cleaning up old remote backups...");
+                var cleanupCmd = sshClient.CreateCommand(cleanupCommand);
+                await Task.Run(() => cleanupCmd.Execute());
+                
+                // Создаем новый бекап
                 string backupCommand = $"if [ -d \"{remotePath}\" ]; then cp -r \"{remotePath}\" \"{backupPath}\"; echo \"Backup created: {backupPath}\"; else echo \"Directory doesn't exist, skipping backup\"; fi";
 
                 Debug.Log($"[DeployManager] Creating remote backup: {backupPath}");
 
                 var command = sshClient.CreateCommand(backupCommand);
-                var result = await Task.Run(() => command.Execute());
+                await Task.Run(() => command.Execute());
 
                 if (command.ExitStatus == 0)
                 {
-                    Debug.Log($"[DeployManager] ✅ Remote backup created: {command.Result.Trim()}");
+                    Debug.Log($"[DeployManager] Remote backup created: {command.Result.Trim()}");
                     return true;
                 }
                 else
@@ -384,13 +445,10 @@ namespace Energy8.BuildDeploySystem.Editor
         }
 
         /// <summary>
-        /// Удаляет существующие файлы если настройка включена
+        /// Удаляет существующие файлы (всегда выполняется)
         /// </summary>
         private static async Task<bool> DeleteExistingFilesIfNeeded(DeploySettings settings, string targetPath, SshClient sshClient = null)
         {
-            if (!settings.DeleteExistingFiles)
-                return true;
-
             try
             {
                 if (settings.Method == DeployMethod.LocalCopy)
@@ -422,14 +480,14 @@ namespace Energy8.BuildDeploySystem.Editor
                 return true;
             }
 
-            Debug.Log($"[DeployManager] 🗑️ Deleting existing directory: {targetPath}");
+            Debug.Log($"[DeployManager] Deleting existing directory: {targetPath}");
 
             await Task.Run(() =>
             {
                 Directory.Delete(targetPath, true);
             });
 
-            Debug.Log("[DeployManager] ✅ Existing directory deleted successfully");
+            Debug.Log("[DeployManager] Existing directory deleted successfully");
             return true;
         }
 
@@ -442,14 +500,14 @@ namespace Energy8.BuildDeploySystem.Editor
             {
                 string deleteCommand = $"if [ -d \"{remotePath}\" ]; then rm -rf \"{remotePath}\"/*; echo \"Directory contents deleted\"; else echo \"Directory doesn't exist\"; fi";
 
-                Debug.Log($"[DeployManager] 🗑️ Deleting remote directory contents: {remotePath}");
+                Debug.Log($"[DeployManager] Deleting remote directory contents: {remotePath}");
 
                 var command = sshClient.CreateCommand(deleteCommand);
                 var result = await Task.Run(() => command.Execute());
 
                 if (command.ExitStatus == 0)
                 {
-                    Debug.Log($"[DeployManager] ✅ Remote directory cleared: {command.Result.Trim()}");
+                    Debug.Log($"[DeployManager] Remote directory cleared: {command.Result.Trim()}");
                     return true;
                 }
                 else
@@ -530,6 +588,7 @@ namespace Energy8.BuildDeploySystem.Editor
                 return false;
             }
         }
+
         private static void ValidateDeployPath(string path)
         {
             if (!Directory.Exists(path) && !File.Exists(path))
@@ -540,20 +599,8 @@ namespace Energy8.BuildDeploySystem.Editor
 
         private static string[] GetFilesToDeploy(DeploySettings settings, string buildPath)
         {
-            if (settings.DeployZipOnly)
-            {
-                var zipFiles = Directory.GetFiles(buildPath, "*.zip", SearchOption.TopDirectoryOnly);
-                if (zipFiles.Length == 0)
-                {
-                    throw new FileNotFoundException("No ZIP files found for deploy");
-                }
-                return zipFiles;
-            }
-            else
-            {
-                var files = Directory.GetFiles(buildPath, "*", SearchOption.AllDirectories);
-                return files;
-            }
+            var files = Directory.GetFiles(buildPath, "*", SearchOption.AllDirectories);
+            return files;
         }
 
         private static async Task<bool> DeployViaLocalCopy(DeploySettings settings, string buildPath)
@@ -573,50 +620,43 @@ namespace Energy8.BuildDeploySystem.Editor
                     return false;
                 }
                 string targetPath = settings.LocalCopyTargetPath;
+                string parentDir = Path.GetDirectoryName(targetPath);
+                string targetDirName = Path.GetFileName(targetPath);
+                string tempPath = Path.Combine(parentDir, $"{targetDirName}_temp_{DateTime.Now:yyyyMMdd_HHmmss}");
 
-                // 1. Создаем бекап если нужно
-                if (!await CreateBackupIfNeeded(settings, targetPath))
+                try
                 {
-                    Debug.LogError("[DeployManager] Backup creation failed, aborting deploy");
-                    return false;
-                }
+                    // 1. Копируем файлы во временную директорию
+                    EditorUtility.DisplayProgressBar("Local Copy Deploy", "Copying to temp directory...", 0.1f);
+                    DirectoryCopy(buildPath, tempPath, true);
+                    Debug.Log($"[DeployManager] Copied build to temp directory: {tempPath}");
 
-                // 2. Удаляем существующие файлы если нужно
-                if (!await DeleteExistingFilesIfNeeded(settings, targetPath))
-                {
-                    Debug.LogError("[DeployManager] Failed to delete existing files, aborting deploy");
-                    return false;
-                }
-
-                // 3. Создаем целевую директорию
-                if (!Directory.Exists(targetPath))
-                {
-                    Directory.CreateDirectory(targetPath);
-                    Debug.Log($"[DeployManager] Created target directory: {targetPath}");
-                }
-
-                var files = Directory.GetFiles(buildPath, "*", SearchOption.AllDirectories);
-                int copied = 0;
-                foreach (var file in files)
-                {
-                    string relPath = Path.GetRelativePath(buildPath, file);
-                    string destFile = Path.Combine(targetPath, relPath);
-                    string destDir = Path.GetDirectoryName(destFile);
-                    if (!Directory.Exists(destDir))
+                    // 2. Создаем бекап и переименовываем
+                    EditorUtility.DisplayProgressBar("Local Copy Deploy", "Creating backup and swapping directories...", 0.8f);
+                    if (!await CreateBackupAndSwapLocal(targetPath, tempPath))
                     {
-                        Directory.CreateDirectory(destDir);
-                        Debug.Log($"[DeployManager] Created directory: {destDir}");
+                        Debug.LogError("[DeployManager] Failed to create backup and swap, aborting deploy");
+                        return false;
                     }
-                    File.Copy(file, destFile, true);
-                    copied++;
-                    Debug.Log($"[DeployManager] Copied: {relPath}");
-                    await Task.Yield();
+
+                    EditorUtility.ClearProgressBar();
+                    Debug.Log($"[DeployManager] Local copy deploy completed successfully");
+                    return true;
                 }
-                Debug.Log($"[DeployManager] Local copy deploy completed. Files copied: {copied}");
-                return true;
+                catch
+                {
+                    // Удаляем временную директорию при ошибке
+                    if (Directory.Exists(tempPath))
+                    {
+                        Directory.Delete(tempPath, true);
+                        Debug.Log($"[DeployManager] Cleaned up temp directory: {tempPath}");
+                    }
+                    throw;
+                }
             }
             catch (Exception ex)
             {
+                EditorUtility.ClearProgressBar();
                 Debug.LogError($"[DeployManager] Local copy deploy failed: {ex.Message}");
                 return false;
             }

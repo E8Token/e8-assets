@@ -14,30 +14,27 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buildProfileGUID: 92bc16ec2a93c7641a03e6e5751c9d55
   buildProfileName: Web Debug
-  outputPath: Builds/Debug/Web/assets_{{{VERSION}}}
+  targetEnvironment: Debug
+  outputPath: Builds/Identity//{{{ENVIRONMENT}}}/{{{PLATFORM}}}/Identity_{{{VERSION}}}
   alwaysCleanBuild: 1
   customBuildName: 
   deploySettings:
     enableDeploy: 1
-    alwaysDeploy: 0
     deployMethod: 2
     serverHost: 194.135.91.70
     serverPort: 55555
-    remotePath: /var/www/html/debug/games/assets
+    remotePath: /var/www/html/debug/games/
     authMethod: 1
     username: dlemonvcake
     password: 
     privateKeyPath: C:/Users/dlemo/.ssh/id_ed25519
     privateKeyPassphrase: 
-    deleteExistingFiles: 1
-    createBackup: 1
-    deployZipOnly: 0
     localCopyTargetPath: 
   webGLSettings:
     buildDXT: 1
     buildASTC: 1
     buildETC2: 1
-    compressionAlgorithms: 02000000
+    compressionAlgorithms: 0200000001000000
   androidSettings:
     buildAAB: 0
     buildAPK: 1

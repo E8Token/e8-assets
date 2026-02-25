@@ -257,7 +257,6 @@ namespace Energy8.BuildDeploySystem.Editor
     {
         [Header("Deploy Configuration")]
         [SerializeField] private bool enableDeploy = false;
-        [SerializeField] private bool alwaysDeploy = false;
         [SerializeField] private DeployMethod deployMethod = DeployMethod.FTP;
 
         [Header("Server Settings")]
@@ -272,10 +271,6 @@ namespace Energy8.BuildDeploySystem.Editor
         [SerializeField] private string privateKeyPath = "";
         [SerializeField] private string privateKeyPassphrase = "";
 
-        [Header("Deploy Options")]
-        [SerializeField] private bool deleteExistingFiles = false;
-        [SerializeField] private bool createBackup = true;
-        [SerializeField] private bool deployZipOnly = false;
 
         [Header("Local Copy Deploy")]
         [SerializeField] private string localCopyTargetPath = "";
@@ -284,12 +279,6 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             get => enableDeploy;
             set => enableDeploy = value;
-        }
-
-        public bool AlwaysDeploy
-        {
-            get => alwaysDeploy;
-            set => alwaysDeploy = value;
         }
 
         public DeployMethod Method
@@ -344,24 +333,6 @@ namespace Energy8.BuildDeploySystem.Editor
         {
             get => privateKeyPassphrase;
             set => privateKeyPassphrase = value;
-        }
-
-        public bool DeleteExistingFiles
-        {
-            get => deleteExistingFiles;
-            set => deleteExistingFiles = value;
-        }
-
-        public bool CreateBackup
-        {
-            get => createBackup;
-            set => createBackup = value;
-        }
-
-        public bool DeployZipOnly
-        {
-            get => deployZipOnly;
-            set => deployZipOnly = value;
         }
 
         public string LocalCopyTargetPath

@@ -142,13 +142,23 @@ namespace Energy8.BuildDeploySystem.Editor
                 string processedOutputPath = ProcessOutputPathTemplate(config.OutputPath, config);
                 string fullOutputPath = Path.GetFullPath(processedOutputPath);
 
-                if (clean)
+                // Создаем родительские директории рекурсивно
+                string parentDir = Path.GetDirectoryName(fullOutputPath);
+                if (!string.IsNullOrEmpty(parentDir) && !Directory.Exists(parentDir))
+                {
+                    Directory.CreateDirectory(parentDir);
+                    Debug.Log($"[BuildSystem] Created parent directory: {parentDir}");
+                }
+
+                if (clean && Directory.Exists(fullOutputPath))
                 {
                     Directory.Delete(fullOutputPath, true);
                 }
+                
                 if (!Directory.Exists(fullOutputPath))
                 {
                     Directory.CreateDirectory(fullOutputPath);
+                    Debug.Log($"[BuildSystem] Created output directory: {fullOutputPath}");
                 }
 
                 var buildProfile = config.BuildProfile;

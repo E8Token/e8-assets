@@ -15,6 +15,7 @@ MonoBehaviour:
   AuthServerUrl: https://api.dev.energy8.io/v1
   FirebaseConfig: {fileID: 4900000, guid: 611664c296eed6d448ded7c73ee7982f, type: 3}
   FirebaseWebConfig: {fileID: 4900000, guid: 5439415ee8707074eb8ffa89d14776b7, type: 3}
+  TelegramBotId: 8550889661
   EnableAnalytics: 0
   TrackUserActions: 0
   TrackErrors: 0
