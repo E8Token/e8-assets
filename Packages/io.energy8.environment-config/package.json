@@ -1,6 +1,6 @@
 {
   "name": "io.energy8.environment-config",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "E8 Environment Config",
   "description": "Environment configuration management system for Energy8 projects",
   "unity": "2022.3",

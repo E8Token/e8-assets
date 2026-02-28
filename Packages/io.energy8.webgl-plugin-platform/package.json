@@ -1,6 +1,6 @@
 {
   "name": "io.energy8.webgl-plugin-platform",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "displayName": "E8 WebGL Plugin Platform",
   "description": "Platform for developing WebGL plugins that improve communication between Unity and browser with JavaScript integration.",
   "unity": "6000.0",

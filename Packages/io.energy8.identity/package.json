@@ -1,6 +1,6 @@
 {
   "name": "io.energy8.identity",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "displayName": "E8 Identity",
   "description": "Package for Energy8 identity functionality with authentication, user management, and analytics integration.",
   "unity": "6000.0",

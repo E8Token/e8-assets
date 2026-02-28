@@ -1,6 +1,6 @@
 {
   "name": "io.energy8.viewportmanager",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "displayName": "E8 Viewport Manager",
   "description": "Viewport detection and screen orientation management system for Energy8 ecosystem. Handles device type detection, platform identification, and screen orientation changes.",
   "unity": "6000.0",
