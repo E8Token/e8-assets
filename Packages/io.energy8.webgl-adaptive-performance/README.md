@@ -23,7 +23,7 @@ Adaptive graphics performance system that automatically adjusts Unity quality se
 
 1. Open Unity Package Manager
 2. Click "+" and select "Add package from git URL"
-3. Enter: `https://git.energy8.io/Energy8/e8-assets.git?path=Packages/io.energy8.webgl-adaptive-performance`
+3. Enter: `https://github.com/E8Token/e8-assets.git?path=Packages/io.energy8.webgl-adaptive-performance`
 
 ### Via manifest.json
 
@@ -32,8 +32,8 @@ Add to your `Packages/manifest.json`:
 ```json
 {
   "dependencies": {
-    "io.energy8.webgl-adaptive-performance": "https://git.energy8.io/Energy8/e8-assets.git?path=Packages/io.energy8.webgl-adaptive-performance",
-    "io.energy8.viewportmanager": "https://git.energy8.io/Energy8/e8-assets.git?path=Packages/io.energy8.viewportmanager"
+    "io.energy8.webgl-adaptive-performance": "https://github.com/E8Token/e8-assets.git?path=Packages/io.energy8.webgl-adaptive-performance",
+    "io.energy8.viewportmanager": "https://github.com/E8Token/e8-assets.git?path=Packages/io.energy8.viewportmanager"
   }
 }
 ```
