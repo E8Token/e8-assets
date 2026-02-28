@@ -8,8 +8,6 @@ using Energy8.Identity.UI.Core;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Identity.Auth.Core.Models;
-#else
-using Firebase.Auth;
 #endif
 
 namespace Energy8.Identity.UI.Runtime.State
@@ -47,7 +45,6 @@ namespace Energy8.Identity.UI.Runtime.State
             this.identityService = identityService;
             this.analyticsPermissionService = analyticsPermissionService;
 
-            identityService.OnSignedIn += OnUserSignedIn;
             identityService.OnSignedOut += OnUserSignedOut;
         }
 
@@ -102,7 +99,7 @@ namespace Energy8.Identity.UI.Runtime.State
 
         #region Event Handlers (перенос из строк 148-177)
 
-        private void OnUserSignedIn(FirebaseUser user)
+        private void OnUserSignedIn(object user)
         {
             // Если уже в состоянии UserFlowActive, не переходить обратно в SignedIn
             if (CurrentState == IdentityState.UserFlowActive)
@@ -138,7 +135,6 @@ namespace Energy8.Identity.UI.Runtime.State
         {
             if (identityService != null)
             {
-                identityService.OnSignedIn -= OnUserSignedIn;
                 identityService.OnSignedOut -= OnUserSignedOut;
             }
         }

@@ -27,9 +27,6 @@ namespace Energy8.Identity.Analytics.Runtime.Factory
 
 #if UNITY_WEBGL && !UNITY_EDITOR
             return new WebGLAnalyticsProvider();
-#elif !UNITY_WEBGL || UNITY_EDITOR
-            // Use native Firebase provider for non-WebGL platforms
-            return new FirebaseNativeAnalyticsProvider();
 #else
             // Fallback to default provider
             return new DefaultAnalyticsProvider();

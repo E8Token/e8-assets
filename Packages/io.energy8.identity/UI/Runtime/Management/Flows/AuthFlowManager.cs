@@ -14,8 +14,6 @@ using Energy8.Identity.UI.Core;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Identity.Auth.Core.Models;
-#else
-using Firebase.Auth;
 #endif
 
 namespace Energy8.Identity.UI.Runtime.Management.Flows

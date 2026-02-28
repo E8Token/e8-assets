@@ -24,11 +24,6 @@
   "dependencies": {
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "com.google.external-dependency-manager": "https://github.com/googlesamples/unity-jar-resolver.git?path=upm",
-    "com.google.firebase.analytics": "https://github.com/Dmitry-Viktorov/unity-firebase-sdk.git?path=firebase-packages/com.google.firebase.analytics",
-    "com.google.firebase.app": "https://github.com/Dmitry-Viktorov/unity-firebase-sdk.git?path=firebase-packages/com.google.firebase.app",
-    "com.google.firebase.auth": "https://github.com/Dmitry-Viktorov/unity-firebase-sdk.git?path=firebase-packages/com.google.firebase.auth",
-    "com.google.firebase.crashlytics": "https://github.com/Dmitry-Viktorov/unity-firebase-sdk.git?path=firebase-packages/com.google.firebase.crashlytics",
-    "com.google.firebase.messaging": "https://github.com/Dmitry-Viktorov/unity-firebase-sdk.git?path=firebase-packages/com.google.firebase.messaging",
     "com.unity.inputsystem": "1.17.0",
     "com.unity.localization": "1.5.8",
     "com.unity.nuget.newtonsoft-json": "3.2.2",

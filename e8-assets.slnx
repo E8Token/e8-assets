@@ -5,12 +5,12 @@
   <Project Path="Energy8.Identity.Http.csproj" />
   <Project Path="Energy8.Identity.Shared.csproj" />
   <Project Path="Energy8.Identity.Game.csproj" />
-  <Project Path="Energy8.Identity.Analytics.csproj" />
   <Project Path="Energy8.Identity.Auth.csproj" />
   <Project Path="Energy8.Identity.User.csproj" />
   <Project Path="Energy8.EnvironmentConfig.Editor.csproj" />
   <Project Path="Energy8.EnvironmentConfig.Runtime.csproj" />
   <Project Path="Game.csproj" />
+  <Project Path="Energy8.Identity.Analytics.csproj" />
   <Project Path="Energy8.Identity.Configuration.csproj" />
   <Project Path="Energy8.WebGL.AdaptivePerformance.csproj" />
   <Project Path="Energy8.WebGL.PluginPlatform.csproj" />

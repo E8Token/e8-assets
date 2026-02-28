@@ -16,8 +16,6 @@ using AuthTelegramLinkDto = Energy8.Identity.Shared.Core.Contracts.Dto.Auth.Tele
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using Energy8.Identity.Auth.Core.Models;
-#else
-using Firebase.Auth;
 #endif
 
 namespace Energy8.Identity.UI.Runtime.Services
@@ -32,14 +30,14 @@ namespace Energy8.Identity.UI.Runtime.Services
 
         public bool IsInitialized { get; private set; }
         public bool IsSignedIn => authProvider.IsSignedIn;
-        public FirebaseUser CurrentUser => authProvider.CurrentUser;
+
 
         public bool HasTelegramAutoAuthData => authProvider.HasTelegramAutoAuthData;
 
-        public event Action<FirebaseUser> OnSignedIn;
-        public event Action OnSignedOut;
+    public event Action OnSignedOut;
+    public event Action<object> OnSignedIn;
 
-        public IdentityService(
+    public IdentityService(
             IAuthProvider authProvider,
             IUserService userService,
             IHttpClient httpClient,
@@ -50,7 +48,6 @@ namespace Energy8.Identity.UI.Runtime.Services
             this.httpClient = httpClient;
             this.analyticsService = analyticsService;
 
-            authProvider.OnSignedIn += HandleSignedIn;
             authProvider.OnSignedOut += HandleSignedOut;
         }
         
@@ -101,7 +98,7 @@ namespace Energy8.Identity.UI.Runtime.Services
             }
         }
 
-        public UniTask<AuthResult> SignInWithGoogle(bool linkProvider, CancellationToken ct)
+        public UniTask<object> SignInWithGoogle(bool linkProvider, CancellationToken ct)
         {
             return authProvider.SignInWithGoogle(linkProvider, ct);
         }
@@ -126,29 +123,10 @@ namespace Energy8.Identity.UI.Runtime.Services
                 throw;
             }
         }
-        private async void HandleSignedIn(FirebaseUser user)
+        private async void HandleSignedIn(object user)
         {
             try
             {
-                var token = await authProvider.GetToken(false, CancellationToken.None);
-                httpClient.SetAuthToken(token);
-
-                // Log sign-in event to analytics
-                if (analyticsService != null && analyticsService.IsInitialized)
-                {
-                    analyticsService.SetUserId(user.UserId);
-                    analyticsService.LogSignIn("firebase");
-
-                    var userProps = new Dictionary<string, object>
-                    {
-                        { "display_name", user.DisplayName ?? "" },
-                        { "email", user.Email ?? "" },
-                        { "provider_id", user.ProviderId ?? "" }
-                    };
-                    analyticsService.SetUserProperties(userProps);
-                }
-
-                OnSignedIn?.Invoke(authProvider.CurrentUser);
             }
             catch (Exception ex)
             {
@@ -174,7 +152,7 @@ namespace Energy8.Identity.UI.Runtime.Services
             pendingEmailToken = response.Token;
         }
 
-        public async UniTask<AuthResult> ConfirmEmailCode(string code, CancellationToken ct)
+        public async UniTask<object> ConfirmEmailCode(string code, CancellationToken ct)
         {
             if (string.IsNullOrEmpty(pendingEmailToken))
                 throw new InvalidOperationException("No pending email confirmation");
@@ -192,12 +170,12 @@ namespace Energy8.Identity.UI.Runtime.Services
             return result;
         }
 
-        public UniTask<AuthResult> SignInWithApple(bool linkProvider, CancellationToken ct)
+        public UniTask<object> SignInWithApple(bool linkProvider, CancellationToken ct)
         {
             return authProvider.SignInWithApple(linkProvider, ct);
         }
 
-        public async UniTask<AuthResult> SignInWithTelegramAsync(bool linkProvider, CancellationToken ct)
+        public async UniTask<object> SignInWithTelegramAsync(bool linkProvider, CancellationToken ct)
         {
             try
             {
@@ -210,7 +188,7 @@ namespace Energy8.Identity.UI.Runtime.Services
                 }
 
                 AuthTelegramSignInDto telegramUserDto = linkProvider ?
-                     new AuthTelegramLinkDto(user, CurrentUser.UserId) :
+                     new AuthTelegramLinkDto(user, "telegram") :
                      new AuthTelegramSignInDto(user);
 
                 if (linkProvider)
@@ -246,5 +224,6 @@ namespace Energy8.Identity.UI.Runtime.Services
                 throw new Energy8Exception("Sign in failed", ex.Message);
             }
         }
-    }
+
+  }
 }
